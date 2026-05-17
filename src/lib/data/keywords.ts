@@ -45,5 +45,6 @@ export const iconMappings: Record<string, { icon: string, hint: string }> = {
     ':rb_rune_chaos:': { icon: 'rune_chaos.svg', hint: 'Chaos Rune (รูนแห่งความโกลาหล)' },
     ':rb_rune_mind:': { icon: 'rune_mind.svg', hint: 'Mind Rune (รูนแห่งจิตใจ)' },
     ':rb_rune_body:': { icon: 'rune_body.svg', hint: 'Body Rune (รูนแห่งร่างกาย)' },
+    ':rb_rune_order:': { icon: '8bb1b193a8e1adc26ca28e1a21da8d1e2f5d2f72-64x64.png', hint: 'Order Rune (รูนแห่งระเบียบ)' },
     ':rb_rune_rainbow:': { icon: 'rune_rainbow.svg', hint: 'Any Rune (รูนใดก็ได้)' }
 };

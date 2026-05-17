@@ -30,7 +30,7 @@
         'Chaos': 'rune_chaos.svg',
         'Mind': 'rune_mind.svg',
         'Body': 'rune_body.svg',
-        'Order': 'rune_rainbow.svg'
+        'Order': '8bb1b193a8e1adc26ca28e1a21da8d1e2f5d2f72-64x64.png'
     };
 
     const rarityColors: Record<string, string> = {
