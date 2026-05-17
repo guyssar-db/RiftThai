@@ -1,46 +1,44 @@
 node_modules
-
-# Output
-.output
-.vercel
-.netlify
-.wrangler
 /.svelte-kit
 /build
-
-# OS
-.DS_Store
-Thumbs.db
-
-# VS Code
-.vscode/
-
-# Env
 .env
 .env.*
-!.env.example
-!.env.test
+.DS_Store
+Thumbs.db
+.vscode/
 
-# Vite
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
+# Ignore all scripts and config files except the essential ones
+*.js
+*.cjs
+!svelte.config.js
+!eslint.config.js
+!vite.config.ts
 
-# Project Specific - Temp files and data extraction scripts
-*.json
+# Ignore all JSON files in the root (mostly processing batches)
+/*.json
 !package.json
 !package-lock.json
 !tsconfig.json
-!src/lib/data/riftbound_cards_all.json
 
-# Exclude scripts used for data processing
-*.cjs
-download_images.js
-translate_script.js
+# Allow data files inside src
+!src/lib/data/*.json
 
-# Temporary directories
+# Ignore temporary directories
 temp_chunks/
-temp_chunk.json
+.output/
 
-# Markdown documentation
-keyword.md
-req.md
+# Documentation
+*.md
+!README.md
+!GEMINI.md
+
+# Ensure images are ALWAYS included
+!static/images/
+!*.png
+!*.jpg
+!*.jpeg
+!*.gif
+!*.svg
+!*.webp
+!*.avif
+!*.ico
