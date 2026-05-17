@@ -156,7 +156,7 @@
                             {#if card.power !== null}
                                 <div class="flex items-center gap-2 px-3 py-2 bg-slate-800 rounded-xl border border-slate-800">
                                     <img src="/images/icons/might.svg" class="h-4 w-auto" alt="P" /> 
-                                    <span class="font-black text-white uppercase text-[0.65rem] tracking-widest">Might: {card.power.value.label}</span>
+                                    <span class="font-black text-white uppercase text-[0.65rem] tracking-widest">Might: {card.power?.value?.label}</span>
                                 </div>
                             {/if}
                         </div>
