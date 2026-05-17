@@ -1,0 +1,46 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Project Specific - Temp files and data extraction scripts
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!src/lib/data/riftbound_cards_all.json
+
+# Exclude scripts used for data processing
+*.cjs
+download_images.js
+translate_script.js
+
+# Temporary directories
+temp_chunks/
+temp_chunk.json
+
+# Markdown documentation
+keyword.md
+req.md
