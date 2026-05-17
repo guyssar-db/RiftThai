@@ -3,6 +3,7 @@
 	import CardModal from '$lib/components/CardModal.svelte';
 	import SearchBar from '$lib/components/SearchBar.svelte';
 	import KeywordSection from '$lib/components/KeywordSection.svelte';
+	import { navigating } from '$app/stores';
 	
 	let { data } = $props();
 
@@ -70,9 +71,25 @@
 	function closePopup() {
 		selectedPopupCard = null;
 	}
+
+	let isFiltering = $state(false);
+	$effect(() => {
+		searchTerm; selectedSet; selectedType;
+		isFiltering = true;
+		const timer = setTimeout(() => (isFiltering = false), 300);
+		return () => clearTimeout(timer);
+	});
+
+	let isLoading = $derived(!!$navigating || isFiltering);
 </script>
 
 <div class="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500/30">
+	{#if !!$navigating}
+		<div class="fixed top-0 left-0 right-0 h-1 z-[100] overflow-hidden bg-slate-900">
+			<div class="h-full bg-sky-500 animate-loading-bar"></div>
+		</div>
+	{/if}
+
 	<nav class="sticky top-0 z-50 bg-slate-950/80 border-b border-slate-800 backdrop-blur-xl transition-all duration-300">
 		<div class="max-w-[1400px] mx-auto flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 gap-4">
 			<div class="flex items-center gap-2">
@@ -113,44 +130,58 @@
 				/>
 			</header>
 
-			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-8">
-				{#each paginatedCards as card}
-					<button 
-						class="group flex flex-col text-left transition-all duration-500 hover:-translate-y-2" 
-						onclick={() => openPopup(card)}
-					>
-						<div class="relative w-full aspect-[744/1039] bg-slate-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-white/5 flex items-center justify-center group-hover:border-sky-500/50 group-hover:shadow-sky-500/10 transition-all duration-500">
-							{#if card.image_url}
-								<img 
-									src={card.image_url} 
-									alt={card.name_en} 
-									loading="lazy" 
-									class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 {card.type.includes('Battlefield') ? 'battlefield-rotated' : ''}"
-								/>
-							{:else}
-								<div class="text-slate-600 text-[10px] uppercase font-black tracking-tighter">No Preview</div>
-							{/if}
-							
-							<div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-							
-							<div class="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-								<div class="flex items-center justify-between">
-									<span class="text-[10px] font-black text-sky-400 tracking-widest">{card.code}</span>
-									<div class="w-6 h-6 bg-sky-500 rounded-lg flex items-center justify-center text-slate-950">
-										<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+			{#if isLoading}
+				<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-8 animate-pulse">
+					{#each Array(12) as _}
+						<div class="flex flex-col gap-4">
+							<div class="w-full aspect-[744/1039] bg-slate-900 rounded-2xl border border-slate-800"></div>
+							<div class="space-y-2 px-1">
+								<div class="h-4 bg-slate-900 rounded-md w-3/4"></div>
+								<div class="h-3 bg-slate-900 rounded-md w-1/2"></div>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-8">
+					{#each paginatedCards as card}
+						<button 
+							class="group flex flex-col text-left transition-all duration-500 hover:-translate-y-2" 
+							onclick={() => openPopup(card)}
+						>
+							<div class="relative w-full aspect-[744/1039] bg-slate-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-white/5 flex items-center justify-center group-hover:border-sky-500/50 group-hover:shadow-sky-500/10 transition-all duration-500">
+								{#if card.image_url}
+									<img 
+										src={card.image_url} 
+										alt={card.name_en} 
+										loading="lazy" 
+										class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 {card.type.includes('Battlefield') ? 'battlefield-rotated' : ''}"
+									/>
+								{:else}
+									<div class="text-slate-600 text-[10px] uppercase font-black tracking-tighter">No Preview</div>
+								{/if}
+								
+								<div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+								
+								<div class="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+									<div class="flex items-center justify-between">
+										<span class="text-[10px] font-black text-sky-400 tracking-widest">{card.code}</span>
+										<div class="w-6 h-6 bg-sky-500 rounded-lg flex items-center justify-center text-slate-950">
+											<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
-						<div class="mt-4 px-1">
-							<h3 class="font-bold text-white text-sm sm:text-base line-clamp-1 group-hover:text-sky-400 transition-colors">{card.name_en}</h3>
-							<p class="text-slate-500 text-[10px] sm:text-xs font-bold mt-1 tracking-tight">{card.type}</p>
-						</div>
-					</button>
-				{/each}
-			</div>
+							<div class="mt-4 px-1">
+								<h3 class="font-bold text-white text-sm sm:text-base line-clamp-1 group-hover:text-sky-400 transition-colors">{card.name_en}</h3>
+								<p class="text-slate-500 text-[10px] sm:text-xs font-bold mt-1 tracking-tight">{card.type}</p>
+							</div>
+						</button>
+					{/each}
+				</div>
+			{/if}
 
-			{#if filteredCards.length === 0}
+			{#if filteredCards.length === 0 && !isLoading}
 				<div class="py-32 flex flex-col items-center justify-center text-center">
 					<div class="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center mb-6 border border-slate-800">
 						<svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -222,6 +253,16 @@
 {/if}
 
 <style>
+	@keyframes loading-bar {
+		0% { transform: translateX(-100%); }
+		50% { transform: translateX(0); }
+		100% { transform: translateX(100%); }
+	}
+
+	.animate-loading-bar {
+		animation: loading-bar 1.5s infinite linear;
+	}
+
 	:global(.kw-inline-badge) {
 		display: inline-flex;
 		align-items: center;
