@@ -161,7 +161,7 @@
                             {/if}
                         </div>
                         
-                        {#if card.domains.length > 0}
+                        {#if card.domains?.length > 0}
                             <div class="flex flex-wrap gap-2 mt-4">
                                 {#each card.domains as domain}
                                     <div class="bg-slate-950 px-4 py-2 rounded-2xl flex items-center gap-2.5 text-xs font-black border border-slate-800">
