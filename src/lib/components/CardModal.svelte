@@ -84,7 +84,16 @@ interface Card {
     function parseAbility(text: string) {
         if (!text) return "";
         let processed = text;
+        const placeholders: Record<string, string> = {};
+        let phCount = 0;
 
+        function addPH(html: string) {
+            const id = `___PH${phCount++}___`;
+            placeholders[id] = html;
+            return id;
+        }
+
+        // 1. Convert Thai keywords to English for standard processing
         const keywordReplacements: Record<string, string> = {
             '\\[แอ็คชัน\\]': '[Action]',
             '\\[รีแอ็คชัน\\]': '[Reaction]',
@@ -113,23 +122,20 @@ interface Card {
         processed = processed.replace(/\[ล่า\s*(\d+)?\]/g, (m, p1) => p1 ? `[Hunt ${p1}]` : '[Hunt]');
         processed = processed.replace(/\[เลเวล\s*(\d+)?\]/g, (m, p1) => p1 ? `[Level ${p1}]` : '[Level]');
 
-        // Highlight Mechanics (Done before icons and badges to avoid HTML tag corruption)
-        Object.entries(mechanics).forEach(([key, hint]) => {
-            // Negative lookahead prevents matching inside [...]
-            const regex = new RegExp(`\\b(${key})\\b(?![^\\[]*\\])`, 'gi');
-            processed = processed.replace(regex, `<span class="text-amber-400 underline decoration-dotted group relative cursor-pointer inline-block outline-none" tabindex="0">$1<span class="pointer-events-none opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-max bg-slate-800 text-white sm:text-xs p-3 rounded-xl border border-slate-700 shadow-2xl whitespace-normal leading-relaxed text-center font-medium not-underline text-slate-100 not-italic" style="max-width: 220px; z-index: 100; font-size: 11px;">${hint}</span></span>`);
-        });
+        // 2. Identify and hide tokens into placeholders to prevent nested replacements
+        
+        // Rainbow Rune [c]
+        processed = processed.replace(/\[c\]/gi, () => addPH(`<img src="/images/icons/rune_rainbow.svg" class="inline-icon" title="Any Rune" alt="Any Rune" />`));
 
-        processed = processed.replace(/\[c\]/gi, `<img src="/images/icons/rune_rainbow.svg" class="inline-icon" title="Any Rune" alt="Any Rune" />`);
-        processed = processed.replace(/:rb_energy_(\d+):/g, (match, p1) => {
-            return `<span class="icon-energy-circle" title="Energy: ${p1}">${p1}</span>`;
-        });
+        // Energy Icons
+        processed = processed.replace(/:rb_energy_(\d+):/g, (match, p1) => addPH(`<span class="icon-energy-circle" title="Energy: ${p1}">${p1}</span>`));
 
+        // Other Icons from mappings
         Object.entries(iconMappings).forEach(([key, value]) => {
-            const regex = new RegExp(key, 'g');
-            processed = processed.replace(regex, `<img src="/images/icons/${value.icon}" class="inline-icon" title="${value.hint}" alt="${key}" />`);
+            processed = processed.replace(new RegExp(key, 'g'), () => addPH(`<img src="/images/icons/${value.icon}" class="inline-icon" title="${value.hint}" alt="${key}" />`));
         });
 
+        // Keywords [Badge]
         processed = processed.replace(/\[([^\]]+)\]/g, (match, p1) => {
             const cleanP1 = p1.split(' ')[0];
             const kw = keywords.find(k => 
@@ -140,9 +146,21 @@ interface Card {
             const bgColor = kw ? kw.color : '#107361';
             const hint = kw ? kw.description_th : '';
             if (hint) {
-                return `<span class="kw-inline-badge group relative cursor-pointer outline-none" tabindex="0" style="background-color: ${bgColor}"><span>${p1}</span><span class="pointer-events-none opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity absolute bottom-full left-1/2 mb-2 w-max bg-slate-800 text-white sm:text-xs p-3 rounded-xl border border-slate-700 shadow-2xl whitespace-normal leading-relaxed text-center font-medium font-sans normal-case tracking-normal not-italic" style="transform: translateX(-50%) skewX(13deg); max-width: 220px; z-index: 100; font-size: 11px;">${hint}</span></span>`;
+                return addPH(`<span class="kw-inline-badge group relative cursor-pointer outline-none" tabindex="0" style="background-color: ${bgColor}"><span>${p1}</span><span class="pointer-events-none opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity absolute bottom-full left-1/2 mb-2 w-max bg-slate-800 text-white sm:text-xs p-3 rounded-xl border border-slate-700 shadow-2xl whitespace-normal leading-relaxed text-center font-medium font-sans normal-case tracking-normal not-italic" style="transform: translateX(-50%) skewX(13deg); max-width: 220px; z-index: 100; font-size: 11px;">${hint}</span></span>`);
             }
-            return `<span class="kw-inline-badge" style="background-color: ${bgColor}"><span>${p1}</span></span>`;
+            return addPH(`<span class="kw-inline-badge" style="background-color: ${bgColor}"><span>${p1}</span></span>`);
+        });
+
+        // Mechanics (Ready, Exhaust, etc.)
+        const sortedMechanics = Object.entries(mechanics).sort((a, b) => b[0].length - a[0].length);
+        sortedMechanics.forEach(([key, hint]) => {
+            const regex = new RegExp(`\\b(${key})\\b`, 'gi');
+            processed = processed.replace(regex, (match) => addPH(`<span class="text-amber-400 underline decoration-dotted group relative cursor-pointer inline-block outline-none" tabindex="0">${match}<span class="pointer-events-none opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-max bg-slate-800 text-white sm:text-xs p-3 rounded-xl border border-slate-700 shadow-2xl whitespace-normal leading-relaxed text-center font-medium not-underline text-slate-100 not-italic" style="max-width: 220px; z-index: 100; font-size: 11px;">${hint}</span></span>`));
+        });
+
+        // 3. Restore all placeholders back to HTML
+        Object.entries(placeholders).forEach(([id, html]) => {
+            processed = processed.replace(id, html);
         });
 
         return processed.replace(/\n/g, '<br />');
