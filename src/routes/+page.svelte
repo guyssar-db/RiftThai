@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { keywords, iconMappings } from '$lib/data/keywords';
 	import CardModal from '$lib/components/CardModal.svelte';
+	import TurnPhasesSection from '$lib/components/TurnPhasesSection.svelte';
 	import SearchBar from '$lib/components/SearchBar.svelte';
 	import KeywordSection from '$lib/components/KeywordSection.svelte';
 	import { navigating } from '$app/stores';
@@ -33,16 +34,21 @@
 	let searchTerm = $state("");
 	let selectedSet = $state("All");
 	let selectedType = $state("All");
-	let viewMode = $state<"gallery" | "keywords">("gallery");
+	let viewMode = $state<"gallery" | "keywords" | "phases">("gallery");
 
 	let sets = $derived(["All", ...new Set(cards.map(c => c.set_name).filter(Boolean))]);
 	let types = $derived(["All", ...new Set(cards.map(c => c.type).filter(Boolean))]);
 
 	let filteredCards = $derived(
 		cards.filter(c => {
+			const searchLower = searchTerm.toLowerCase();
 			const matchesSearch = 
-				c.name_en.toLowerCase().includes(searchTerm.toLowerCase()) || 
-				c.code.toLowerCase().includes(searchTerm.toLowerCase());
+				c.name_en.toLowerCase().includes(searchLower) || 
+				c.name_th.toLowerCase().includes(searchLower) ||
+				c.code.toLowerCase().includes(searchLower) ||
+				c.ability_en.toLowerCase().includes(searchLower) ||
+				c.ability_th.toLowerCase().includes(searchLower) ||
+				(c.tags && c.tags.some(tag => tag.toLowerCase().includes(searchLower)));
 			
 			const matchesSet = selectedSet === "All" || c.set_name === selectedSet;
 			const matchesType = selectedType === "All" || c.type === selectedType;
@@ -83,39 +89,83 @@
 	let isLoading = $derived(!!$navigating || isFiltering);
 </script>
 
-<div class="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500/30">
+<div class="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500/30 pb-24 sm:pb-0">
 	{#if !!$navigating}
-		<div class="fixed top-0 left-0 right-0 h-1 z-[100] overflow-hidden bg-slate-900">
+		<div class="fixed top-0 left-0 right-0 h-1 z-[200] overflow-hidden bg-slate-900">
 			<div class="h-full bg-sky-500 animate-loading-bar"></div>
 		</div>
 	{/if}
 
+	<!-- Desktop & Mobile Header -->
 	<nav class="sticky top-0 z-50 bg-slate-950/80 border-b border-slate-800 backdrop-blur-xl transition-all duration-300">
-		<div class="max-w-[1400px] mx-auto flex flex-col sm:flex-row justify-between items-center px-4 sm:px-8 py-4 gap-4">
+		<div class="max-w-[1400px] mx-auto flex justify-between items-center px-6 py-4">
 			<div class="flex items-center gap-2">
 				<div class="font-black text-2xl text-white tracking-tighter">RiftThai</div>
 			</div>
 			
-			<div class="flex bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800 gap-1 w-full sm:w-auto">
+			<!-- Desktop Nav -->
+			<div class="hidden md:flex bg-slate-900/50 p-1 rounded-xl border border-slate-800 gap-1">
 				<button 
-					class="flex-1 sm:px-6 py-2 rounded-xl font-bold text-sm transition-all duration-300 {viewMode === 'gallery' ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}"
+					class="px-6 py-2 rounded-lg font-bold text-sm transition-all duration-300 {viewMode === 'gallery' ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}"
 					onclick={() => viewMode = 'gallery'}
+					aria-label="View Gallery"
 				>
 					Gallery
 				</button>
 				<button 
-					class="flex-1 sm:px-6 py-2 rounded-xl font-bold text-sm transition-all duration-300 {viewMode === 'keywords' ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}"
+					class="px-6 py-2 rounded-lg font-bold text-sm transition-all duration-300 {viewMode === 'keywords' ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}"
 					onclick={() => viewMode = 'keywords'}
+					aria-label="View Keywords"
 				>
 					Keywords
 				</button>
+				<button 
+					class="px-6 py-2 rounded-lg font-bold text-sm transition-all duration-300 {viewMode === 'phases' ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}"
+					onclick={() => viewMode = 'phases'}
+					aria-label="View Turn Phases"
+				>
+					Turn Phases
+				</button>
 			</div>
 
-			<div class="hidden sm:flex items-center gap-6">
-				<a href="https://riftbound.com" target="_blank" class="text-slate-400 hover:text-white transition-colors text-sm font-bold tracking-tight">Official Site</a>
-			</div>
-		</div>
+			<div class="flex items-center gap-4">
+				<a
+					href="/qa"
+					class="px-4 py-2 rounded-xl font-bold text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all duration-300 border border-transparent hover:border-slate-700"
+				>
+					Q&A
+				</a>
+				<div class="w-px h-4 bg-slate-700"></div>
+				<a href="https://riftbound.com" target="_blank" class="block text-slate-500 hover:text-white transition-colors text-xs font-black uppercase tracking-widest">Official</a>
+			</div>		</div>
 	</nav>
+
+	<!-- Mobile Bottom Navigation -->
+	<div class="md:hidden fixed bottom-6 left-4 right-6 z-50 pointer-events-none flex justify-center">
+		<div class="bg-slate-900/90 backdrop-blur-2xl border border-white/10 p-1.5 rounded-2xl shadow-2xl shadow-black/50 flex gap-1 pointer-events-auto">
+			<button 
+				class="flex flex-col items-center justify-center px-5 py-2 rounded-xl transition-all duration-300 {viewMode === 'gallery' ? 'bg-sky-500 text-slate-950' : 'text-slate-400'}"
+				onclick={() => { viewMode = 'gallery'; window.scrollTo({top: 0, behavior: 'smooth'}); }}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+				<span class="text-[10px] font-black uppercase tracking-tighter">Gallery</span>
+			</button>
+			<button 
+				class="flex flex-col items-center justify-center px-5 py-2 rounded-xl transition-all duration-300 {viewMode === 'keywords' ? 'bg-sky-500 text-slate-950' : 'text-slate-400'}"
+				onclick={() => { viewMode = 'keywords'; window.scrollTo({top: 0, behavior: 'smooth'}); }}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+				<span class="text-[10px] font-black uppercase tracking-tighter">Keywords</span>
+			</button>
+			<button 
+				class="flex flex-col items-center justify-center px-5 py-2 rounded-xl transition-all duration-300 {viewMode === 'phases' ? 'bg-sky-500 text-slate-950' : 'text-slate-400'}"
+				onclick={() => { viewMode = 'phases'; window.scrollTo({top: 0, behavior: 'smooth'}); }}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m4.93 4.93 14.14 14.14"/><path d="M2 12h20"/><path d="m19.07 4.93-14.14 14.14"/></svg>
+				<span class="text-[10px] font-black uppercase tracking-tighter">Phases</span>
+			</button>
+		</div>
+	</div>
 
 	<main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-8 sm:py-12">
 		{#if viewMode === 'gallery'}
@@ -229,8 +279,10 @@
 					<p class="text-slate-500 text-xs font-bold tracking-widest uppercase">Page {currentPage} of {totalPages}</p>
 				</div>
 			{/if}
-		{:else}
+		{:else if viewMode === 'keywords'}
 			<KeywordSection {keywords} />
+		{:else if viewMode === 'phases'}
+			<TurnPhasesSection />
 		{/if}
 	</main>
 
@@ -238,8 +290,8 @@
 		<div class="max-w-[1400px] mx-auto px-8 text-center space-y-8">
 			<div class="font-black text-3xl text-white tracking-tighter opacity-50">RiftThai</div>
 			<div class="max-w-2xl mx-auto text-slate-500 text-sm font-medium leading-relaxed">
-				<p>RiftThai เป็นโปรเจกต์แปลภาษาไทยสำหรับเกม Riftbound เพื่อให้ผู้เล่นชาวไทยเข้าถึงเกมได้ง่ายขึ้น</p>
-				<p class="mt-4">All card data, images, and brand assets are property of Riot Games. This is a fan-made translation project.</p>
+				<p>RiftThai เป็นโปรเจกต์แปลภาษาไทยสำหรับเกม Riftbound TCG เพื่อให้ผู้เล่นชาวไทยเข้าถึงเกมได้ง่ายขึ้น</p>
+				<p class="mt-4 text-[10px] leading-relaxed">RiftThai isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</p>
 			</div>
 			<div class="flex justify-center gap-8">
 				<a href="#" class="text-slate-400 hover:text-white transition-colors font-bold text-xs uppercase tracking-widest">Back to top</a>
@@ -249,7 +301,7 @@
 </div>
 
 {#if selectedPopupCard}
-	<CardModal card={selectedPopupCard} closePopup={closePopup} />
+	<CardModal card={selectedPopupCard} closePopup={closePopup} canEdit={data.canEdit} />
 {/if}
 
 <style>
@@ -273,7 +325,6 @@
 		font-weight: 900;
 		font-size: 0.75em;
 		transform: skewX(-13deg);
-		border-radius: 4px;
 		box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
@@ -319,6 +370,14 @@
 	.battlefield-rotated {
 		transform: rotate(90deg) scale(1.4);
 		object-fit:contain;
+	}
+
+	.custom-scrollbar-hide::-webkit-scrollbar {
+		display: none;
+	}
+	.custom-scrollbar-hide {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
 	}
 
 	@media (max-width: 640px) {

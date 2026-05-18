@@ -34,7 +34,7 @@
             </div>
             <input 
                 type="text" 
-                placeholder="ค้นหาชื่อการ์ด หรือ รหัส..." 
+                placeholder="ค้นหาชื่อการ์ด, รหัส หรือ ความสามารถ..." 
                 class="w-full bg-slate-900 border border-slate-800 text-white pl-12 pr-5 py-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all placeholder:text-slate-600"
                 bind:value={searchTerm} 
             />

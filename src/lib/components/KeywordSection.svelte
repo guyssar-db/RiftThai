@@ -56,12 +56,12 @@
 					class="bg-slate-900/30 border border-slate-800/60 p-5 rounded-2xl hover:border-sky-500/20 transition-all duration-300 flex flex-col gap-3 group"
 				>
 					<div class="flex items-center justify-between gap-4">
-						<div
-							class="px-4 py-1.5 rounded-lg font-black text-xs tracking-widest uppercase shadow-md text-white"
-							style="background-color: {kw.color}"
+						<span 
+							class="kw-inline-badge" 
+							style="background-color: {kw.color};"
 						>
-							{kw.name_en}
-						</div>
+							<span>{kw.name_en}</span>
+						</span>
 						<div class="text-slate-500 font-black tracking-widest text-[0.7rem] uppercase">
 							{kw.name_th}
 						</div>
