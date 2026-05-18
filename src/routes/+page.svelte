@@ -89,7 +89,7 @@
 	let isLoading = $derived(!!$navigating || isFiltering);
 </script>
 
-<div class="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500/30 pb-24 sm:pb-0">
+<div class="min-h-dvh bg-slate-950 text-slate-100 font-sans selection:bg-sky-500/30 pb-24 sm:pb-0">
 	{#if !!$navigating}
 		<div class="fixed top-0 left-0 right-0 h-1 z-[200] overflow-hidden bg-slate-900">
 			<div class="h-full bg-sky-500 animate-loading-bar"></div>

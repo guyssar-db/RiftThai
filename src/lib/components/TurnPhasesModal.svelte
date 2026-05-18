@@ -68,7 +68,7 @@
     <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md transition-opacity duration-300"></div>
     
     <div 
-        class="relative bg-slate-900 w-full max-w-4xl max-h-[90vh] rounded-[2rem] border border-slate-800 shadow-2xl overflow-hidden flex flex-col scale-100" 
+        class="relative bg-slate-900 w-full max-w-4xl max-h-[90dvh] rounded-[2rem] border border-slate-800 shadow-2xl overflow-hidden flex flex-col scale-100" 
         onclick={(e) => e.stopPropagation()}
     >
         <!-- Header -->

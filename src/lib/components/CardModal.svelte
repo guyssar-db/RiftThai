@@ -173,7 +173,7 @@ interface Card {
     <div class="absolute inset-0 bg-slate-950/95 backdrop-blur-xl transition-opacity duration-300"></div>
     
     <div 
-        class="relative bg-slate-900 w-full max-w-5xl max-h-full sm:max-h-[95vh] rounded-3xl sm:rounded-[2.5rem] border border-slate-800 shadow-2xl overflow-hidden flex flex-col transition-all duration-500 scale-100" 
+        class="relative bg-slate-900 w-full max-w-5xl max-h-full sm:max-h-[95dvh] rounded-3xl sm:rounded-[2.5rem] border border-slate-800 shadow-2xl overflow-hidden flex flex-col transition-all duration-500 scale-100" 
         onclick={(e) => e.stopPropagation()}
     >
         <div class="lg:hidden flex items-center justify-between p-6 bg-slate-900 border-b border-slate-800">

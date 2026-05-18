@@ -100,7 +100,7 @@
     ));
 </script>
 
-<div class="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 sm:p-8">
+<div class="min-h-dvh bg-slate-950 text-slate-100 font-sans p-4 sm:p-8">
     <div class="max-w-4xl mx-auto">
         <a href="/" class="inline-block text-sky-500 hover:text-sky-400 font-bold mb-8 transition-colors">← กลับหน้าหลัก</a>
         
