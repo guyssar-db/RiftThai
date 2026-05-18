@@ -146,7 +146,7 @@ interface Card {
             const bgColor = kw ? kw.color : '#107361';
             const hint = kw ? kw.description_th : '';
             if (hint) {
-                return addPH(`<span class="kw-inline-badge group relative cursor-pointer outline-none" tabindex="0" style="background-color: ${bgColor}"><span>${p1}</span><span class="pointer-events-none opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity absolute bottom-full left-1/2 mb-2 w-max bg-slate-800 text-white sm:text-xs p-3 rounded-xl border border-slate-700 shadow-2xl whitespace-normal leading-relaxed text-center font-medium font-sans normal-case tracking-normal not-italic" style="transform: translateX(-50%) skewX(13deg); max-width: 220px; z-index: 100; font-size: 11px;">${hint}</span></span>`);
+                return addPH(`<span class="kw-inline-badge cursor-pointer outline-none" tabindex="0" data-tooltip="${hint}" style="background-color: ${bgColor}"><span>${p1}</span></span>`);
             }
             return addPH(`<span class="kw-inline-badge" style="background-color: ${bgColor}"><span>${p1}</span></span>`);
         });
@@ -155,7 +155,7 @@ interface Card {
         const sortedMechanics = Object.entries(mechanics).sort((a, b) => b[0].length - a[0].length);
         sortedMechanics.forEach(([key, hint]) => {
             const regex = new RegExp(`\\b(${key})\\b`, 'gi');
-            processed = processed.replace(regex, (match) => addPH(`<span class="text-amber-400 underline decoration-dotted group relative cursor-pointer inline-block outline-none" tabindex="0">${match}<span class="pointer-events-none opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-max bg-slate-800 text-white sm:text-xs p-3 rounded-xl border border-slate-700 shadow-2xl whitespace-normal leading-relaxed text-center font-medium not-underline text-slate-100 not-italic" style="max-width: 220px; z-index: 100; font-size: 11px;">${hint}</span></span>`));
+            processed = processed.replace(regex, (match) => addPH(`<span class="text-amber-400 underline decoration-dotted cursor-pointer inline-block outline-none" tabindex="0" data-tooltip="${hint}">${match}</span>`));
         });
 
         // 3. Restore all placeholders back to HTML
@@ -165,7 +165,53 @@ interface Card {
 
         return processed.replace(/\n/g, '<br />');
     }
+
+    let activeTooltip = $state("");
+    let tooltipX = $state(0);
+    let tooltipY = $state(0);
+    let tooltipTransform = $state("translate(-50%, -100%)");
+
+    function showTooltip(e: Event) {
+        const target = e.target as HTMLElement;
+        const trigger = target.closest('[data-tooltip]') as HTMLElement;
+        if (trigger) {
+            activeTooltip = trigger.getAttribute('data-tooltip') || "";
+            const rect = trigger.getBoundingClientRect();
+            tooltipX = rect.left + rect.width / 2;
+            
+            if (rect.top < 100) {
+                tooltipY = rect.bottom + 8;
+                tooltipTransform = "translate(-50%, 0)";
+            } else {
+                tooltipY = rect.top - 8;
+                tooltipTransform = "translate(-50%, -100%)";
+            }
+        }
+    }
+
+    function handleMouseOut(e: MouseEvent) {
+        const target = e.target as HTMLElement;
+        const trigger = target.closest('[data-tooltip]') as HTMLElement;
+        const related = e.relatedTarget as Node;
+        if (trigger && related && trigger.contains(related)) {
+            return;
+        }
+        activeTooltip = "";
+    }
+
+    function hideTooltip() {
+        activeTooltip = "";
+    }
 </script>
+
+{#if activeTooltip}
+    <div 
+        class="fixed z-[9999] bg-slate-800 text-white sm:text-xs p-3 rounded-xl border border-slate-700 shadow-2xl whitespace-normal leading-relaxed text-center font-medium font-sans normal-case tracking-normal not-italic pointer-events-none"
+        style="left: {tooltipX}px; top: {tooltipY}px; transform: {tooltipTransform}; max-width: 220px; font-size: 11px;"
+    >
+        {activeTooltip}
+    </div>
+{/if}
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -193,7 +239,7 @@ interface Card {
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 transition-transform group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
-        <div class="overflow-y-auto custom-scrollbar">
+        <div class="overflow-y-auto custom-scrollbar" onscroll={hideTooltip}>
             <div class="grid md:grid-cols-2 items-start">
                 <div class="p-8 sm:p-10 bg-slate-950/30 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-slate-800 lg:h-full">
                     <div class="relative group flex justify-center w-full px-2">
@@ -273,7 +319,9 @@ interface Card {
                             {#if isEditing && canEdit}
                                 <textarea bind:value={tempAbilityTh} class="w-full h-32 bg-slate-800 p-4 rounded-xl text-white text-sm"></textarea>
                             {:else}
-                                <div class="text-lg sm:text-xl font-bold leading-[1.6] text-white">
+                                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                <div class="text-lg sm:text-xl font-bold leading-[1.6] text-white"
+                                     onmouseover={showTooltip} onmouseout={handleMouseOut} onfocusin={showTooltip} onfocusout={hideTooltip}>
                                     {@html parseAbility(card.ability_th)}
                                 </div>
                             {/if}
@@ -284,7 +332,9 @@ interface Card {
                             {#if isEditing && canEdit}
                                 <textarea bind:value={tempAbilityEn} class="w-full h-32 bg-slate-800 p-4 rounded-xl text-slate-300 text-sm"></textarea>
                             {:else}
-                                <div class="text-base sm:text-lg text-slate-400 leading-relaxed italic font-medium">
+                                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                <div class="text-base sm:text-lg text-slate-400 leading-relaxed italic font-medium"
+                                     onmouseover={showTooltip} onmouseout={handleMouseOut} onfocusin={showTooltip} onfocusout={hideTooltip}>
                                     {@html parseAbility(card.ability_en)}
                                 </div>
                             {/if}
