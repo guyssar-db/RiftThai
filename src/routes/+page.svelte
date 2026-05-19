@@ -89,87 +89,91 @@
 	let isLoading = $derived(!!$navigating || isFiltering);
 </script>
 
-<div class="min-h-dvh bg-slate-950 text-slate-100 font-sans selection:bg-sky-500/30 pb-24 sm:pb-0">
+<div class="min-h-dvh text-slate-100 font-sans selection:bg-cyan-500/30 pb-24 sm:pb-0 relative">
+	<div class="mesh-gradient"></div>
+
 	{#if !!$navigating}
 		<div class="fixed top-0 left-0 right-0 h-1 z-[200] overflow-hidden bg-slate-900">
-			<div class="h-full bg-sky-500 animate-loading-bar"></div>
+			<div class="h-full bg-cyan-500 animate-loading-bar"></div>
 		</div>
 	{/if}
 
 	<!-- Desktop & Mobile Header -->
-	<nav class="sticky top-0 z-50 bg-slate-950/80 border-b border-slate-800 backdrop-blur-xl transition-all duration-300">
-		<div class="max-w-[1400px] mx-auto flex justify-between items-center px-6 py-4">
-			<div class="flex items-center gap-2">
-				<div class="font-black text-2xl text-white tracking-tighter">RiftThai</div>
+	<nav class="sticky top-0 z-50 glass-panel border-b border-white/5 transition-all duration-300">
+		<div class="max-w-[1440px] mx-auto flex justify-between items-center px-6 py-4">
+			<div class="flex items-center gap-3 group cursor-pointer">
+				<div class="font-black text-2xl text-white tracking-tighter uppercase italic">RiftThai</div>
 			</div>
 			
 			<!-- Desktop Nav -->
-			<div class="hidden md:flex bg-slate-900/50 p-1 rounded-xl border border-slate-800 gap-1">
+			<div class="hidden md:flex bg-white/5 p-1 rounded-2xl border border-white/10 gap-1 backdrop-blur-md">
 				<button 
-					class="px-6 py-2 rounded-lg font-bold text-sm transition-all duration-300 {viewMode === 'gallery' ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}"
+					class="px-8 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 {viewMode === 'gallery' ? 'bg-cyan-500 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-105' : 'text-slate-400 hover:text-white hover:bg-white/5'}"
 					onclick={() => viewMode = 'gallery'}
-					aria-label="View Gallery"
 				>
 					Gallery
 				</button>
 				<button 
-					class="px-6 py-2 rounded-lg font-bold text-sm transition-all duration-300 {viewMode === 'keywords' ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}"
+					class="px-8 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 {viewMode === 'keywords' ? 'bg-cyan-500 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-105' : 'text-slate-400 hover:text-white hover:bg-white/5'}"
 					onclick={() => viewMode = 'keywords'}
-					aria-label="View Keywords"
 				>
 					Keywords
 				</button>
 				<button 
-					class="px-6 py-2 rounded-lg font-bold text-sm transition-all duration-300 {viewMode === 'phases' ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}"
+					class="px-8 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-500 {viewMode === 'phases' ? 'bg-cyan-500 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.4)] scale-105' : 'text-slate-400 hover:text-white hover:bg-white/5'}"
 					onclick={() => viewMode = 'phases'}
-					aria-label="View Turn Phases"
 				>
-					Turn Phases
+					Phases
 				</button>
 			</div>
 
-			<div class="flex items-center gap-4">
+			<div class="flex items-center gap-6">
 				<a
 					href="/qa"
-					class="px-4 py-2 rounded-xl font-bold text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all duration-300 border border-transparent hover:border-slate-700"
+					class="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-cyan-400 transition-colors"
 				>
 					Q&A
 				</a>
-				<div class="w-px h-4 bg-slate-700"></div>
-				<a href="https://riftbound.com" target="_blank" class="block text-slate-500 hover:text-white transition-colors text-xs font-black uppercase tracking-widest">Official</a>
+				<div class="w-px h-4 bg-white/10"></div>
+				<a href="https://riftbound.com" target="_blank" class="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white transition-all hover:bg-white/10 text-[10px] font-black uppercase tracking-widest">Official</a>
 			</div>		</div>
 	</nav>
 
 	<!-- Mobile Bottom Navigation -->
-	<div class="md:hidden fixed bottom-6 left-4 right-6 z-50 pointer-events-none flex justify-center">
-		<div class="bg-slate-900/90 backdrop-blur-2xl border border-white/10 p-1.5 rounded-2xl shadow-2xl shadow-black/50 flex gap-1 pointer-events-auto">
+	<div class="md:hidden fixed bottom-8 left-0 right-0 z-50 px-6 pointer-events-none">
+		<div class="max-w-md mx-auto glass-panel border-white/10 p-2 rounded-[2rem] shadow-2xl shadow-black/80 flex gap-1 pointer-events-auto">
 			<button 
-				class="flex flex-col items-center justify-center px-5 py-2 rounded-xl transition-all duration-300 {viewMode === 'gallery' ? 'bg-sky-500 text-slate-950' : 'text-slate-400'}"
+				class="flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all duration-500 {viewMode === 'gallery' ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20' : 'text-slate-500'}"
 				onclick={() => { viewMode = 'gallery'; window.scrollTo({top: 0, behavior: 'smooth'}); }}
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
-				<span class="text-[10px] font-black uppercase tracking-tighter">Gallery</span>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+				<span class="text-[9px] font-black uppercase tracking-widest">Gallery</span>
 			</button>
 			<button 
-				class="flex flex-col items-center justify-center px-5 py-2 rounded-xl transition-all duration-300 {viewMode === 'keywords' ? 'bg-sky-500 text-slate-950' : 'text-slate-400'}"
+				class="flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all duration-500 {viewMode === 'keywords' ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20' : 'text-slate-500'}"
 				onclick={() => { viewMode = 'keywords'; window.scrollTo({top: 0, behavior: 'smooth'}); }}
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-				<span class="text-[10px] font-black uppercase tracking-tighter">Keywords</span>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+				<span class="text-[9px] font-black uppercase tracking-widest">Keywords</span>
 			</button>
 			<button 
-				class="flex flex-col items-center justify-center px-5 py-2 rounded-xl transition-all duration-300 {viewMode === 'phases' ? 'bg-sky-500 text-slate-950' : 'text-slate-400'}"
+				class="flex-1 flex flex-col items-center justify-center py-3 rounded-2xl transition-all duration-500 {viewMode === 'phases' ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20' : 'text-slate-500'}"
 				onclick={() => { viewMode = 'phases'; window.scrollTo({top: 0, behavior: 'smooth'}); }}
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m4.93 4.93 14.14 14.14"/><path d="M2 12h20"/><path d="m19.07 4.93-14.14 14.14"/></svg>
-				<span class="text-[10px] font-black uppercase tracking-tighter">Phases</span>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m4.93 4.93 14.14 14.14"/><path d="M2 12h20"/><path d="m19.07 4.93-14.14 14.14"/></svg>
+				<span class="text-[9px] font-black uppercase tracking-widest">Phases</span>
 			</button>
 		</div>
 	</div>
 
-	<main class="max-w-[1400px] mx-auto px-4 sm:px-8 py-8 sm:py-12">
+	<main class="max-w-[1440px] mx-auto px-6 sm:px-12 py-12 sm:py-20">
 		{#if viewMode === 'gallery'}
-			<header class="space-y-8 mb-12 sm:mb-16">
+			<header class="space-y-12 mb-16 sm:mb-24">
+				<div class="text-center space-y-4 mb-16">
+					<h1 class="text-5xl sm:text-8xl font-black text-white tracking-tighter italic uppercase">
+						Rift<span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-500">Thai</span>
+					</h1>
+				</div>
 				<SearchBar 
 					bind:searchTerm={searchTerm} 
 					bind:selectedSet={selectedSet} 
@@ -181,50 +185,56 @@
 			</header>
 
 			{#if isLoading}
-				<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-8 animate-pulse">
+				<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 sm:gap-10">
 					{#each Array(12) as _}
-						<div class="flex flex-col gap-4">
-							<div class="w-full aspect-[744/1039] bg-slate-900 rounded-2xl border border-slate-800"></div>
-							<div class="space-y-2 px-1">
-								<div class="h-4 bg-slate-900 rounded-md w-3/4"></div>
-								<div class="h-3 bg-slate-900 rounded-md w-1/2"></div>
+						<div class="flex flex-col gap-5 animate-pulse">
+							<div class="w-full aspect-[744/1039] bg-white/5 rounded-3xl border border-white/10"></div>
+							<div class="space-y-3 px-2">
+								<div class="h-5 bg-white/5 rounded-lg w-3/4"></div>
+								<div class="h-3 bg-white/5 rounded-lg w-1/2"></div>
 							</div>
 						</div>
 					{/each}
 				</div>
 			{:else}
-				<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-8">
+				<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 sm:gap-10">
 					{#each paginatedCards as card}
 						<button 
-							class="group flex flex-col text-left transition-all duration-500 hover:-translate-y-2" 
+							class="group flex flex-col text-left transition-all duration-700 hover:-translate-y-4" 
 							onclick={() => openPopup(card)}
 						>
-							<div class="relative w-full aspect-[744/1039] bg-slate-900 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-white/5 flex items-center justify-center group-hover:border-sky-500/50 group-hover:shadow-sky-500/10 transition-all duration-500">
+							<div class="relative w-full aspect-[744/1039] bg-slate-900 rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 flex items-center justify-center transition-all duration-700 group-hover:border-cyan-500/50 group-hover:shadow-[0_0_40px_rgba(6,182,212,0.15)] group-active:scale-95">
 								{#if card.image_url}
 									<img 
 										src={card.image_url} 
 										alt={card.name_en} 
 										loading="lazy" 
-										class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 {card.type.includes('Battlefield') ? 'battlefield-rotated' : ''}"
+										class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 {card.type.includes('Battlefield') ? 'battlefield-rotated' : ''}"
 									/>
 								{:else}
-									<div class="text-slate-600 text-[10px] uppercase font-black tracking-tighter">No Preview</div>
+									<div class="text-slate-600 text-[10px] uppercase font-black tracking-widest italic">Signal Lost</div>
 								{/if}
 								
-								<div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+								<!-- Hover Overlay -->
+								<div class="absolute inset-0 bg-gradient-to-t from-cyan-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
 								
-								<div class="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-									<div class="flex items-center justify-between">
-										<span class="text-[10px] font-black text-sky-400 tracking-widest">{card.code}</span>
-										<div class="w-6 h-6 bg-sky-500 rounded-lg flex items-center justify-center text-slate-950">
-											<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-										</div>
+								<!-- Floating Badge -->
+								<div class="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
+									<span class="text-[9px] font-black text-white tracking-widest">{card.code}</span>
+								</div>
+
+								<div class="absolute bottom-6 left-6 right-6 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-700">
+									<div class="w-full h-10 bg-cyan-500 rounded-xl flex items-center justify-center text-slate-950 font-black text-xs uppercase tracking-widest shadow-lg shadow-cyan-500/20">
+										View Details
 									</div>
 								</div>
 							</div>
-							<div class="mt-4 px-1">
-								<h3 class="font-bold text-white text-sm sm:text-base line-clamp-1 group-hover:text-sky-400 transition-colors">{card.name_en}</h3>
-								<p class="text-slate-500 text-[10px] sm:text-xs font-bold mt-1 tracking-tight">{card.type}</p>
+							<div class="mt-6 px-2 space-y-1">
+								<h3 class="font-black text-white text-sm sm:text-base line-clamp-1 group-hover:text-cyan-400 transition-colors duration-300 italic tracking-tight uppercase">{card.name_en}</h3>
+								<div class="flex items-center gap-2">
+									<div class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></div>
+									<p class="text-slate-500 text-[10px] sm:text-xs font-black uppercase tracking-[0.2em]">{card.type}</p>
+								</div>
 							</div>
 						</button>
 					{/each}
@@ -232,27 +242,32 @@
 			{/if}
 
 			{#if filteredCards.length === 0 && !isLoading}
-				<div class="py-32 flex flex-col items-center justify-center text-center">
-					<div class="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center mb-6 border border-slate-800">
-						<svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+				<div class="py-40 flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-700">
+					<div class="relative group">
+						<div class="absolute -inset-8 bg-cyan-500/10 rounded-full blur-3xl group-hover:bg-cyan-500/20 transition-all"></div>
+						<div class="w-24 h-24 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-center relative backdrop-blur-xl">
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+						</div>
 					</div>
-					<h3 class="text-xl font-bold text-white mb-2">ไม่พบการ์ดที่ค้นหา</h3>
-					<p class="text-slate-500 max-w-xs">ลองเปลี่ยนคำค้นหาหรือตัวกรองดูใหม่อีกครั้ง</p>
+					<div class="space-y-2">
+						<h3 class="text-3xl font-black text-white italic uppercase tracking-tighter">No Signal Found</h3>
+						<p class="text-slate-500 font-medium tracking-wide">ไม่พบการ์ดที่ค้นหา ลองเปลี่ยนตัวกรองดูใหม่อีกครั้ง</p>
+					</div>
 				</div>
 			{/if}
 
 			{#if totalPages > 1}
-				<div class="mt-20 flex flex-col items-center gap-6">
-					<div class="flex items-center gap-2">
+				<div class="mt-32 flex flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom duration-1000">
+					<div class="flex items-center gap-4">
 						<button 
-							class="w-12 h-12 flex items-center justify-center bg-slate-900 border border-slate-800 rounded-2xl text-white transition-all hover:bg-slate-800 hover:border-slate-700 disabled:opacity-30 disabled:cursor-not-allowed group"
-							onclick={() => currentPage--}
+							class="w-14 h-14 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl text-white transition-all hover:bg-cyan-500 hover:text-slate-950 hover:border-cyan-500 disabled:opacity-20 disabled:hover:bg-white/5 disabled:hover:text-white group"
+							onclick={() => { currentPage--; window.scrollTo({top: 0, behavior: 'smooth'}); }}
 							disabled={currentPage === 1}
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 transition-transform group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
 						</button>
 						
-						<div class="flex items-center bg-slate-900 border border-slate-800 rounded-2xl p-1 gap-1">
+						<div class="flex items-center bg-white/5 border border-white/10 rounded-[1.5rem] p-1.5 gap-1 backdrop-blur-xl">
 							{#each Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
 								if (totalPages <= 5) return i + 1;
 								if (currentPage <= 3) return i + 1;
@@ -260,8 +275,8 @@
 								return currentPage - 2 + i;
 							}) as page}
 								<button 
-									class="w-10 h-10 flex items-center justify-center rounded-xl text-sm font-black transition-all {currentPage === page ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20 scale-110' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}"
-									onclick={() => currentPage = page}
+									class="w-12 h-12 flex items-center justify-center rounded-xl text-xs font-black transition-all duration-500 {currentPage === page ? 'bg-cyan-500 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.3)] scale-110' : 'text-slate-500 hover:text-white hover:bg-white/5'}"
+									onclick={() => { currentPage = page; window.scrollTo({top: 0, behavior: 'smooth'}); }}
 								>
 									{page}
 								</button>
@@ -269,14 +284,14 @@
 						</div>
 
 						<button 
-							class="w-12 h-12 flex items-center justify-center bg-slate-900 border border-slate-800 rounded-2xl text-white transition-all hover:bg-slate-800 hover:border-slate-700 disabled:opacity-30 disabled:cursor-not-allowed group"
-							onclick={() => currentPage++}
+							class="w-14 h-14 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl text-white transition-all hover:bg-cyan-500 hover:text-slate-950 hover:border-cyan-500 disabled:opacity-20 disabled:hover:bg-white/5 disabled:hover:text-white group"
+							onclick={() => { currentPage++; window.scrollTo({top: 0, behavior: 'smooth'}); }}
 							disabled={currentPage === totalPages}
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
 						</button>
 					</div>
-					<p class="text-slate-500 text-xs font-bold tracking-widest uppercase">Page {currentPage} of {totalPages}</p>
+					<div class="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-black text-slate-500 tracking-[0.4em] uppercase">Page {currentPage} of {totalPages}</div>
 				</div>
 			{/if}
 		{:else if viewMode === 'keywords'}
@@ -286,15 +301,33 @@
 		{/if}
 	</main>
 
-	<footer class="mt-32 py-16 border-t border-slate-800 bg-slate-950">
-		<div class="max-w-[1400px] mx-auto px-8 text-center space-y-8">
-			<div class="font-black text-3xl text-white tracking-tighter opacity-50">RiftThai</div>
-			<div class="max-w-2xl mx-auto text-slate-500 text-sm font-medium leading-relaxed">
-				<p>RiftThai เป็นโปรเจกต์แปลภาษาไทยสำหรับเกม Riftbound TCG เพื่อให้ผู้เล่นชาวไทยเข้าถึงเกมได้ง่ายขึ้น</p>
-				<p class="mt-4 text-[10px] leading-relaxed">RiftThai isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</p>
+	<footer class="mt-48 py-24 border-t border-white/5 bg-slate-950/50 backdrop-blur-3xl relative overflow-hidden">
+		<div class="absolute -bottom-24 -left-24 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px]"></div>
+		<div class="absolute -top-24 -right-24 w-96 h-96 bg-violet-500/10 rounded-full blur-[120px]"></div>
+		
+		<div class="max-w-[1440px] mx-auto px-8 relative z-10">
+			<div class="grid md:grid-cols-2 gap-16 items-center">
+				<div class="space-y-8 text-center md:text-left">
+					<div class="font-black text-5xl text-white tracking-tighter italic uppercase">Rift<span class="text-cyan-500">Thai</span></div>
+					<p class="text-slate-400 text-sm font-medium leading-relaxed max-w-md">
+						RiftThai เป็นโปรเจกต์แปลภาษาไทยสำหรับเกม Riftbound TCG เพื่อให้ผู้เล่นชาวไทยเข้าถึงเกมได้ง่ายขึ้น
+					</p>
+					<div class="flex justify-center md:justify-start gap-8">
+						<a href="#" class="text-white hover:text-cyan-400 transition-colors font-black text-xs uppercase tracking-[0.3em] flex items-center gap-2">
+							Back to top
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
+						</a>
+					</div>
+				</div>
+				<div class="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] space-y-6">
+					<div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Legal Disclaimer</div>
+					<p class="text-[10px] text-slate-500 leading-relaxed font-medium">
+						RiftThai isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
+					</p>
+				</div>
 			</div>
-			<div class="flex justify-center gap-8">
-				<a href="#" class="text-slate-400 hover:text-white transition-colors font-bold text-xs uppercase tracking-widest">Back to top</a>
+			<div class="mt-24 pt-12 border-t border-white/5 text-center text-[10px] font-black text-slate-600 uppercase tracking-widest">
+				&copy; 2026 RiftThai Community
 			</div>
 		</div>
 	</footer>
