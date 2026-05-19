@@ -4,170 +4,279 @@
             id: 1,
             name: 'AWAKEN PHASE',
             nameTh: 'เฟสเตรียมพร้อม',
+            color: 'text-sky-500',
+            bg: 'bg-sky-500',
+            border: 'border-sky-500/20',
+            hoverBorder: 'hover:border-sky-500/50',
             details: [
-                'ถอดสถานะ <b>มึนงง (Stun)</b> ออกจากยูนิตของเราทั้งหมด',
-                'เปลี่ยนการ์ดยูนิต และ รูน ทั้งหมดที่อยู่ในสภาพ <b>เหนื่อย (Exhausted)</b> กลับมาเป็น <b>พร้อม (Ready)</b>'
+                'ถอดสถานะ <b>มึนงง (Stun)</b>',
+                'เปลี่ยนการ์ดที่ <b>เหนื่อย (Exhausted)</b> ทั้งหมด (Units, Runes, Champions, Gear) กลับมาเป็น <b>พร้อม (Ready)</b>'
             ]
         },
         {
             id: 2,
-            name: 'START OF TURN PHASE',
-            nameTh: 'เฟสเริ่มเทิร์น',
+            name: 'BEGINNING PHASE',
+            nameTh: 'เฟสเริ่มต้น',
+            color: 'text-indigo-500',
+            bg: 'bg-indigo-500',
+            border: 'border-indigo-500/20',
+            hoverBorder: 'hover:border-indigo-500/50',
             details: [
-                'ตรวจสอบการ์ดเพื่อเก็บแต้ม <b>"Hold"</b> (สะสมแต้มต่อเทิร์น)',
-                'ความสามารถประเภท <b>"At the start of your turn..."</b> ทำงาน'
+                'ตรวจสอบแต้ม <b>Hold</b>: ได้รับ 1 แต้มต่อ 1 Battlefield ที่เราคุมได้',
+                'ความสามารถ <b>"At the start of your turn..."</b> ทั้งหมดทำงาน'
             ]
         },
         {
             id: 3,
-            name: 'ACTION PHASE',
-            nameTh: 'เฟสหลัก (ทำแอ็คชัน)',
-            description: 'ผู้เล่นสามารถเลือกทำสิ่งเหล่านี้ "กี่ครั้งก็ได้" และ "สลับลำดับกันได้" ตราบเท่าที่มีทรัพยากรเพียงพอ:',
-            actions: [
-                { label: 'Play a Card', desc: 'จ่าย Energy + รูน เพื่อลงยูนิตหรือร่ายเวทมนตร์' },
-                { label: 'Set Hidden', desc: 'จ่าย 1 Power Rune เพื่อวางการ์ดคว่ำหน้า (ซ่อน)' },
-                { label: 'Use Ability', desc: 'สั่ง Exhaust ยูนิตเพื่อใช้ความสามารถติดตัว' },
-                { label: 'Move Unit', desc: 'สั่ง Exhaust ยูนิตเพื่อเคลื่อนที่ไปเลนอื่น' },
-                { label: 'Initiate Showdown', desc: 'ประกาศเปิดศึกลานประจัญหน้า (Showdown)' }
-            ],
-            reactionWindow: 'ทุกครั้งที่มีการกระทำเกิดขึ้น ฝ่ายตรงข้ามสามารถเล่นการ์ด [Reaction] สวนกลับได้ (Chain Stack)'
+            name: 'CHANNEL PHASE',
+            nameTh: 'เฟสรูน',
+            color: 'text-amber-500',
+            bg: 'bg-amber-500',
+            border: 'border-amber-500/20',
+            hoverBorder: 'hover:border-amber-500/50',
+            details: [
+                'นำ <b>รูน 2 ใบ</b> จาก Rune Deck เข้าสู่สนาม (ในสภาพหงายหน้า)',
+                '<i>พิเศษ:</i> หากคุณเป็นผู้เล่นคนที่สองในเทิร์นแรก ให้ Channel รูนเพิ่มเป็น 3 ใบ'
+            ]
         },
         {
             id: 4,
-            name: 'END OF TURN PHASE',
-            nameTh: 'เฟสจบเทิร์น',
+            name: 'DRAW PHASE',
+            nameTh: 'เฟสจั่วการ์ด',
+            color: 'text-violet-500',
+            bg: 'bg-violet-500',
+            border: 'border-violet-500/20',
+            hoverBorder: 'hover:border-violet-500/50',
             details: [
-                'ผลลัพธ์ที่มีระยะเวลา <b>"this turn"</b> จะหมดผลลง',
-                '<b>Global Heal:</b> ล้างความเสียหายออกจากยูนิตทุกตัวบนกระดานจนพลังชีวิตเต็ม',
+                'จั่วการ์ด 1 ใบจาก <b>Main Deck</b> ขึ้นมือ'
+            ]
+        },
+        {
+            id: 5,
+            name: 'ACTION PHASE',
+            nameTh: 'เฟสหลัก (ทำแอ็คชัน)',
+            color: 'text-emerald-500',
+            bg: 'bg-emerald-500',
+            border: 'border-emerald-500',
+            hoverBorder: 'hover:border-emerald-500',
+            description: 'ผู้เล่นสามารถเลือกทำสิ่งเหล่านี้ "กี่ครั้งก็ได้" และ "สลับลำดับกันได้" ตราบเท่าที่มีทรัพยากรเพียงพอ:',
+            actions: [
+                { label: 'Play Card', desc: 'จ่าย Energy + รูน ลงยูนิต/ร่ายเวท' },
+                { label: 'Set Hidden', desc: 'จ่าย 1 Power Rune วางการ์ดคว่ำหน้า' },
+                { label: 'Use Ability', desc: 'สั่ง Exhaust ยูนิตเพื่อใช้ความสามารถ' },
+                { label: 'Move Unit', desc: 'สั่ง Exhaust ยูนิตเพื่อเดินหน้าในเลน' }
+            ]
+        },
+        {
+            id: 6,
+            name: 'END OF TURN',
+            nameTh: 'เฟสจบเทิร์น',
+            color: 'text-rose-500',
+            bg: 'bg-rose-500',
+            border: 'border-rose-500/20',
+            hoverBorder: 'hover:border-rose-500/50',
+            details: [
+                'ผลลัพธ์ <b>"this turn"</b> ทั้งหมดหมดผลลง',
+                '<b>Global Heal:</b> ฟื้นฟูพลังชีวิตยูนิตทุกตัวบนกระดานจนเต็ม',
                 'ประกาศส่งเทิร์นให้ผู้เล่นฝั่งตรงข้าม'
             ]
         }
     ];
 
     const combatSteps = [
-        { step: 1, title: 'Pre-Combat Spell Window', desc: 'ทั้งสองฝ่ายร่ายการ์ด Reaction/Action เพื่อบัฟหรือขัดจังหวะ' },
-        { step: 2, title: 'Assign Damage', desc: 'คำนวณ Might และหักล้างพลังชีวิตยูนิต' },
-        { step: 3, title: 'Cleanup & Deathknell', desc: 'ยูนิตที่ตายถูกส่งลงสุสาน และสกิล [Deathknell] ทำงาน' },
-        { step: 4, title: 'Contested Check', desc: 'ตรวจสอบการยึดพื้นที่ (Conquer) หากสำเร็จได้ +1 แต้ม' },
-        { step: 5, title: 'Global Heal', desc: 'ยูนิตที่รอดชีวิตทั้งหมดจะได้รับการฟื้นฟูพลังชีวิตจนเต็ม' }
-    ];
-
-    const chainSteps = [
-        { step: 1, title: 'Open the Chain', desc: 'ผู้เล่นประกาศร่ายเวทมนตร์หรือใช้สกิล และวางเป็นลำดับที่ 1' },
-        { step: 2, title: 'Reaction Window', desc: 'คู่ต่อสู้สามารถร่าย [Reaction] สวนได้ และเราก็สามารถร่ายสวนกลับไปได้อีก (ลำดับ 2, 3, 4...)' },
-        { step: 3, title: 'Resolve the Chain', desc: 'เมื่อไม่มีใครร่ายต่อ ระบบจะเริ่มทำงานจาก "หลังสุดมาหน้าสุด" (3 -> 2 -> 1)' }
+        { title: 'Pre-Combat Window', desc: 'ร่าย Reaction/Action สวนกันรอบสุดท้าย' },
+        { title: 'Assign Damage', desc: 'คำนวณ Might และหักล้างพลังชีวิตยูนิต' },
+        { title: 'Cleanup & Deathknell', desc: 'ยูนิตตายลงสุสาน และสกิล [Deathknell] ทำงาน' },
+        { title: 'Contested Check', desc: 'เช็คการยึดพื้นที่ (+1 แต้ม) หรือเริ่มศึกรอบใหม่หากมีตัวใหม่ปรากฏ' }
     ];
 </script>
 
-<div class="space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-    <!-- Intro -->
-    <div class="text-center max-w-2xl mx-auto space-y-4">
-        <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight">ลำดับการเล่น</h2>
-        <p class="text-slate-500 text-sm sm:text-base font-medium">ทำความเข้าใจขั้นตอนต่างๆ ใน 1 เทิร์นของเกม Riftbound เพื่อวางแผนกลยุทธ์ให้แม่นยำ</p>
+<div class="space-y-12 py-8 animate-in fade-in duration-1000">
+    <!-- Header -->
+    <div class="text-center space-y-4">
+        <h2 class="text-4xl font-black text-white tracking-tight italic">GAMEPLAY FLOW</h2>
+        <p class="text-slate-500 font-medium">ลำดับขั้นตอนการเล่น Riftbound อย่างเป็นทางการ</p>
     </div>
 
-    <!-- Timeline -->
-    <div class="relative space-y-12 max-w-4xl mx-auto">
-        <!-- Vertical Line -->
-        <div class="absolute left-6 top-4 bottom-4 w-0.5 bg-slate-800 hidden sm:block"></div>
-
-        {#each phases as phase}
-            <div class="relative sm:pl-20">
-                <!-- Step Number Circle -->
-                <div class="absolute left-0 top-0 w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-lg font-black text-sky-500 z-10 hidden sm:flex">
-                    {phase.id}
-                </div>
-
-                <div class="bg-slate-900/40 rounded-3xl p-6 sm:p-8 border border-slate-800 transition-all hover:border-sky-500/20">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-                        <span class="text-sky-500 font-black text-xs tracking-widest uppercase">Phase {phase.id}</span>
-                        <h3 class="text-xl sm:text-2xl font-black text-white">{phase.name} <span class="text-slate-500 font-medium ml-2 text-lg sm:text-xl">({phase.nameTh})</span></h3>
-                    </div>
-
-                    {#if phase.details}
-                        <ul class="space-y-4">
+    <!-- Flowchart Container -->
+    <div class="max-w-5xl mx-auto px-4">
+        <div class="flex flex-col items-center space-y-8">
+            
+            <!-- Phases 1-4 (Fast Flow) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                {#each phases.slice(0, 4) as phase}
+                    <div class="bg-slate-900 border {phase.border} rounded-2xl p-5 {phase.hoverBorder} transition-all group">
+                        <div class="{phase.color} font-black text-[10px] tracking-widest mb-1">PHASE {phase.id}</div>
+                        <h3 class="text-sm font-black text-white mb-3">{phase.name}</h3>
+                        <ul class="space-y-2">
                             {#each phase.details as detail}
-                                <li class="flex items-start gap-4 text-slate-300 text-sm sm:text-lg leading-relaxed">
-                                    <div class="mt-2.5 w-2 h-2 rounded-full bg-sky-500 shrink-0 shadow-[0_0_10px_rgba(14,165,233,0.5)]"></div>
+                                <li class="flex items-start gap-2 text-slate-400 text-[11px] leading-tight">
+                                    <div class="mt-1.5 w-1 h-1 rounded-full {phase.bg} shrink-0"></div>
                                     <span>{@html detail}</span>
                                 </li>
                             {/each}
                         </ul>
-                    {/if}
-
-                    {#if phase.id === 3}
-                        <div class="mt-8 space-y-6">
-                            <p class="text-slate-400 text-sm sm:text-base italic bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">{phase.description}</p>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {#each phase.actions as action}
-                                    <div class="bg-slate-950/40 p-4 rounded-2xl border border-slate-800/60 hover:border-sky-500/20 transition-all">
-                                        <div class="text-sky-400 font-black text-xs uppercase mb-1 tracking-wider">{action.label}</div>
-                                        <div class="text-slate-300 text-xs sm:text-sm">{action.desc}</div>
-                                    </div>
-                                {/each}
-                            </div>
-                            <div class="bg-amber-500/10 border border-amber-500/20 p-5 rounded-2xl flex gap-4">
-                                <span class="text-xl">⚠️</span>
-                                <div class="space-y-1">
-                                    <div class="text-amber-500 font-black text-xs uppercase tracking-widest">Reaction Window</div>
-                                    <p class="text-amber-200/70 text-sm leading-relaxed">{phase.reactionWindow}</p>
-                                </div>
-                            </div>
-                        </div>
-                    {/if}
-
-                    <!-- Special Combat Timeline Connection -->
-                    {#if phase.id === 3}
-                        <div class="mt-10 pt-10 border-t border-slate-800">
-                            <div class="bg-slate-950/80 rounded-3xl p-6 sm:p-8 border border-slate-800/50">
-                                <div class="flex items-center gap-4 mb-8">
-                                    <div class="px-4 py-1.5 bg-red-500/20 text-red-500 rounded-xl text-xs font-black uppercase tracking-widest border border-red-500/10">Combat Timeline</div>
-                                    <h4 class="text-white text-lg font-black">ขั้นตอนการประจันหน้า (Showdown)</h4>
-                                </div>
-                                
-                                <div class="grid gap-6">
-                                    {#each combatSteps as step}
-                                        <div class="flex gap-5 group">
-                                            <div class="shrink-0 w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xs font-black text-slate-500 group-hover:text-red-500 group-hover:border-red-500/30 transition-all">
-                                                {step.step}
-                                            </div>
-                                            <div>
-                                                <div class="text-slate-200 font-bold group-hover:text-white transition-colors">{step.title}</div>
-                                                <div class="text-slate-500 text-sm mt-1">{step.desc}</div>
-                                            </div>
-                                        </div>
-                                    {/each}
-                                </div>
-                            </div>
-                        </div>
-                    {/if}
-                </div>
-            </div>
-        {/each}
-    </div>
-
-    <!-- Chain Timeline Section -->
-    <div class="max-w-4xl mx-auto pt-8">
-        <div class="bg-slate-900/40 rounded-[2.5rem] p-8 sm:p-12 border border-slate-800">
-            <div class="flex flex-col items-center text-center space-y-4 mb-12">
-                <div class="px-5 py-2 bg-amber-500/20 text-amber-500 rounded-2xl text-xs font-black uppercase tracking-[0.2em] border border-amber-500/10">Chain Timeline</div>
-                <h4 class="text-white text-2xl sm:text-3xl font-black">ขั้นตอนการทำงานของห่วงโซ่ (Chain Stack)</h4>
-                <p class="text-slate-500 text-sm max-w-xl">เมื่อมีการร่ายการ์ดหรือใช้ความสามารถสวนกัน ระบบจะใช้ระบบห่วงโซ่เพื่อตัดสินลำดับการทำงาน</p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-                <!-- Horizontal connector for desktop -->
-                <div class="absolute top-4 left-0 right-0 h-0.5 bg-slate-800 hidden md:block z-0"></div>
-                
-                {#each chainSteps as step}
-                    <div class="relative z-10 flex flex-col items-center text-center group">
-                        <div class="w-10 h-10 rounded-2xl bg-slate-900 border-2 border-slate-800 flex items-center justify-center text-sm font-black text-amber-500 mb-6 ring-8 ring-slate-950 group-hover:border-amber-500/50 transition-all">
-                            {step.step}
-                        </div>
-                        <div class="text-slate-100 font-bold mb-3 group-hover:text-amber-400 transition-colors">{step.title}</div>
-                        <div class="text-slate-500 text-sm leading-relaxed">{step.desc}</div>
                     </div>
                 {/each}
+            </div>
+
+
+            <!-- Arrow Down -->
+            <div class="flex flex-col items-center -my-4 z-10">
+                <div class="w-0.5 h-8 bg-gradient-to-b from-violet-500 to-emerald-500"></div>
+                <div class="text-emerald-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m7 13 5 5 5-5"/><path d="M12 6v12"/></svg>
+                </div>
+            </div>
+
+            <!-- Phase 5: Action HUB -->
+            <div class="w-full max-w-4xl relative">
+                <div class="absolute -inset-4 border-2 border-emerald-500/10 border-dashed rounded-[3rem] -z-0"></div>
+                
+                <div class="bg-slate-900 border-2 border-emerald-500 rounded-[2.5rem] p-8 relative z-10 shadow-[0_0_50px_rgba(16,185,129,0.1)]">
+                    <div class="flex flex-col md:flex-row gap-8">
+                        <!-- Main HUB Info -->
+                        <div class="md:w-1/2 space-y-4">
+                            <div class="text-emerald-500 font-black text-xs tracking-widest">PHASE 5</div>
+                            <h3 class="text-3xl font-black text-white">{phases[4].name}</h3>
+                            <p class="text-slate-400 text-sm italic">{phases[4].description}</p>
+                            
+                            <div class="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex gap-3">
+                                <span class="text-amber-500">⚠️</span>
+                                <div class="text-[11px] leading-relaxed text-amber-200/70">
+                                    <b>REACTION WINDOW:</b> คู่แข่งสามารถประกาศร่าย [Reaction] เพื่อขัดจังหวะได้ทุกครั้งที่คุณทำแอ็กชัน
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions Grid -->
+                        <div class="md:w-1/2 grid grid-cols-2 gap-3">
+                            {#each phases[4].actions as action}
+                                <div class="bg-slate-950 border border-emerald-500/20 p-4 rounded-2xl hover:border-emerald-500/50 transition-colors group/item">
+                                    <div class="text-emerald-400 font-black text-[10px] uppercase mb-1">{action.label}</div>
+                                    <div class="text-slate-400 text-[10px] leading-tight">{action.desc}</div>
+                                </div>
+                            {/each}
+                            
+                            <!-- Showdown Trigger -->
+                            <div class="col-span-2 bg-red-500/10 border-2 border-red-500/20 p-4 rounded-2xl flex items-center justify-between group/sd cursor-pointer hover:border-red-500/50 transition-all">
+                                <div>
+                                    <div class="text-red-500 font-black text-xs uppercase">Initiate Showdown</div>
+                                    <div class="text-red-200/50 text-[10px]">ประกาศเปิดศึกตัดสินพื้นที่ในเลน</div>
+                                </div>
+                                <div class="text-red-500 animate-pulse">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Combat Steps (Sub-Flow) -->
+                    <div class="mt-8 pt-8 border-t border-slate-800">
+                        <div class="text-center mb-6">
+                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Combat Timeline</span>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {#each combatSteps as step, i}
+                                <div class="relative flex flex-col items-center text-center">
+                                    <div class="w-8 h-8 rounded-full bg-slate-950 border border-red-500/30 flex items-center justify-center text-[10px] font-black text-red-500 mb-2">
+                                        {i + 1}
+                                    </div>
+                                    <div class="text-slate-200 text-[10px] font-bold">{step.title}</div>
+                                    <div class="text-slate-500 text-[9px] px-2">{step.desc}</div>
+                                    
+                                    {#if i < 3}
+                                        <div class="absolute top-4 -right-2 text-slate-800 hidden md:block">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                                        </div>
+                                    {/if}
+                                </div>
+                            {/each}
+                        </div>
+                        <div class="mt-6 text-center">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-800 rounded-full text-[9px] text-slate-500 font-bold italic">
+                                <span>Global Heal (Step 5) เกิดขึ้นหลังจบทุกลานประจัญหน้า</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arrow Down -->
+            <div class="flex flex-col items-center -my-4 z-10">
+                <div class="w-0.5 h-8 bg-gradient-to-b from-emerald-500 to-rose-500"></div>
+                <div class="text-rose-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m7 13 5 5 5-5"/><path d="M12 6v12"/></svg>
+                </div>
+            </div>
+
+            <!-- Phase 6: End -->
+            <div class="w-full max-w-sm group">
+                <div class="bg-slate-900 border-2 border-rose-500/20 rounded-3xl p-6 relative overflow-hidden transition-all hover:border-rose-500/50 hover:shadow-[0_0_30px_rgba(244,63,94,0.1)]">
+                    <div class="text-rose-500 font-black text-xs tracking-widest mb-1">PHASE 6</div>
+                    <h3 class="text-xl font-black text-white mb-4">{phases[5].name}</h3>
+                    <ul class="space-y-2">
+                        {#each phases[5].details as detail}
+                            <li class="flex items-start gap-2 text-slate-400 text-sm">
+                                <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></div>
+                                <span>{@html detail}</span>
+                            </li>
+                        {/each}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Loop Back Arrow -->
+            <div class="pt-8 flex flex-col items-center opacity-30">
+                <div class="text-slate-500 mb-2 font-black text-[10px] uppercase tracking-widest">Next Player's Turn</div>
+                <div class="w-32 h-16 border-2 border-slate-800 border-t-0 rounded-b-[2rem] relative">
+                    <div class="absolute -right-1.5 -top-2 text-slate-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m7 11 5-5 5 5"/></svg>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Chain Stack Section -->
+    <div class="max-w-4xl mx-auto pt-16">
+        <div class="bg-slate-900/40 rounded-[3rem] p-10 border border-slate-800">
+            <div class="flex flex-col items-center text-center space-y-4 mb-12">
+                <div class="px-4 py-1.5 bg-amber-500/20 text-amber-500 rounded-xl text-[10px] font-black uppercase tracking-widest">Advanced Rule</div>
+                <h4 class="text-white text-2xl font-black">CHAIN STACK (ห่วงโซ่)</h4>
+                <p class="text-slate-500 text-xs max-w-md">เมื่อมีการร่ายเวทหรือใช้สกิลสวนกัน ระบบจะทำงานจาก <b>"หลังสุดย้อนกลับมาหน้าสุด"</b> (LIFO)</p>
+            </div>
+            
+            <div class="flex flex-col md:flex-row items-center justify-center gap-6 relative">
+                <!-- Connector Line -->
+                <div class="absolute h-0.5 bg-slate-800 left-20 right-20 top-6 hidden md:block -z-10"></div>
+
+                <div class="flex flex-col items-center gap-3 group">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-950 border-2 border-slate-800 flex items-center justify-center text-amber-500 font-black group-hover:border-amber-500/50 transition-all">1</div>
+                    <div class="text-white text-[10px] font-bold">Open the Chain</div>
+                    <div class="text-slate-500 text-[9px] max-w-[100px] text-center">ผู้เล่นประกาศร่ายการ์ดใบแรก</div>
+                </div>
+
+                <div class="text-slate-800 hidden md:block">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                </div>
+
+                <div class="flex flex-col items-center gap-3 group">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-950 border-2 border-slate-800 flex items-center justify-center text-amber-500 font-black group-hover:border-amber-500/50 transition-all">2</div>
+                    <div class="text-white text-[10px] font-bold">Reaction Window</div>
+                    <div class="text-slate-500 text-[9px] max-w-[100px] text-center">คู่แข่งร่าย [Reaction] สวนกลับได้เรื่อยๆ</div>
+                </div>
+
+                <div class="text-slate-800 hidden md:block">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                </div>
+
+                <div class="flex flex-col items-center gap-3 group">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500 border-2 border-amber-400 flex items-center justify-center text-slate-950 font-black">3</div>
+                    <div class="text-amber-500 text-[10px] font-bold">Resolve the Chain</div>
+                    <div class="text-slate-500 text-[9px] max-w-[100px] text-center">เริ่มทำงานจาก "ใบสุดท้าย" ย้อนกลับมา</div>
+                </div>
             </div>
         </div>
     </div>
@@ -175,10 +284,10 @@
 
 <style>
     @keyframes in {
-        from { opacity: 0; transform: translateY(1rem); }
+        from { opacity: 0; transform: translateY(2rem); }
         to { opacity: 1; transform: translateY(0); }
     }
     .animate-in {
-        animation: in 0.7s ease-out fill-mode-both;
+        animation: in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 </style>
