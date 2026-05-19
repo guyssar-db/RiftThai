@@ -28,6 +28,9 @@ src/lib/data/riftbound_cards_all_backup.json
 temp_chunks/
 .output/
 
+# Ignore unused components
+src/lib/components/TurnPhasesModal.svelte
+
 # Documentation
 *.md
 !README.md
