@@ -71,7 +71,7 @@ interface Card {
         'Channel': 'เชื่อมต่อ: การจั่วเปิดการ์ดรูนใบใหม่จากกองรูน',
         'Recycle': 'รีไซเคิล: การนำการ์ดรูนที่ใช้แล้วหรือจากมือส่งกลับเข้าใต้กองรูนเพื่อรับแต้ม Power',
         'Conquer': 'ยึดครอง: ชนะการประจันหน้า (Showdown) และยึดพื้นที่สำเร็จ',
-        'Hold': 'คุมพื้นที่: การควบคุมสนามรบต่อเนื่องเมื่อเข้าสู่เฟสเริ่มเทิร์น',
+        'Hold': 'คุมพื้นที่: การควบคุมสนามรบต่อเนื่องจนถึง BEGINNING PHASE',
         'Banish': 'เนรเทศ: การ์ดที่โดนส่งมาโซนนี้จะหลุดออกนอกวงโคจรของระบบเกมโดยสิ้นเชิง มันจะไม่ได้อยู่บนสนาม ไม่ได้อยู่ในมือ ไม่ได้อยู่ในสุสาน และไม่สามารถใช้การ์ดชุบชีวิตทั่วไปดึงกลับมาใช้งานได้อีกเลย'
 
     };
@@ -265,11 +265,14 @@ interface Card {
                     <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/5 opacity-50"></div>
                     <div class="relative z-10 w-full max-w-[400px]">
                         <div class="absolute -inset-10 bg-cyan-500/10 blur-[80px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
-                        <img 
-                            src={card.image_url} 
-                            alt={card.name_en} 
-                            class="w-full h-auto rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.6)] border border-white/5 object-contain transition-transform duration-700 group-hover:scale-[1.02] group-hover:-rotate-1" 
-                        />
+                        <picture class="w-full h-auto">
+                            <source srcset={card.image_url.replace(/\.(png|jpg|jpeg)$/i, '.avif')} type="image/avif" />
+                            <img 
+                                src={card.image_url} 
+                                alt={card.name_en} 
+                                class="w-full h-auto rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.6)] border border-white/5 object-contain transition-transform duration-700 group-hover:scale-[1.02] group-hover:-rotate-1" 
+                            />
+                        </picture>
                     </div>
                 </div>
                 

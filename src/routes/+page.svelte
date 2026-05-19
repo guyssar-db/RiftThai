@@ -205,12 +205,15 @@
 						>
 							<div class="relative w-full aspect-[744/1039] bg-slate-900 rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 flex items-center justify-center transition-all duration-700 group-hover:border-cyan-500/50 group-hover:shadow-[0_0_40px_rgba(6,182,212,0.15)] group-active:scale-95">
 								{#if card.image_url}
-									<img 
-										src={card.image_url} 
-										alt={card.name_en} 
-										loading="lazy" 
-										class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 {card.type.includes('Battlefield') ? 'battlefield-rotated' : ''}"
-									/>
+									<picture class="w-full h-full">
+										<source srcset={card.image_url.replace('.png', '.avif').replace('.jpg', '.avif')} type="image/avif" />
+										<img 
+											src={card.image_url} 
+											alt={card.name_en} 
+											loading="lazy" 
+											class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 {card.type.includes('Battlefield') ? 'battlefield-rotated' : ''}"
+										/>
+									</picture>
 								{:else}
 									<div class="text-slate-600 text-[10px] uppercase font-black tracking-widest italic">Signal Lost</div>
 								{/if}
