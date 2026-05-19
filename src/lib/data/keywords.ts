@@ -14,6 +14,8 @@ export const keywords: Keyword[] = [
     { id: 'reaction', name_en: 'Reaction', name_th: 'รีแอ็คชัน', description_th: 'ประเภทของการ์ดความเร็วสูง (Instant) ที่สามารถร่ายสวนกลับหรือขัดจังหวะคู่แข่งได้ตลอดเวลา รวมถึงในเทิร์นของคู่แข่งและช่วงการต่อสู้', color: '#107361' },
     { id: 'ambush', name_en: 'Ambush', name_th: 'Ambush', description_th: 'ยูนิตที่มีคีย์เวิร์ดนี้สามารถร่ายลงสนามด้วยความเร็วระดับ Reaction (ร่ายแทรกได้) แต่ต้องลงใน Battlefield ที่เรามีทหารคุมอยู่แล้วเท่านั้น', color: '#107361' },
     { id: 'quickdraw', name_en: 'Quick-Draw', name_th: 'Quick-Draw', description_th: 'คล้ายกับ Ambush แต่ใช้สำหรับ \'การ์ดอุปกรณ์ (Gear)\' หรือเวทมนตร์ ให้สามารถร่ายติดตั้งหรือใช้งานด้วยความเร็ว Reaction ได้', color: '#107361' },
+    { id: 'Repeat', name_en: 'Repeat', name_th: 'Repeat', description_th: 'คุณสามารถจ่ายค่าร่ายเพิ่มเติมเพื่อทำซ้ำผลของเวทมนตร์นี้', color: '#107361' },
+
 
     { id: 'hunt', name_en: 'Hunt', name_th: 'ล่า', description_th: 'กลไกพิเศษของเซ็ต Unleashed (เช่น เด็ค Rengar/Kha\'zix) ที่เกี่ยวข้องกับการล่าสังหารเป้าหมายเพื่อสะสมค่า XP สำหรับการ Level up', color: '#97B028' },
     { id: 'deflect', name_en: 'Deflect', name_th: 'เบี่ยงเบน', description_th: 'เกราะป้องกันเวทย์: หากคู่แข่งต้องการร่ายเวทมนตร์หรือสกิล \'เลือกเป้าหมาย\' มาที่ยูนิตนี้ คู่แข่งต้องจ่ายค่าร่ายเพิ่ม (Tax) มิฉะนั้นเวทย์จะไร้ผล', color: '#97B028' },
