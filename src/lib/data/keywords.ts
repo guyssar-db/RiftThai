@@ -13,10 +13,10 @@ export const keywords: Keyword[] = [
     { id: 'action', name_en: 'Action', name_th: 'แอ็คชัน', description_th: 'ประเภทของการ์ดหรือสกิลที่สามารถเล่นได้ในเฟสหลัก (Action Phase) ของเทิร์นเจ้าของการ์ด หรือเล่นในช่วงเปิดศึก (Showdown) ได้', color: '#107361' },
     { id: 'reaction', name_en: 'Reaction', name_th: 'รีแอ็คชัน', description_th: 'ประเภทของการ์ดความเร็วสูง (Instant) ที่สามารถร่ายสวนกลับหรือขัดจังหวะคู่แข่งได้ตลอดเวลา รวมถึงในเทิร์นของคู่แข่งและช่วงการต่อสู้', color: '#107361' },
     { id: 'ambush', name_en: 'Ambush', name_th: 'Ambush', description_th: 'ยูนิตที่มีคีย์เวิร์ดนี้สามารถร่ายลงสนามด้วยความเร็วระดับ Reaction (ร่ายแทรกได้) แต่ต้องลงใน Battlefield ที่เรามีทหารคุมอยู่แล้วเท่านั้น', color: '#107361' },
-    { id: 'quickdraw', name_en: 'Quick-Draw', name_th: 'Quick-Draw', description_th: 'คล้ายกับ Ambush แต่ใช้สำหรับ \'การ์ดอุปกรณ์ (Gear)\' หรือคาถา ให้สามารถร่ายติดตั้งหรือใช้งานด้วยความเร็ว Reaction ได้', color: '#107361' },
+    { id: 'quickdraw', name_en: 'Quick-Draw', name_th: 'Quick-Draw', description_th: 'คล้ายกับ Ambush แต่ใช้สำหรับ \'การ์ดอุปกรณ์ (Gear)\' หรือเวทมนตร์ ให้สามารถร่ายติดตั้งหรือใช้งานด้วยความเร็ว Reaction ได้', color: '#107361' },
 
     { id: 'hunt', name_en: 'Hunt', name_th: 'ล่า', description_th: 'กลไกพิเศษของเซ็ต Unleashed (เช่น เด็ค Rengar/Kha\'zix) ที่เกี่ยวข้องกับการล่าสังหารเป้าหมายเพื่อสะสมค่า XP สำหรับการ Level up', color: '#97B028' },
-    { id: 'deflect', name_en: 'Deflect', name_th: 'เบี่ยงเบน', description_th: 'เกราะป้องกันเวทย์: หากคู่แข่งต้องการร่ายคาถาหรือสกิล \'เลือกเป้าหมาย\' มาที่ยูนิตนี้ คู่แข่งต้องจ่ายค่าร่ายเพิ่ม (Tax) มิฉะนั้นเวทย์จะไร้ผล', color: '#97B028' },
+    { id: 'deflect', name_en: 'Deflect', name_th: 'เบี่ยงเบน', description_th: 'เกราะป้องกันเวทย์: หากคู่แข่งต้องการร่ายเวทมนตร์หรือสกิล \'เลือกเป้าหมาย\' มาที่ยูนิตนี้ คู่แข่งต้องจ่ายค่าร่ายเพิ่ม (Tax) มิฉะนั้นเวทย์จะไร้ผล', color: '#97B028' },
     { id: 'deathknell', name_en: 'Deathknell', name_th: 'เสียงระฆังมรณะ', description_th: 'ความสามารถที่จะทำงานเมื่อยูนิตนี้ตายและถูกส่งลงสุสาน (Trash)', color: '#97B028' },
     { id: 'temporary', name_en: 'Temporary', name_th: 'ชั่วคราว', description_th: 'ยูนิตนี้จะถูกทำลายหรือสลายหายไปเองโดยอัตโนมัติเมื่อจบเทิร์น (End of Turn)', color: '#97B028' },
     { id: 'level', name_en: 'Level', name_th: 'เลเวล', description_th: 'ระบบสะสมค่าประสบการณ์ (XP) ของแชมเปี้ยนในเซ็ต Unleashed เมื่อเงื่อนไขครบ แชมเปี้ยนจะอัปเกรดร่างและได้รับความสามารถใหม่', color: '#97B028' },
@@ -33,7 +33,7 @@ export const keywords: Keyword[] = [
 
     { id: 'backline', name_en: 'Backline', name_th: 'แนวหลัง', description_th: 'ยูนิตนี้จะได้รับความเสียหายจากการต่อสู้ (Combat Damage) เป็นลำดับสุดท้าย (ตรงข้ามกับ Tank)', color: '#CD2E6F' },
     { id: 'tank', name_en: 'Tank', name_th: 'แทงค์', description_th: 'ยูนิตนี้จะเป็นตัวรับความเสียหายจากการต่อสู้ (Combat Damage) เป็นลำดับแรกสุดในเลนนั้นเสมอ', color: '#CD2E6F' },
-    { id: 'shield', name_en: 'Shield', name_th: 'เกราะป้องกัน', description_th: 'ป้องกันความเสียหาย 1 ครั้งถัดไปที่จะเกิดขึ้นกับยูนิตนี้ (ไม่ว่าจะจากการต่อสู้หรือคาถา) แล้วโล่จะแตกหายไป', color: '#CD2E6F' },
+    { id: 'shield', name_en: 'Shield', name_th: 'เกราะป้องกัน', description_th: 'ป้องกันความเสียหาย 1 ครั้งถัดไปที่จะเกิดขึ้นกับยูนิตนี้ (ไม่ว่าจะจากการต่อสู้หรือเวทมนตร์) แล้วโล่จะแตกหายไป', color: '#CD2E6F' },
     { id: 'assault', name_en: 'Assault', name_th: 'บุกทะลวง', description_th: 'ยูนิตจะได้รับค่าพลังโจมตีเพิ่มขึ้น (+X Might) เมื่อเป็นฝ่ายบุก (Attack) หรือเริ่มเปิด Showdown ในเทิร์นของคุณ', color: '#CD2E6F' }
 ];
 

@@ -78,7 +78,9 @@ interface Card {
         'Channel': 'เชื่อมต่อ: การจั่วเปิดการ์ดรูนใบใหม่จากกองรูน',
         'Recycle': 'รีไซเคิล: การนำการ์ดรูนที่ใช้แล้วหรือจากมือส่งกลับเข้าใต้กองรูนเพื่อรับแต้ม Power',
         'Conquer': 'ยึดครอง: ชนะการประจันหน้า (Showdown) และยึดพื้นที่สำเร็จ',
-        'Hold': 'คุมพื้นที่: การควบคุมสนามรบต่อเนื่องเมื่อเข้าสู่เฟสเริ่มเทิร์น'
+        'Hold': 'คุมพื้นที่: การควบคุมสนามรบต่อเนื่องเมื่อเข้าสู่เฟสเริ่มเทิร์น',
+        'Banish': 'เนรเทศ: การ์ดที่โดนส่งมาโซนนี้จะหลุดออกนอกวงโคจรของระบบเกมโดยสิ้นเชิง มันจะไม่ได้อยู่บนสนาม ไม่ได้อยู่ในมือ ไม่ได้อยู่ในสุสาน และไม่สามารถใช้การ์ดชุบชีวิตทั่วไปดึงกลับมาใช้งานได้อีกเลย'
+
     };
 
     function parseAbility(text: string) {
@@ -158,12 +160,17 @@ interface Card {
             processed = processed.replace(regex, (match) => addPH(`<span class="text-amber-400 underline decoration-dotted cursor-pointer inline-block outline-none" tabindex="0" data-tooltip="${hint}">${match}</span>`));
         });
 
-        // 3. Restore all placeholders back to HTML
-        Object.entries(placeholders).forEach(([id, html]) => {
-            processed = processed.replace(id, html);
-        });
+        // 2.5 Style text in parentheses as gray
+        processed = processed.replace(/\(([^)]+)\)/g, (match, p1) => addPH(`<span class="text-slate-500 font-medium">(${p1})</span>`));
 
-        return processed.replace(/\n/g, '<br />');
+        // 3. Restore all placeholders back to HTML (in reverse order to handle nesting)
+        const entries = Object.entries(placeholders);
+        for (let i = entries.length - 1; i >= 0; i--) {
+            const [id, html] = entries[i];
+            processed = processed.replace(id, html);
+        }
+
+        return processed.replace(/\\n/g, '<br />').replace(/\n/g, '<br />');
     }
 
     let activeTooltip = $state("");
@@ -264,7 +271,7 @@ interface Card {
                         
                         <div class="flex flex-wrap gap-2 sm:gap-4 items-center pt-2">
                             <span class="text-slate-100 font-black uppercase text-[0.65rem] sm:text-[0.7rem] tracking-[0.15em] border border-slate-700 bg-slate-950 px-4 py-2 rounded-xl">{card.type}</span>
-                            <span class="font-black uppercase text-[0.65rem] sm:text-[0.7rem] px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 {rarityColors[card.rarity] || 'text-slate-300'}">{card.rarity}</span>
+                            <!-- <span class="font-black uppercase text-[0.65rem] sm:text-[0.7rem] px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 {rarityColors[card.rarity] || 'text-slate-300'}">{card.rarity}</span> -->
                             
                             {#if card.energy !== null}
                                 <div class="flex items-center gap-2 px-3 py-2 bg-slate-800 rounded-xl border border-slate-700">
