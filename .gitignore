@@ -22,6 +22,7 @@ Thumbs.db
 
 # Allow data files inside src
 !src/lib/data/*.json
+src/lib/data/riftbound_cards_all_backup.json
 
 # Ignore temporary directories
 temp_chunks/
