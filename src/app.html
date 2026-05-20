@@ -20,6 +20,7 @@
 		<meta property="twitter:description" content="เว็บไซต์รวมข้อมูลการ์ดเกม Riftbound ภาษาไทย ค้นหาการ์ด ดูความสามารถ และคำศัพท์เฉพาะทางแปลไทย" />
 		<meta property="twitter:image" content="/images/icons/a088ae851d94b5c34aa4900e8ccb4cc103144dce-354x354.png" />
 
+		<link rel="canonical" href="https://riftbound-thai.vercel.app/" />
 		<meta name="theme-color" content="#0f172a" />
 		<meta name="text-scale" content="scale" />
 		<script type="application/ld+json">
@@ -34,6 +35,23 @@
 				"target": "https://riftbound-thai.vercel.app/?q={search_term_string}",
 				"query-input": "required name=search_term_string"
 			}
+		}
+		</script>
+		<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "BreadcrumbList",
+			"itemListElement": [{
+				"@type": "ListItem",
+				"position": 1,
+				"name": "Home",
+				"item": "https://riftbound-thai.vercel.app/"
+			}, {
+				"@type": "ListItem",
+				"position": 2,
+				"name": "Q&A",
+				"item": "https://riftbound-thai.vercel.app/qa"
+			}]
 		}
 		</script>
 		%sveltekit.head%
