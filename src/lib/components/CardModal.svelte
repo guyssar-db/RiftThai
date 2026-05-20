@@ -64,15 +64,15 @@ interface Card {
     };
 
     const mechanics: Record<string, string> = {
-        'Ready': 'พร้อม: ยูนิตสามารถโจมตีหรือใช้สกิลได้ทันที (ตั้งตรง)',
-        'Exhausted': 'เหนื่อย: ยูนิตไม่สามารถโจมตีหรือใช้สกิลได้ (นอนตะแคง)',
-        'Exhaust': 'การสั่งให้นอนตะแคงเพื่อใช้งานความสามารถหรือเคลื่อนที่',
-        'Buff': 'การเพิ่มค่าพลังหรือความสามารถให้ยูนิต',
-        'Channel': 'เชื่อมต่อ: การจั่วเปิดการ์ดรูนใบใหม่จากกองรูน',
-        'Recycle': 'รีไซเคิล: การนำการ์ดรูนที่ใช้แล้วหรือจากมือส่งกลับเข้าใต้กองรูนเพื่อรับแต้ม Power',
-        'Conquer': 'ยึดครอง: ชนะการประจันหน้า (Showdown) และยึดพื้นที่สำเร็จ',
-        'Hold': 'คุมพื้นที่: การควบคุมสนามรบต่อเนื่องจนถึง BEGINNING PHASE',
-        'Banish': 'เนรเทศ: การ์ดที่โดนส่งมาโซนนี้จะหลุดออกนอกวงโคจรของระบบเกมโดยสิ้นเชิง มันจะไม่ได้อยู่บนสนาม ไม่ได้อยู่ในมือ ไม่ได้อยู่ในสุสาน และไม่สามารถใช้การ์ดชุบชีวิตทั่วไปดึงกลับมาใช้งานได้อีกเลย'
+        'Ready': 'Ready: ยูนิตสามารถโจมตีหรือใช้สกิลได้ทันที (ตั้งตรง)',
+        'Exhausted': 'Exhausted: ยูนิตไม่สามารถโจมตีหรือใช้สกิลได้ (นอนตะแคง)',
+        'Exhaust': 'Exhaust: การสั่งให้นอนตะแคงเพื่อใช้งานความสามารถหรือเคลื่อนที่',
+        'Buff': 'Buff: การเพิ่มค่าพลังหรือความสามารถให้ยูนิต',
+        'Channel': 'Channel: การจั่วเปิดการ์ดรูนใบใหม่จากกองรูน',
+        'Recycle': 'Recycle: การนำการ์ดรูนที่ใช้แล้วหรือจากมือส่งกลับเข้าใต้กองรูนเพื่อรับแต้ม Power',
+        'Conquer': 'Conquer: ชนะการประจันหน้า (Showdown) และยึดพื้นที่สำเร็จ',
+        'Hold': 'Hold: การควบคุมสนามรบต่อเนื่องจนถึง BEGINNING PHASE',
+        'Banish': 'Banish: การ์ดที่โดนส่งมาโซนนี้จะหลุดออกนอกวงโคจรของระบบเกมโดยสิ้นเชิง มันจะไม่ได้อยู่บนสนาม ไม่ได้อยู่ในมือ ไม่ได้อยู่ในสุสาน และไม่สามารถใช้การ์ดชุบชีวิตทั่วไปดึงกลับมาใช้งานได้อีกเลย'
 
     };
 
@@ -132,7 +132,11 @@ interface Card {
 
         // Keywords [Badge]
         processed = processed.replace(/\[([^\]]+)\]/g, (match, p1) => {
-            const cleanP1 = p1.split(' ')[0];
+            const trimmedP1 = p1.trim();
+            const hasArrow = trimmedP1.endsWith('>');
+            const displayP1 = hasArrow ? trimmedP1.slice(0, -1).trim() : p1;
+            
+            const cleanP1 = displayP1.split(' ')[0];
             const kw = keywords.find(k => 
                 k.name_en.toLowerCase() === cleanP1.toLowerCase() || 
                 k.name_th.toLowerCase() === cleanP1.toLowerCase() ||
@@ -140,10 +144,12 @@ interface Card {
             );
             const bgColor = kw ? kw.color : '#107361';
             const hint = kw ? kw.description_th : '';
+            const className = hasArrow ? 'kw-inline-badge kw-arrow cursor-pointer outline-none' : 'kw-inline-badge cursor-pointer outline-none';
+            
             if (hint) {
-                return addPH(`<span class="kw-inline-badge cursor-pointer outline-none" tabindex="0" data-tooltip="${hint}" style="background-color: ${bgColor}; border: none; shadow: none;"><span>${p1}</span></span>`);
+                return addPH(`<span class="${className}" tabindex="0" data-tooltip="${hint}" style="background-color: ${bgColor}; border: none; shadow: none;"><span>${displayP1}</span></span>`);
             }
-            return addPH(`<span class="kw-inline-badge" style="background-color: ${bgColor}; border: none; shadow: none;"><span>${p1}</span></span>`);
+            return addPH(`<span class="${hasArrow ? 'kw-inline-badge kw-arrow' : 'kw-inline-badge'}" style="background-color: ${bgColor}; border: none; shadow: none;"><span>${displayP1}</span></span>`);
         });
 
         // Mechanics (Ready, Exhaust, etc.)

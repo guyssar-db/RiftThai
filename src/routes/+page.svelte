@@ -371,6 +371,16 @@
 		transform: skewX(13deg);
 	}
 
+	:global(.kw-inline-badge.kw-arrow) {
+		transform: none;
+		clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+		padding: 0 18px 0 14px;
+	}
+
+	:global(.kw-inline-badge.kw-arrow > *) {
+		transform: none;
+	}
+
 	:global(.inline-icon) {
 		display: inline-block;
 		height: 1.3em;
