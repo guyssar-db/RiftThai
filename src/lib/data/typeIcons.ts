@@ -1,5 +1,5 @@
 const typeIconMap: Record<string, string> = {
-	Battlefield: '5e9799d87d0f8baa55f6d9bddb9750669a0f485b-455x419.png',
+	Battlefield: 'battlefield.avif',
 	Champion: 'champion.avif',
 	Gear: 'gear.avif',
 	Legend: 'legend.avif',
