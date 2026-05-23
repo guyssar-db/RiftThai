@@ -18,6 +18,7 @@
 	let searchTerm = $state('');
 	let selectedSet = $state('All');
 	let selectedType = $state('All');
+	let selectedDomain = $state('All');
 	let viewMode = $state<'gallery' | 'keywords' | 'phases'>('gallery');
 	let currentPage = $state(1);
 	let selectedPopupCard = $state<Card | null>(null);
@@ -27,6 +28,10 @@
 
 	let sets = $derived(['All', ...new Set(cards.map((card) => card.set_name).filter(Boolean))]);
 	let types = $derived(['All', ...new Set(cards.map((card) => card.type).filter(Boolean))]);
+	let domains = $derived([
+		'All',
+		...new Set(cards.flatMap((card) => card.domains ?? []).filter(Boolean))
+	]);
 
 	let filteredCards = $derived(
 		cards.filter((card) => {
@@ -46,8 +51,10 @@
 			const matchesSearch = !searchLower || searchable.includes(searchLower);
 			const matchesSet = selectedSet === 'All' || card.set_name === selectedSet;
 			const matchesType = selectedType === 'All' || card.type === selectedType;
+			const matchesDomain =
+				selectedDomain === 'All' || (card.domains ?? []).includes(selectedDomain);
 
-			return matchesSearch && matchesSet && matchesType;
+			return matchesSearch && matchesSet && matchesType && matchesDomain;
 		})
 	);
 
@@ -60,6 +67,7 @@
 		searchTerm;
 		selectedSet;
 		selectedType;
+		selectedDomain;
 		currentPage = 1;
 	});
 
@@ -67,6 +75,7 @@
 		searchTerm;
 		selectedSet;
 		selectedType;
+		selectedDomain;
 		isFiltering = true;
 		const timer = setTimeout(() => (isFiltering = false), 220);
 		return () => clearTimeout(timer);
@@ -114,8 +123,10 @@
 					bind:searchTerm
 					bind:selectedSet
 					bind:selectedType
+					bind:selectedDomain
 					{sets}
 					{types}
+					{domains}
 					resultsCount={filteredCards.length}
 				/>
 			</header>

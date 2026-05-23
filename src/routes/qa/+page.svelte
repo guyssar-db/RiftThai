@@ -1,4 +1,6 @@
 <script lang="ts">
+    import SiteMenu from '$lib/components/SiteMenu.svelte';
+
     interface QAItem { category: string; question: string; answer: string; }
     
     const qaData: {
@@ -102,6 +104,13 @@
 
 <div class="min-h-dvh bg-slate-950 text-slate-100 font-sans p-4 sm:p-8">
     <div class="max-w-4xl mx-auto">
+        <div class="mb-8 flex items-center justify-between gap-4">
+            <a href="/" class="shrink-0 text-xl font-black uppercase italic tracking-tight text-white sm:text-2xl">
+                Rift<span class="text-cyan-400">Thai</span>
+            </a>
+            <SiteMenu active="qa" />
+        </div>
+
         <a href="/" class="inline-block text-sky-500 hover:text-sky-400 font-bold mb-8 transition-colors">← กลับหน้าหลัก</a>
         
         <div class="mb-12 text-center space-y-4">

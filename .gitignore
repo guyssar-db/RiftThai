@@ -27,6 +27,7 @@ src/lib/data/riftbound_cards_all_backup.json
 # Ignore temporary directories
 temp_chunks/
 .output/
+dev-server.*
 
 # Ignore unused components
 src/lib/components/TurnPhasesModal.svelte
@@ -35,6 +36,8 @@ src/lib/components/TurnPhasesModal.svelte
 *.md
 !README.md
 !GEMINI.md
+!docs/
+!docs/*.md
 
 # Ensure images are ALWAYS included
 !static/images/

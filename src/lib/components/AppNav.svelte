@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SiteMenu from '$lib/components/SiteMenu.svelte';
+
 	type ViewMode = 'gallery' | 'keywords' | 'phases';
 
 	let { viewMode = $bindable() } = $props<{ viewMode: ViewMode }>();
@@ -34,22 +36,7 @@
 			{/each}
 		</div>
 
-		<div class="flex items-center gap-2 sm:gap-4">
-			<a
-				href="/qa"
-				class="rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-400 transition hover:bg-white/5 hover:text-cyan-300"
-			>
-				Q&A
-			</a>
-			<a
-				href="https://riftbound.com"
-				target="_blank"
-				rel="noreferrer"
-				class="hidden rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white transition hover:bg-white/10 sm:inline-flex"
-			>
-				Official
-			</a>
-		</div>
+		<SiteMenu />
 	</div>
 </nav>
 

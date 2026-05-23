@@ -3,20 +3,25 @@
 		searchTerm = $bindable(),
 		selectedSet = $bindable(),
 		selectedType = $bindable(),
+		selectedDomain = $bindable(),
 		sets,
 		types,
+		domains,
 		resultsCount
 	} = $props<{
 		searchTerm: string;
 		selectedSet: string;
 		selectedType: string;
+		selectedDomain: string;
 		sets: string[];
 		types: string[];
+		domains: string[];
 		resultsCount: number;
 	}>();
 
 	let setOptions = $derived(sets.filter((set: string) => set !== 'All'));
 	let typeOptions = $derived(types.filter((type: string) => type !== 'All'));
+	let domainOptions = $derived(domains.filter((domain: string) => domain !== 'All'));
 </script>
 
 <div class="space-y-5">
@@ -43,7 +48,7 @@
 			/>
 		</div>
 
-		<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex">
+		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:flex">
 			<div class="relative min-w-0 lg:min-w-[180px]">
 				<select
 					class="w-full cursor-pointer appearance-none rounded-2xl border border-white/5 bg-slate-950/60 px-5 py-4 pr-10 text-xs font-black uppercase tracking-widest text-white transition-all focus:border-cyan-400/50 focus:outline-none sm:py-5"
@@ -67,6 +72,21 @@
 					<option value="All">All Types</option>
 					{#each typeOptions as type}
 						<option value={type}>{type}</option>
+					{/each}
+				</select>
+				<div class="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-slate-500">
+					<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+				</div>
+			</div>
+
+			<div class="relative min-w-0 lg:min-w-[180px]">
+				<select
+					class="w-full cursor-pointer appearance-none rounded-2xl border border-white/5 bg-slate-950/60 px-5 py-4 pr-10 text-xs font-black uppercase tracking-widest text-white transition-all focus:border-cyan-400/50 focus:outline-none sm:py-5"
+					bind:value={selectedDomain}
+				>
+					<option value="All">All Domains</option>
+					{#each domainOptions as domain}
+						<option value={domain}>{domain}</option>
 					{/each}
 				</select>
 				<div class="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-slate-500">
