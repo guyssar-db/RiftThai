@@ -2,6 +2,7 @@
 	import { getRarityIcon } from '$lib/data/rarityIcons';
 	import { getTypeIcons } from '$lib/data/typeIcons';
 	import type { Card } from '$lib/types/card';
+	import { getCardImageSources } from '$lib/utils/cardImages';
 
 	let {
 		cards,
@@ -30,15 +31,20 @@
 	<div class="card-grid">
 		{#each cards as card}
 			<button
+				type="button"
 				class="group min-w-0 text-left transition duration-300 hover:-translate-y-2 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25"
 				onclick={() => openPopup(card)}
 			>
 				<div class="relative flex aspect-[744/1039] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/5 bg-slate-900 shadow-[0_16px_36px_rgba(0,0,0,0.42)] transition duration-300 group-hover:border-cyan-400/50 group-hover:shadow-[0_0_36px_rgba(34,211,238,0.12)] group-active:scale-[0.98] sm:rounded-3xl">
 					{#if card.image_url}
+						{@const imageSources = getCardImageSources(card.image_url, [240, 320, 480, 744])}
 						<img
-							src={card.image_url}
+							src={imageSources.fallback}
+							srcset={imageSources.fallbackSrcset}
+							sizes="(min-width: 1440px) 210px, (min-width: 1180px) 18vw, (min-width: 900px) 23vw, (min-width: 640px) 30vw, 46vw"
 							alt={card.name_en}
 							loading="lazy"
+							decoding="async"
 							class="h-full w-full object-cover transition duration-500 group-hover:scale-105 {card.type?.includes('Battlefield') ? 'battlefield-rotated' : ''}"
 						/>
 					{:else}

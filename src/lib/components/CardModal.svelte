@@ -3,12 +3,14 @@
     import { getRarityIcon } from '$lib/data/rarityIcons';
     import { getTypeIcons } from '$lib/data/typeIcons';
     import type { Card } from '$lib/types/card';
+    import { getCardImageSources } from '$lib/utils/cardImages';
     let { card, closePopup, canEdit } = $props<{ card: Card, closePopup: () => void, canEdit: boolean }>();
 
     let isEditing = $state(false);
     let tempAbilityEn = $state('');
     let tempAbilityTh = $state('');
     let isSaving = $state(false);
+    let modalImageSources = $derived(getCardImageSources(card.image_url, [480, 744, 1039, 1488]));
 
     $effect(() => {
         tempAbilityEn = card.ability_en;
@@ -295,11 +297,26 @@
                     <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/5 opacity-50"></div>
                     <div class="relative z-10 w-full max-w-[250px] sm:max-w-[340px] lg:max-w-[380px]">
                         <div class="absolute -inset-10 bg-cyan-500/10 blur-[80px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
-                        <img 
-                            src={card.image_url} 
-                            alt={card.name_en} 
-                            class="h-auto w-full rounded-2xl border border-white/5 object-contain shadow-[0_30px_70px_rgba(0,0,0,0.6)] transition-transform duration-700 group-hover:scale-[1.02] sm:rounded-3xl lg:group-hover:-rotate-1" 
-                        />
+                        <picture>
+                            {#if modalImageSources.webpSrcset}
+                                <source
+                                    type="image/webp"
+                                    srcset={modalImageSources.webpSrcset}
+                                    sizes="(min-width: 1024px) 380px, (min-width: 640px) 340px, 250px"
+                                />
+                            {/if}
+                            <img
+                                src={modalImageSources.fallback}
+                                srcset={modalImageSources.fallbackSrcset}
+                                sizes="(min-width: 1024px) 380px, (min-width: 640px) 340px, 250px"
+                                alt={card.name_en}
+                                loading="eager"
+                                decoding="async"
+                                fetchpriority="high"
+                                draggable="false"
+                                class="pointer-events-none h-auto w-full rounded-2xl border border-white/5 object-contain shadow-[0_30px_70px_rgba(0,0,0,0.6)] transition-transform duration-700 group-hover:scale-[1.02] sm:rounded-3xl lg:group-hover:-rotate-1"
+                            />
+                        </picture>
                     </div>
                 </div>
                 

@@ -1,4 +1,8 @@
 <script lang="ts">
+	import IconSelect from '$lib/components/IconSelect.svelte';
+	import { getDomainIcon } from '$lib/data/domainIcons';
+	import { getTypeIcons } from '$lib/data/typeIcons';
+
 	let {
 		searchTerm = $bindable(),
 		selectedSet = $bindable(),
@@ -22,9 +26,38 @@
 	let setOptions = $derived(sets.filter((set: string) => set !== 'All'));
 	let typeOptions = $derived(types.filter((type: string) => type !== 'All'));
 	let domainOptions = $derived(domains.filter((domain: string) => domain !== 'All'));
+	let typeSelectOptions = $derived([
+		{ label: 'All Types', value: 'All' },
+		...typeOptions.map((type: string) => ({
+			label: type,
+			value: type,
+			icons: getTypeIcons(type).map((icon) => ({
+				label: icon.label,
+				src: `/images/icons/${icon.src}`
+			}))
+		}))
+	]);
+	let domainSelectOptions = $derived([
+		{ label: 'All Domains', value: 'All' },
+		...domainOptions.map((domain: string) => {
+			const icon = getDomainIcon(domain);
+			return {
+				label: domain,
+				value: domain,
+				icons: icon ? [{ label: domain, src: icon }] : []
+			};
+		})
+	]);
+	let isBattlefieldType = $derived(selectedType === 'Battlefield');
+
+	$effect(() => {
+		if (isBattlefieldType && selectedDomain !== 'All') {
+			selectedDomain = 'All';
+		}
+	});
 </script>
 
-<div class="space-y-5">
+<div class="relative z-[120] space-y-5">
 	<div class="flex flex-wrap items-center justify-between gap-3 px-1 sm:px-2">
 		<div class="flex items-center gap-3">
 			<div class="h-6 w-1.5 rounded-full bg-cyan-400"></div>
@@ -35,7 +68,7 @@
 		</div>
 	</div>
 
-	<div class="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-3xl lg:flex-row">
+	<div class="relative z-[120] flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-3xl lg:flex-row">
 		<div class="group relative min-w-0 flex-grow">
 			<div class="pointer-events-none absolute inset-y-0 left-5 flex items-center text-slate-500 transition-colors group-focus-within:text-cyan-400 sm:left-6">
 				<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
@@ -64,35 +97,14 @@
 				</div>
 			</div>
 
-			<div class="relative min-w-0 lg:min-w-[180px]">
-				<select
-					class="w-full cursor-pointer appearance-none rounded-2xl border border-white/5 bg-slate-950/60 px-5 py-4 pr-10 text-xs font-black uppercase tracking-widest text-white transition-all focus:border-cyan-400/50 focus:outline-none sm:py-5"
-					bind:value={selectedType}
-				>
-					<option value="All">All Types</option>
-					{#each typeOptions as type}
-						<option value={type}>{type}</option>
-					{/each}
-				</select>
-				<div class="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-slate-500">
-					<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-				</div>
-			</div>
+			<IconSelect bind:value={selectedType} label="All Types" options={typeSelectOptions} />
 
-			<div class="relative min-w-0 lg:min-w-[180px]">
-				<select
-					class="w-full cursor-pointer appearance-none rounded-2xl border border-white/5 bg-slate-950/60 px-5 py-4 pr-10 text-xs font-black uppercase tracking-widest text-white transition-all focus:border-cyan-400/50 focus:outline-none sm:py-5"
-					bind:value={selectedDomain}
-				>
-					<option value="All">All Domains</option>
-					{#each domainOptions as domain}
-						<option value={domain}>{domain}</option>
-					{/each}
-				</select>
-				<div class="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-slate-500">
-					<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-				</div>
-			</div>
+			<IconSelect
+				bind:value={selectedDomain}
+				label="All Domains"
+				options={domainSelectOptions}
+				disabled={isBattlefieldType}
+			/>
 		</div>
 	</div>
 </div>
