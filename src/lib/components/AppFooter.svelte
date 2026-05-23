@@ -14,9 +14,9 @@
 		</div>
 
 		<div class="rounded-2xl border border-white/10 bg-white/5 p-6">
-			<div class="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Legal Disclaimer</div>
-			<p class="text-[10px] font-medium leading-relaxed text-slate-500">
-				RiftThai isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
+			<div class="mb-3 text-[16px] font-black uppercase tracking-widest text-slate-500">Legal Disclaimer</div>
+			<p class="text-[14px] font-medium leading-relaxed text-slate-500">
+				RiftThai ถูกสร้างขึ้นภายใต้นโยบาย "Legal Jibber Jabber" ของ Riot Games โดยใช้ทรัพย์สินที่เป็นกรรมสิทธิ์ของ Riot Games<br> Riot Games ไม่รับรองหรือให้การสนับสนุนโปรเจ็กต์นี้
 			</p>
 		</div>
 	</div>
