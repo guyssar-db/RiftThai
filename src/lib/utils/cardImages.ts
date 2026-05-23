@@ -16,7 +16,9 @@ function canOptimizeImage(imageUrl: string) {
 	}
 }
 
-function buildImageUrl(imageUrl: string, width: number, format?: 'avif' | 'webp') {
+export function getCardImageUrl(imageUrl: string, width: number, format?: 'avif' | 'webp') {
+	if (!canOptimizeImage(imageUrl)) return imageUrl;
+
 	const url = new URL(imageUrl);
 	url.searchParams.set('w', String(width));
 	url.searchParams.set('q', '78');
@@ -30,7 +32,7 @@ function buildImageUrl(imageUrl: string, width: number, format?: 'avif' | 'webp'
 }
 
 function buildSrcset(imageUrl: string, widths: number[], format?: 'avif' | 'webp') {
-	return widths.map((width) => `${buildImageUrl(imageUrl, width, format)} ${width}w`).join(', ');
+	return widths.map((width) => `${getCardImageUrl(imageUrl, width, format)} ${width}w`).join(', ');
 }
 
 export function getCardImageSources(imageUrl: string, widths: number[]): CardImageSources {
@@ -46,7 +48,7 @@ export function getCardImageSources(imageUrl: string, widths: number[]): CardIma
 	const fallbackWidth = sortedWidths[Math.max(0, Math.floor(sortedWidths.length / 2))];
 
 	return {
-		fallback: buildImageUrl(imageUrl, fallbackWidth),
+		fallback: getCardImageUrl(imageUrl, fallbackWidth),
 		fallbackSrcset: buildSrcset(imageUrl, sortedWidths),
 		webpSrcset: buildSrcset(imageUrl, sortedWidths, 'webp')
 	};

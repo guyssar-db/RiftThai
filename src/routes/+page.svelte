@@ -16,6 +16,7 @@
 
 	let cards = $derived((data.cards as Card[]) || []);
 	let searchTerm = $state('');
+	let loadedSearchTerm = $state<string | null>(null);
 	let selectedSet = $state('All');
 	let selectedType = $state('All');
 	let selectedDomain = $state('All');
@@ -25,6 +26,7 @@
 	let isFiltering = $state(false);
 
 	const cardsPerPage = 48;
+	const windows874ByteByChar = createWindows874ByteMap();
 
 	let sets = $derived(['All', ...new Set(cards.map((card) => card.set_name).filter(Boolean))]);
 	let types = $derived(['All', ...new Set(cards.map((card) => card.type).filter(Boolean))]);
@@ -35,20 +37,22 @@
 
 	let filteredCards = $derived(
 		cards.filter((card) => {
-			const searchLower = searchTerm.trim().toLowerCase();
-			const searchable = [
+			const searchTokens = normalizeForSearch(searchTerm).split(' ').filter(Boolean);
+			const searchable = normalizeForSearch([
 				card.name_en,
 				card.name_th,
 				card.code,
+				card.type,
+				card.rarity,
+				card.set_name,
 				card.ability_en,
 				card.ability_th,
+				...(card.domains ?? []),
 				...(card.tags ?? [])
-			]
-				.filter(Boolean)
-				.join(' ')
-				.toLowerCase();
+			]);
 
-			const matchesSearch = !searchLower || searchable.includes(searchLower);
+			const matchesSearch =
+				searchTokens.length === 0 || searchTokens.every((token) => searchable.includes(token));
 			const matchesSet = selectedSet === 'All' || card.set_name === selectedSet;
 			const matchesType = selectedType === 'All' || card.type === selectedType;
 			const matchesDomain =
@@ -62,6 +66,14 @@
 	let paginatedCards = $derived(
 		filteredCards.slice((currentPage - 1) * cardsPerPage, currentPage * cardsPerPage)
 	);
+
+	$effect(() => {
+		const nextSearchTerm = data.searchTerm ?? '';
+		if (nextSearchTerm !== loadedSearchTerm) {
+			searchTerm = nextSearchTerm;
+			loadedSearchTerm = nextSearchTerm;
+		}
+	});
 
 	$effect(() => {
 		searchTerm;
@@ -94,9 +106,50 @@
 	function closePopup() {
 		selectedPopupCard = null;
 	}
+
+	function createWindows874ByteMap() {
+		if (typeof TextDecoder === 'undefined') return new Map<string, number>();
+
+		const decoder = new TextDecoder('windows-874');
+		const byteByChar = new Map<string, number>();
+
+		for (let byte = 0; byte <= 255; byte += 1) {
+			byteByChar.set(decoder.decode(new Uint8Array([byte])), byte);
+		}
+
+		return byteByChar;
+	}
+
+	function repairThaiMojibake(value: string) {
+		if (!/[เธเนโ][\u0080-\u0E7F]/.test(value)) return value;
+		if (typeof TextDecoder === 'undefined' || windows874ByteByChar.size === 0) return value;
+
+		const bytes: number[] = [];
+
+		for (const char of value) {
+			const byte = windows874ByteByChar.get(char);
+			if (byte === undefined) return value;
+			bytes.push(byte);
+		}
+
+		const repaired = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(bytes));
+		return repaired.includes('\uFFFD') ? value : repaired;
+	}
+
+	function normalizeForSearch(value: unknown) {
+		const original = Array.isArray(value) ? value.filter(Boolean).join(' ') : String(value ?? '');
+		const repaired = repairThaiMojibake(original);
+
+		return `${original} ${repaired}`
+			.normalize('NFKC')
+			.toLowerCase()
+			.replace(/[_\-/:()[\].,]+/g, ' ')
+			.replace(/\s+/g, ' ')
+			.trim();
+	}
 </script>
 
-<div class="relative min-h-dvh overflow-x-hidden pb-24 font-sans text-slate-100 selection:bg-cyan-400/30 md:pb-0">
+<div class="relative min-h-dvh overflow-x-clip pb-24 font-sans text-slate-100 selection:bg-cyan-400/30 md:pb-0">
 	<div class="mesh-gradient"></div>
 
 	{#if !!$navigating}
@@ -109,7 +162,7 @@
 
 	<main class="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
 		{#if viewMode === 'gallery'}
-			<header class="mb-10 space-y-8 sm:mb-14 sm:space-y-10">
+			<header class="mb-8 sm:mb-10">
 				<div class="mx-auto max-w-4xl text-center">
 					<p class="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-cyan-300/80">
 						Riftbound Thai Card Database
@@ -118,18 +171,18 @@
 						Rift<span class="text-cyan-400">Thai</span>
 					</h1>
 				</div>
-
-				<SearchBar
-					bind:searchTerm
-					bind:selectedSet
-					bind:selectedType
-					bind:selectedDomain
-					{sets}
-					{types}
-					{domains}
-					resultsCount={filteredCards.length}
-				/>
 			</header>
+
+			<SearchBar
+				bind:searchTerm
+				bind:selectedSet
+				bind:selectedType
+				bind:selectedDomain
+				{sets}
+				{types}
+				{domains}
+				resultsCount={filteredCards.length}
+			/>
 
 			<CardGrid cards={paginatedCards} {isLoading} {openPopup} />
 

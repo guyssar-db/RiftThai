@@ -2,7 +2,7 @@
 	import { getRarityIcon } from '$lib/data/rarityIcons';
 	import { getTypeIcons } from '$lib/data/typeIcons';
 	import type { Card } from '$lib/types/card';
-	import { getCardImageSources } from '$lib/utils/cardImages';
+	import { getCardImageSources, getCardImageUrl } from '$lib/utils/cardImages';
 
 	let {
 		cards,
@@ -13,6 +13,22 @@
 		isLoading?: boolean;
 		openPopup: (card: Card) => void;
 	}>();
+
+	const preloadedPopupImages = new Set<string>();
+
+	function preloadPopupImage(card: Card) {
+		if (!card.image_url || preloadedPopupImages.has(card.image_url)) return;
+
+		preloadedPopupImages.add(card.image_url);
+		const image = new Image();
+		image.decoding = 'async';
+		image.src = getCardImageUrl(card.image_url, 480, 'webp');
+	}
+
+	function handleOpenPopup(card: Card) {
+		preloadPopupImage(card);
+		openPopup(card);
+	}
 </script>
 
 {#if isLoading}
@@ -33,7 +49,9 @@
 			<button
 				type="button"
 				class="group min-w-0 text-left transition duration-300 hover:-translate-y-2 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25"
-				onclick={() => openPopup(card)}
+				onpointerenter={() => preloadPopupImage(card)}
+				onfocus={() => preloadPopupImage(card)}
+				onclick={() => handleOpenPopup(card)}
 			>
 				<div class="relative flex aspect-[744/1039] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/5 bg-slate-900 shadow-[0_16px_36px_rgba(0,0,0,0.42)] transition duration-300 group-hover:border-cyan-400/50 group-hover:shadow-[0_0_36px_rgba(34,211,238,0.12)] group-active:scale-[0.98] sm:rounded-3xl">
 					{#if card.image_url}

@@ -10,7 +10,7 @@
     let tempAbilityEn = $state('');
     let tempAbilityTh = $state('');
     let isSaving = $state(false);
-    let modalImageSources = $derived(getCardImageSources(card.image_url, [480, 744, 1039, 1488]));
+    let modalImageSources = $derived(getCardImageSources(card.image_url, [360, 480, 640, 744]));
 
     $effect(() => {
         tempAbilityEn = card.ability_en;

@@ -38,6 +38,9 @@ src/lib/components/TurnPhasesModal.svelte
 !GEMINI.md
 !docs/
 !docs/*.md
+!skills/
+!skills/**/*.md
+!skills/**/*.yaml
 
 # Ensure images are ALWAYS included
 !static/images/

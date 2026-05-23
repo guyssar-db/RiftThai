@@ -91,28 +91,153 @@
                 "question": "ในการจ่ายค่าร่าย Power Rune โดยวิธี Recycle เราจำเป็นต้องเลือกรูนที่ตั้งตรง (Ready) เท่านั้นใช่ไหม?",
                 "answer": "ไม่จำเป็น สามารถนำรูนที่นอนตะแคง (Exhausted) อยู่มา Recycle ได้ และเป็นวิธีที่โปรนิยมทำ โดยการกด Exhaust รูนเพื่อเอา 1 Energy มาเก็บในระบบก่อน แล้วจับรูนใบเดิมนั้นส่งลงใต้กอง Recycle เพื่อเอา 1 Power ควบคู่กันในเทิร์นเดียว"
             }
+        ,
+            {
+                "category": "Rules & Showdown",
+                "question": "Showdown เกิดขึ้นเมื่อไหร่?",
+                "answer": "Showdown เกิดเมื่อ battlefield กลายเป็นพื้นที่ที่มีการ contest กัน เช่นมี unit เคลื่อนเข้าไปยัง battlefield ที่ฝ่ายตรงข้ามควบคุม หรือมีสถานการณ์ที่ทำให้สองฝ่ายแย่งพื้นที่เดียวกัน แต่ถ้าเล่น unit ลง battlefield ที่เราควบคุมอยู่แล้วโดยไม่มีฝ่ายตรงข้ามเข้ามา contest จะไม่เริ่ม showdown ใหม่"
+            },
+            {
+                "category": "Rules & Showdown",
+                "question": "ถ้า showdown ใหม่ควรเกิดขึ้นระหว่างที่ showdown เดิมยังไม่จบ จะเกิดอะไรขึ้น?",
+                "answer": "Showdown ใหม่นั้นจะถูก staged หรือรอคิวไว้ก่อน แล้วค่อยเกิดขึ้นหลัง showdown ปัจจุบันสรุปผลเสร็จแล้ว ทำให้เกมไม่ต้อง resolve combat หลายชุดซ้อนกันในเวลาเดียวกัน"
+            },
+            {
+                "category": "Rules & Chain",
+                "question": "Chain เกิดจากอะไรบ้าง?",
+                "answer": "Chain เกิดเมื่อผู้เล่นร่าย spell, ใช้ activated ability หรือมี triggered ability ถูกสร้างขึ้น ฝ่ายตรงข้ามจึงมีโอกาสใช้ Reaction เพื่อตอบสนองก่อนสิ่งนั้น resolve แต่การเล่น unit เฉย ๆ ไม่ได้สร้าง reaction window เอง เว้นแต่ว่าการเล่น unit นั้นทำให้ ability บางอย่าง trigger"
+            },
+            {
+                "category": "Rules & Timing",
+                "question": "Action กับ Reaction ต่างกันยังไง?",
+                "answer": "Reaction ใช้ได้เมื่อมี priority ทั้งในเทิร์นเราและเทิร์นคู่แข่ง รวมถึงตอบสนองสิ่งที่อยู่บน chain ได้ ส่วน Action ใช้ตอบ chain ไม่ได้ แต่เล่นได้ในเทิร์นเรา หรือระหว่าง showdown ตอนที่เรามี focus และไม่มีอะไรค้างอยู่บน chain"
+            },
+            {
+                "category": "Rules & Timing",
+                "question": "Spell หรือ ability ที่ไม่มีคำว่า Action หรือ Reaction เล่นตอนไหนได้?",
+                "answer": "โดยทั่วไปเล่นได้เฉพาะในเทิร์นของเรา ตอนที่ไม่มี chain หรือ showdown กำลังดำเนินอยู่ จึงไม่สามารถใช้เป็นการตอบสนองแบบ Reaction และไม่สามารถแทรกระหว่าง showdown ได้ถ้าตัวการ์ดไม่ได้อนุญาตไว้"
+            },
+            {
+                "category": "Rules & Movement",
+                "question": "Spell ที่เขียนว่า Move a unit ย้าย unit จาก battlefield หนึ่งไปอีก battlefield ได้ไหม?",
+                "answer": "ได้ ถ้าการ์ดสั่งให้ Move a unit เอฟเฟกต์นั้นสามารถข้ามข้อจำกัดการเคลื่อนที่ปกติได้ แม้ปกติ unit จะไม่สามารถย้ายจาก battlefield ไป battlefield อื่นเองได้ ยกเว้นมีความสามารถหรือเอฟเฟกต์ที่อนุญาต"
+            },
+            {
+                "category": "Rules & Combat",
+                "question": "เมื่อไหร่เราถือว่าเป็น attacker หรือ defender?",
+                "answer": "เราเป็น attacker เมื่อ unit ของเราย้ายเข้าไป contest battlefield ที่คู่แข่งควบคุมอยู่ และเราเป็น defender เมื่อ unit ของคู่แข่งเข้ามา contest battlefield ที่เราควบคุมอยู่ การย้าย unit ของเราเข้า battlefield ว่างไม่ถือว่าเราเป็น attacker ทันที"
+            },
+            {
+                "category": "Rules & Scoring",
+                "question": "สามารถ score ในเทิร์นของคู่แข่งได้ไหม?",
+                "answer": "ได้ ถ้าเอฟเฟกต์หรือสถานการณ์ทำให้เราควบคุมและ conquer battlefield ได้ในเทิร์นคู่แข่ง เราก็สามารถ score ในเทิร์นนั้นได้ตามปกติ เช่นการใช้การ์ดที่ย้าย unit เข้าไปพลิกผล battlefield ระหว่างเทิร์นคู่แข่ง"
+            },
+            {
+                "category": "Rules & Scoring",
+                "question": "แต้มสุดท้ายของเกมได้จากการ conquer ยังไง?",
+                "answer": "ถ้าจะชนะด้วยแต้มสุดท้ายจากการ conquer battlefield ต้อง score battlefield อื่น ๆ ที่เกี่ยวข้องในเทิร์นนั้นมาก่อนแล้ว หากยังไม่ครบ เงื่อนไขแต้มสุดท้ายจาก conquer จะไม่ให้แต้มทันที และจะเปลี่ยนเป็นจั่วการ์ดแทนตามกฎแต้มสุดท้าย"
+            },
+            {
+                "category": "Rules & Resources",
+                "question": "Rune นับเป็น card สำหรับเอฟเฟกต์อย่าง Karma หรือไม่?",
+                "answer": "ไม่นับ สำหรับข้อความกฎที่อ้างถึง card โดยทั่วไปหมายถึง Main Deck card ดังนั้นการ recycle rune จะไม่ถือว่าเป็นการ recycle card และจะไม่ trigger เอฟเฟกต์ที่สนใจ Main Deck card"
+            },
+            {
+                "category": "Keywords & Abilities",
+                "question": "Hidden เล่นได้กี่แบบ?",
+                "answer": "การ์ดที่มี Hidden เล่นได้สองแบบ: เล่นจากมือแบบปกติโดยจ่าย cost เต็มตามชนิดและ timing ของการ์ด หรือ hide ไว้ที่ battlefield ที่เราควบคุมโดย recycle rune 1 ใบ แล้วค่อยเล่นจาก facedown ในเทิร์นถัดไปแบบ Reaction โดยไม่ต้องจ่าย cost"
+            },
+            {
+                "category": "Keywords & Abilities",
+                "question": "ถ้าเล่นการ์ด Hidden จาก facedown เป้าหมายเลือกได้จากที่ไหน?",
+                "answer": "เมื่อเล่นการ์ดจาก Hidden การเลือกเป้าหมายหรือสิ่งที่การ์ดจะกระทบต้องจำกัดอยู่ที่ battlefield ที่การ์ดนั้นถูก hide ไว้ เช่น spell ที่ฆ่า unit จะเลือกได้เฉพาะ unit ใน battlefield นั้น ไม่ใช่สนามอื่น"
+            },
+            {
+                "category": "Keywords & Abilities",
+                "question": "ถ้าเราเสียการควบคุม battlefield ที่ซ่อนการ์ด Hidden ไว้ การ์ดนั้นจะเป็นอย่างไร?",
+                "answer": "การ์ด Hidden ที่ซ่อนอยู่ใน battlefield นั้นจะถูกส่งไป trash เมื่อเราเสียการควบคุม battlefield นั้น จึงต้องระวังการ hide การ์ดในพื้นที่ที่อาจโดนยึดกลับง่าย"
+            },
+            {
+                "category": "Rules & Triggers",
+                "question": "ข้อความแบบ 'Do this:' หรือ reflexive trigger ทำงานยังไง?",
+                "answer": "ข้อความลักษณะนี้มักสร้าง trigger ชุดใหม่หลังเอฟเฟกต์ก่อนหน้าสำเร็จ ตัวอย่างคือ spell ที่ resolve ก่อน แล้วค่อยสร้าง trigger ให้เลือก unit และ resolve แยกกันภายหลัง จึงไม่ได้เลือกทุกอย่างตั้งแต่ตอนร่าย spell เสมอไป"
+            },
+            {
+                "category": "Rules & Tokens",
+                "question": "Token ที่ไม่มี cost ถือว่ามี cost เท่าไหร่สำหรับการ์ดที่ตรวจ cost?",
+                "answer": "สำหรับเอฟเฟกต์ที่ต้องดู cost ของ token ให้ถือว่า token มี cost เป็น 0 เพราะ token ไม่ได้ขาดข้อมูลแบบ NULL เพียงแต่ไม่มี cost ที่ต้องจ่ายจริง ทำให้การ์ดที่ฆ่าหรือเลือกตาม cost ต่ำสามารถกระทบ token ได้"
+            },
+            {
+                "category": "Rules & Tokens",
+                "question": "ถ้า token ถูก recycle จะไปที่ไหน?",
+                "answer": "Token จะใช้ปลายทาง recycle ตามชนิดของมัน เช่น token ที่เป็น unit หรือ gear จะ recycle ไปยัง Main Deck ตามหลักเดียวกับการ์ดชนิดนั้น แม้ตัว token จะไม่ใช่ Main Deck card จริง ๆ ก็ตาม"
+            },
+            {
+                "category": "Rules & Combat",
+                "question": "ถ้าชนะ combat โดยคู่แข่งไม่เหลือ unit แม้ยังไม่ได้ตีจริง ถือว่าชนะ combat ไหม?",
+                "answer": "ถือว่าชนะ combat ได้ ถ้าเป็น combat showdown และหลังขั้นตอนที่เกี่ยวข้องเหลือ unit ของเราเพียงฝ่ายเดียว ไม่จำเป็นว่าต้องมี combat damage เกิดขึ้นจริง หาก spell หรือ ability เอา unit ฝั่งตรงข้ามออกไปหมดก่อน ก็ยังนับว่าฝ่ายเราชนะ combat"
+            },
+            {
+                "category": "Rules & Targeting",
+                "question": "อะไรถือว่าเป็น target?",
+                "answer": "โดยสรุป สิ่งนั้นมักเป็น target ถ้าเป็นวัตถุหรือผู้เล่นที่ทุกคนเห็นได้ใน public zone, ผู้เล่นคนเดียวเป็นคนเลือก และไม่ใช่สิ่งที่ถูกพูดถึงแค่ใน cost, trigger condition, restriction, replacement effect หรือคำสั่งที่ทุกคนต้องทำพร้อมกัน"
+            },
+            {
+                "category": "Rules & Targeting",
+                "question": "การ์ดอย่าง Cull the Weak ที่ให้ผู้เล่นแต่ละคนฆ่า unit ของตัวเอง target ไหม?",
+                "answer": "ไม่ถือว่า target เพราะแต่ละผู้เล่นเป็นคนเลือก unit ของตัวเองตามคำสั่งร่วมกัน ไม่ใช่ผู้เล่นคนเดียวเลือกวัตถุสาธารณะเพื่อให้ spell หรือ ability กระทบโดยตรง"
+            },
+            {
+                "category": "Rules & Multiplayer",
+                "question": "ใน 2v2 คำว่า friendly unit หมายถึงอะไร?",
+                "answer": "Friendly unit หมายถึง unit ของเราและ unit ของเพื่อนร่วมทีม ดังนั้นเอฟเฟกต์ที่อ้างถึง friendly unit สามารถเกี่ยวข้องกับ unit ของ ally ได้ด้วย แต่คำว่า your units โดยทั่วไปยังหมายถึง unit ที่เราควบคุมเอง ไม่ได้แชร์เป็นของทีมทั้งหมด"
+            }
         ]
     };
 
     let searchTerm = $state("");
-    let filteredQA = $derived(qaData.qa_list.filter((item: QAItem) => 
-        item.question.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.answer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchTerm.toLowerCase())
-    ));
+    let selectedCategory = $state("All");
+    let categories = $derived(["All", ...new Set(qaData.qa_list.map((item) => item.category))]);
+    let filteredQA = $derived(qaData.qa_list.filter((item: QAItem) => {
+        const query = searchTerm.trim().toLowerCase();
+        const matchesSearch =
+            !query ||
+            item.question.toLowerCase().includes(query) ||
+            item.answer.toLowerCase().includes(query) ||
+            item.category.toLowerCase().includes(query);
+        const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
+
+        return matchesSearch && matchesCategory;
+    }));
+
+    function resetFilters() {
+        searchTerm = "";
+        selectedCategory = "All";
+    }
 </script>
 
 <div class="min-h-dvh bg-slate-950 text-slate-100 font-sans p-4 sm:p-8">
     <div class="max-w-4xl mx-auto">
         <div class="mb-8 flex items-center justify-between gap-4">
-            <a href="/" class="shrink-0 text-xl font-black uppercase italic tracking-tight text-white sm:text-2xl">
-                Rift<span class="text-cyan-400">Thai</span>
-            </a>
+            <div class="flex min-w-0 items-center gap-3">
+                <a
+                    href="/"
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 sm:w-auto sm:px-4"
+                    aria-label="Back to gallery"
+                >
+                    <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                    <span class="hidden text-xs font-black uppercase tracking-widest sm:ml-2 sm:block">Back</span>
+                </a>
+
+                <a href="/" class="min-w-0 shrink-0 text-xl font-black uppercase italic tracking-tight text-white sm:text-2xl">
+                    Rift<span class="text-cyan-400">Thai</span>
+                </a>
+            </div>
             <SiteMenu active="qa" />
         </div>
 
-        <a href="/" class="inline-block text-sky-500 hover:text-sky-400 font-bold mb-8 transition-colors">← กลับหน้าหลัก</a>
-        
         <div class="mb-12 text-center space-y-4">
             <h1 class="text-3xl sm:text-4xl font-black text-white">{qaData.game_title}</h1>
             <p class="text-slate-500 font-medium">{qaData.data_type}</p>
@@ -124,6 +249,55 @@
                     bind:value={searchTerm}
                     class="w-full bg-slate-900 border border-slate-800 text-white p-4 rounded-2xl focus:outline-none focus:border-sky-500 transition-all"
                 />
+            </div>
+
+            <div class="mx-auto mt-4 max-w-3xl rounded-2xl border border-slate-800 bg-slate-900/45 p-2">
+                <div class="flex flex-col gap-2 sm:hidden">
+                    <select
+                        bind:value={selectedCategory}
+                        class="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-black uppercase tracking-widest text-white focus:border-sky-500 focus:outline-none"
+                    >
+                        {#each categories as category}
+                            <option value={category}>{category === "All" ? "All Categories" : category}</option>
+                        {/each}
+                    </select>
+
+                    {#if searchTerm || selectedCategory !== "All"}
+                        <button
+                            type="button"
+                            class="rounded-xl border border-slate-800 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-400 transition active:bg-slate-800"
+                            onclick={resetFilters}
+                        >
+                            Reset
+                        </button>
+                    {/if}
+                </div>
+
+                <div class="hidden flex-wrap items-center justify-center gap-2 sm:flex">
+                    {#each categories as category}
+                        <button
+                            type="button"
+                            class="rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition {selectedCategory === category ? 'border-sky-400 bg-sky-400 text-slate-950' : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-sky-300'}"
+                            onclick={() => (selectedCategory = category)}
+                        >
+                            {category === "All" ? "All" : category}
+                        </button>
+                    {/each}
+
+                    {#if searchTerm || selectedCategory !== "All"}
+                        <button
+                            type="button"
+                            class="rounded-xl border border-slate-800 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:text-white"
+                            onclick={resetFilters}
+                        >
+                            Reset
+                        </button>
+                    {/if}
+                </div>
+            </div>
+
+            <div class="text-xs font-black uppercase tracking-widest text-slate-600">
+                {filteredQA.length} / {qaData.qa_list.length} Questions
             </div>
         </div>
 

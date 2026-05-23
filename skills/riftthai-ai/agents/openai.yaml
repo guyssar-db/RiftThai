@@ -1,0 +1,4 @@
+interface:
+  display_name: "RiftThai AI"
+  short_description: "Project workflow guide for RiftThai"
+  default_prompt: "Use $riftthai-ai to make focused changes in the RiftThai Svelte app."

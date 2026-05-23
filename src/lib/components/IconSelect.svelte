@@ -26,7 +26,7 @@
 	}
 </script>
 
-<div class="relative z-[130] min-w-0 lg:min-w-[180px]">
+<div class="relative min-w-0 {isOpen ? 'z-[1000]' : 'z-[130]'} lg:min-w-[180px]">
 	<button
 		type="button"
 		class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-white/5 bg-slate-950/60 px-5 py-4 text-left text-xs font-black uppercase tracking-widest text-white transition-all hover:border-white/10 focus:border-cyan-400/50 focus:outline-none focus:ring-4 focus:ring-cyan-400/10 disabled:cursor-not-allowed disabled:opacity-45 sm:py-5"
@@ -57,7 +57,7 @@
 
 	{#if isOpen && !disabled}
 		<div
-			class="absolute right-0 top-full z-[1000] mt-2 max-h-80 w-full min-w-56 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl"
+			class="absolute inset-x-0 top-full z-[1000] mt-2 max-h-72 w-full min-w-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl lg:left-auto lg:right-0 lg:max-h-80 lg:min-w-56"
 			role="listbox"
 			tabindex="-1"
 		>
