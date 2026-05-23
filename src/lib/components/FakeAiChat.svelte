@@ -20,8 +20,179 @@
 		score: number;
 	};
 
+	type ScoredCard = {
+		card: Card;
+		score: number;
+	};
+
+	type ScoredKeyword = {
+		keyword: (typeof keywords)[number];
+		score: number;
+	};
+
+	type QAAnswer = {
+		category: string;
+		question: string;
+		answer: string;
+	};
+
+	type PhaseAnswer = {
+		title: string;
+		aliases: string[];
+		text: string;
+	};
+
+	type ScoredQA = {
+		item: QAAnswer;
+		score: number;
+	};
+
+	type ScoredPhase = {
+		phase: PhaseAnswer;
+		score: number;
+	};
+
 	const cards = cardsData as Card[];
-	const quickPrompts = ['Hidden คืออะไร', 'Fury ต่างจาก Body ยังไง', 'Reaction ใช้ตอนไหน', 'ค้นหา Ahri'];
+	const qaAnswers: QAAnswer[] = [
+		{
+			category: 'Keywords & Abilities',
+			question: 'สกิล Soaring Scout ที่เขียนว่า DEATHKNELL: Channel 1 rune exhausted ทำงานอย่างไร?',
+			answer:
+				'เมื่อ Soaring Scout ตาย Deathknell จะทำให้ Channel rune 1 ใบเข้ามาในสนามแบบ exhausted จึงยังใช้ Energy จากรูนนั้นในเทิร์นนั้นทันทีไม่ได้'
+		},
+		{
+			category: 'Card Mechanics',
+			question: 'Consult the Past ที่มี Hidden ต้องจ่ายและวางไว้ตรงไหน?',
+			answer:
+				'ตามข้อมูล Q&A ในเว็บ การ์ด Hidden สามารถจ่ายล่วงหน้าโดย recycle rune 1 ใบเพื่อวางคว่ำไว้ที่ battlefield ที่เลือก แล้วค่อยเปิดใช้จาก facedown ภายหลัง'
+		},
+		{
+			category: 'Keywords & Abilities',
+			question: 'Reaction ใช้ตอนไหนได้บ้าง?',
+			answer:
+				'Reaction ใช้เพื่อสวนกลับหรือขัดจังหวะได้เมื่อมี priority รวมถึงในเทิร์นคู่แข่งและช่วงต่อสู้ ตามข้อมูลในเว็บใช้ตอบสิ่งที่อยู่บน chain ได้'
+		},
+		{
+			category: 'Rules & Combat',
+			question: 'Spirit Token ที่เพิ่งเสกออกมาเปิด Showdown ในเทิร์นนั้นได้ไหม?',
+			answer:
+				'ไม่ได้ ถ้า token เข้ามาแบบ exhausted จะยังสั่ง exhaust เพื่อเปิด Showdown ไม่ได้ ต้องรอให้พร้อมก่อน แต่ยังนับ Might เพื่อร่วมตั้งรับได้'
+		},
+		{
+			category: 'Card Mechanics',
+			question: 'Cull the Weak ร่ายได้ไหมถ้าบอร์ดเราว่าง?',
+			answer:
+				'ร่ายได้ ตามข้อมูล Q&A ระบบจะทำตามเอฟเฟกต์ให้ได้มากที่สุด เราไม่มี unit ให้ทำลายก็ไม่ต้องทำลายอะไร ส่วนอีกฝ่ายยังต้องเลือกทำลาย unit ของตัวเองถ้ามี'
+		},
+		{
+			category: 'Rules & Scoring',
+			question: 'Hold และ Ahri, Alluring ได้แต้มตอนไหน?',
+			answer:
+				'ข้อมูลในเว็บระบุว่า Hold scoring และสกิลที่เกี่ยวข้องเกิดช่วงเริ่มเทิร์นของคุณ ถ้าคุม battlefield อยู่จะได้แต้มตามเงื่อนไขของกฎหรือการ์ด'
+		},
+		{
+			category: 'Keywords & Abilities',
+			question: 'Stun จำกัดอะไร และหายตอนไหน?',
+			answer:
+				'ยูนิตที่ติด Stun จะไม่สามารถโจมตี เคลื่อนที่ หรือใช้ activated ability ที่ต้อง exhaust ได้ตามปกติ และจะหายตาม timing ที่กฎหรือเอฟเฟกต์กำหนด'
+		},
+		{
+			category: 'Rules & Healing',
+			question: 'Heal ล้างดาเมจสะสมตอนไหน?',
+			answer:
+				'ข้อมูลในเว็บสรุปว่า damage ที่สะสมบน unit จะถูกล้างตามช่วง cleanup/จบ combat หรือ end of turn ตาม timing ที่กฎและเอฟเฟกต์ระบุ'
+		},
+		{
+			category: 'Rules & Movement',
+			question: 'Move unit ข้ามจาก battlefield หนึ่งไปอีก battlefield ได้ไหม?',
+			answer:
+				'การ move ปกติไม่ได้ข้าม battlefield เอง แต่ถ้าการ์ดหรือ ability สั่ง Move a unit ก็สามารถข้ามข้อจำกัดปกติได้ตามข้อความการ์ด'
+		},
+		{
+			category: 'Rules & Timing',
+			question: 'Action กับ Reaction ต่างกันยังไง?',
+			answer:
+				'Action ใช้ตอบ chain ไม่ได้และต้องเล่นตอนที่ timing เปิดให้ทำ action ส่วน Reaction ใช้ตอนมี priority และใช้ตอบสิ่งที่อยู่บน chain ได้'
+		},
+		{
+			category: 'Rules & Showdown',
+			question: 'Showdown เกิดขึ้นเมื่อไหร่?',
+			answer:
+				'ข้อมูลในเว็บสรุปว่า Showdown เกี่ยวกับการ contest battlefield และในกฎล่าสุด Showdown จะถูก staged ระหว่าง cleanup หลัง battlefield ได้รับสถานะ Contested'
+		},
+		{
+			category: 'Rules & Chain',
+			question: 'Chain เกิดจากอะไร?',
+			answer:
+				'Chain เกิดจากการเล่น spell, activated ability หรือ triggered ability ที่ต้องเข้าลำดับการ resolve ผู้เล่นจึงมีจังหวะใช้ Reaction ตาม priority'
+		},
+		{
+			category: 'Rules & Resources',
+			question: 'Recycle rune ที่ exhausted ได้ไหม?',
+			answer:
+				'ข้อมูล Q&A ในเว็บระบุว่าสามารถ recycle rune ที่ exhausted อยู่ได้ ไม่จำเป็นต้องเลือกรูนที่ ready เท่านั้น'
+		},
+		{
+			category: 'Rules & Targeting',
+			question: 'อะไรถือว่าเป็น target?',
+			answer:
+				'โดยสรุป target มักเป็น object หรือผู้เล่นใน public zone ที่ถูกผู้เล่นคนเดียวเลือกให้ spell หรือ ability กระทบโดยตรง การให้ผู้เล่นแต่ละคนเลือกของตัวเองมักไม่ถือว่า target'
+		},
+		{
+			category: 'Rules & Tokens',
+			question: 'Token ที่ไม่มี cost ถือว่า cost เท่าไหร่?',
+			answer: 'สำหรับเอฟเฟกต์ที่ต้องดู cost ของ token ข้อมูลในเว็บสรุปให้ถือว่า token มี cost เป็น 0'
+		},
+		{
+			category: 'Rules & Multiplayer',
+			question: 'ใน 2v2 friendly unit หมายถึงอะไร?',
+			answer:
+				'Friendly unit หมายถึง unit ของคุณและ unit ของเพื่อนร่วมทีม แต่คำว่า your units โดยทั่วไปหมายถึง unit ที่คุณควบคุมเอง'
+		}
+	];
+
+	const phaseAnswers: PhaseAnswer[] = [
+		{
+			title: 'Awaken Phase',
+			aliases: ['awaken', 'ready', 'เฟสเตรียมพร้อม', 'ตั้งตรง', 'stun หาย'],
+			text: 'Awaken Phase คือช่วงเตรียมพร้อม: ถอด Stun และทำให้การ์ดที่ exhausted อยู่ เช่น units, runes, champions และ gear กลับมา ready'
+		},
+		{
+			title: 'Beginning Phase',
+			aliases: ['beginning', 'start', 'start of turn', 'เฟสเริ่มต้น', 'hold'],
+			text: 'Beginning Phase คือช่วงเริ่มเทิร์น ใช้ตรวจ Hold scoring และให้ความสามารถประเภท start of turn ทำงาน'
+		},
+		{
+			title: 'Channel Phase',
+			aliases: ['channel', 'rune', 'เฟสรูน', 'รูน'],
+			text: 'Channel Phase คือช่วงนำ rune จาก Rune Deck เข้าสู่สนาม โดยข้อมูลในเว็บระบุว่าปกติ channel 2 ใบ และผู้เล่นคนที่สองในเทิร์นแรกได้เพิ่มเป็น 3 ใบ'
+		},
+		{
+			title: 'Draw Phase',
+			aliases: ['draw', 'เฟสจั่ว', 'จั่ว'],
+			text: 'Draw Phase คือช่วงจั่วการ์ด 1 ใบจาก Main Deck ขึ้นมือ'
+		},
+		{
+			title: 'Action Phase',
+			aliases: ['action phase', 'เฟสหลัก', 'play card', 'set hidden', 'use ability', 'move unit'],
+			text: 'Action Phase คือเฟสหลัก ผู้เล่นสามารถ play card, set hidden, use ability และ move unit ได้ตามทรัพยากรและ timing ที่อนุญาต'
+		},
+		{
+			title: 'End Of Turn',
+			aliases: ['end', 'end of turn', 'เฟสจบเทิร์น', 'จบเทิร์น', 'global heal'],
+			text: 'End of Turn คือช่วงจบเทิร์น ผลแบบ this turn หมดลง มีการล้าง damage ตามข้อมูล flow ในเว็บ และส่งเทิร์นให้ผู้เล่นถัดไป'
+		},
+		{
+			title: 'Combat Timeline',
+			aliases: ['combat', 'showdown', 'assign damage', 'deathknell', 'contested check', 'ต่อสู้'],
+			text: 'Combat timeline ในเว็บเรียงเป็น Pre-Combat Window, Assign Damage, Combat Cleanup & Deathknell, Contested Check และ Global Heal'
+		},
+		{
+			title: 'Card Speeds',
+			aliases: ['normal speed', 'action speed', 'reaction speed', 'speed', 'ความเร็ว'],
+			text: 'ข้อมูลหน้า phases แบ่งความเร็วเป็น Normal Speed, Action Speed และ Reaction Speed โดย Reaction ใช้ตอบ chain ได้ ส่วน Action ต้องรอ chain ว่าง'
+		}
+	];
 	const stopWords = new Set([
 		'คือ',
 		'อะไร',
@@ -51,12 +222,15 @@
 		'domain'
 	]);
 
+	const noAnswerText =
+		'ข้อนี้ผมยังตอบให้มั่นใจไม่ได้จากข้อมูลที่มีในเว็บ เลยไม่อยากเดาให้ผิด ถ้าเป็นเคสเฉพาะการ์ด ให้ลองเช็กข้อความบนการ์ดหรือ official rules เพิ่มอีกชั้น';
+
 	let isOpen = $state(false);
 	let input = $state('');
 	let messages = $state<Message[]>([
 		{
 			role: 'bot',
-			text: 'ถาม rule, keyword, domain หรือชื่อการ์ดได้ ระบบนี้ค้นจากข้อมูลในเว็บเท่านั้น'
+			text: 'ถามกฎ, การ์ด, keyword, phase, Q&A หรือ domain มาได้เลย ผมจะตอบจากข้อมูลที่มีในเว็บและจะไม่เดาถ้าไม่มั่นใจ'
 		}
 	]);
 
@@ -203,6 +377,11 @@
 		);
 	}
 
+	function isGenericDomainIntent(query: string) {
+		const normalizedQuery = normalize(query);
+		return normalizedQuery.includes('domain') || normalizedQuery.includes('โดเมน');
+	}
+
 	function scoreRule(rule: RuleAnswer, query: string, tokens: string[]) {
 		const normalizedQuery = normalize(query);
 		let score = 0;
@@ -220,6 +399,55 @@
 		return score;
 	}
 
+	function scoreQA(item: QAAnswer, query: string, tokens: string[]) {
+		const normalizedQuery = normalize(query);
+		let score = scoreText(item.question, tokens) * 3 + scoreText(item.answer, tokens) + scoreText(item.category, tokens);
+
+		if (normalize(item.question).includes(normalizedQuery)) score += 35;
+		if (normalize(item.answer).includes(normalizedQuery)) score += 18;
+
+		return score;
+	}
+
+	function findQA(query: string): ScoredQA[] {
+		const tokens = getTokens(query);
+		if (tokens.length === 0) return [];
+
+		return qaAnswers
+			.map((item): ScoredQA => ({ item, score: scoreQA(item, query, tokens) }))
+			.filter((result) => result.score > 0)
+			.sort((a, b) => b.score - a.score)
+			.slice(0, 3);
+	}
+
+	function scorePhase(phase: PhaseAnswer, query: string, tokens: string[]) {
+		const normalizedQuery = normalize(query);
+		let score = scoreText(phase.title, tokens) * 3 + scoreText(phase.text, tokens);
+
+		for (const alias of phase.aliases) {
+			const normalizedAlias = normalize(alias);
+			if (normalizedQuery === normalizedAlias) score += 120;
+			if (normalizedQuery.includes(normalizedAlias)) score += 58;
+			score += scoreText(alias, tokens) * 3;
+		}
+
+		if (normalizedQuery.includes('phase') || normalizedQuery.includes('เฟส')) score += 16;
+
+		return score;
+	}
+
+	function findPhases(query: string): ScoredPhase[] {
+		const tokens = getTokens(query);
+		const normalizedQuery = normalize(query);
+		if (tokens.length === 0 && !normalizedQuery.includes('phase') && !normalizedQuery.includes('เฟส')) return [];
+
+		return phaseAnswers
+			.map((phase): ScoredPhase => ({ phase, score: scorePhase(phase, query, tokens) }))
+			.filter((result) => result.score > 0)
+			.sort((a, b) => b.score - a.score)
+			.slice(0, 3);
+	}
+
 	function findRules(query: string) {
 		const tokens = getTokens(query);
 		if (tokens.length === 0) return [];
@@ -231,7 +459,7 @@
 			.slice(0, 3);
 	}
 
-	function findKeyword(query: string) {
+	function findKeyword(query: string): ScoredKeyword | undefined {
 		const tokens = getTokens(query);
 		const normalizedQuery = normalize(query);
 
@@ -247,7 +475,27 @@
 				return { keyword, score };
 			})
 			.filter((result) => result.score > 0)
-			.sort((a, b) => b.score - a.score)[0]?.keyword;
+			.sort((a, b) => b.score - a.score)[0];
+	}
+
+	function isDirectKeywordQuestion(query: string, result: ScoredKeyword | undefined) {
+		if (!result) return false;
+
+		const normalizedQuery = normalize(query);
+		const allKeywordMatches = keywords.filter((keyword) =>
+			[keyword.name_en, keyword.name_th, keyword.id].some((term) => {
+				const normalizedTerm = normalize(term);
+				return normalizedTerm ? normalizedQuery.includes(normalizedTerm) : false;
+			})
+		);
+
+		if (allKeywordMatches.length !== 1) return false;
+
+		const keywordTerms = [result.keyword.name_en, result.keyword.name_th, result.keyword.id].map(normalize);
+		const hasKeyword = keywordTerms.some((term) => term && normalizedQuery.includes(term));
+		const isShortQuestion = getTokens(query).length <= 3;
+
+		return hasKeyword && (isShortQuestion || normalizedQuery.includes('คือ') || normalizedQuery.includes('keyword'));
 	}
 
 	function searchableCardText(card: Card) {
@@ -281,7 +529,7 @@
 		}, 0);
 	}
 
-	function findCards(query: string) {
+	function findCards(query: string): ScoredCard[] {
 		const tokens = getTokens(query);
 		if (tokens.length === 0) return [];
 
@@ -289,8 +537,7 @@
 			.map((card) => ({ card, score: scoreCard(card, tokens) }))
 			.filter((result) => result.score > 0)
 			.sort((a, b) => b.score - a.score)
-			.slice(0, 3)
-			.map(({ card }) => card);
+			.slice(0, 3);
 	}
 
 	function formatRules(results: ScoredRule[]) {
@@ -298,10 +545,28 @@
 
 		const [best, ...related] = results;
 		const relatedText = related.length
-			? `\n\nคำตอบที่เกี่ยวข้อง:\n${related.map(({ rule }) => `- ${rule.title}: ${rule.text}`).join('\n')}`
+			? `\n\nเรื่องที่อาจเกี่ยวข้อง:\n${related.map(({ rule }) => `- ${rule.title}: ${rule.text}`).join('\n')}`
 			: '';
 
-		return `${best.rule.title}: ${best.rule.text}${relatedText}`;
+		return `ถ้าถามเรื่อง ${best.rule.title} คำตอบคือ: ${best.rule.text}${relatedText}`;
+	}
+
+	function formatQA(results: ScoredQA[]) {
+		const [best, ...related] = results;
+		const relatedText = related.length
+			? `\n\nคำถามใกล้เคียงใน Q&A:\n${related.map(({ item }) => `- ${item.question}`).join('\n')}`
+			: '';
+
+		return `เจอคำตอบจาก Q&A ในเว็บ:\n${best.item.question}\n\n${best.item.answer}${relatedText}`;
+	}
+
+	function formatPhases(results: ScoredPhase[]) {
+		const [best, ...related] = results;
+		const relatedText = related.length
+			? `\n\nหัวข้อ phase ที่เกี่ยวข้อง:\n${related.map(({ phase }) => `- ${phase.title}: ${phase.text}`).join('\n')}`
+			: '';
+
+		return `${best.phase.title}: ${best.phase.text}${relatedText}`;
 	}
 
 	function formatDomains(results: ScoredDomain[], query: string) {
@@ -316,12 +581,10 @@
 
 		if (isGenericDomainQuestion && results[0].score < 90) {
 			return [
-				'Domains ใน Riftbound มี 6 แบบ: Fury, Calm, Mind, Body, Chaos และ Order.',
+				'ใน Riftbound มี domain หลัก 6 แบบ: Fury, Calm, Mind, Body, Chaos และ Order.',
 				'',
-				'สรุปเร็ว:',
-				...domainAnswers.map((domain) => `${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`),
-				'',
-				'ถ้าอยากเจาะลึก พิมพ์ชื่อ domain เช่น "Fury" หรือ "Calm"'
+				'สรุปแบบเร็ว ๆ คือ:',
+				...domainAnswers.map((domain) => `${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`)
 			].join('\n');
 		}
 
@@ -337,24 +600,24 @@
 			: '';
 
 		return [
-			`${best.domain.iconToken} ${best.domain.name} (${best.domain.colorName}): ${best.domain.summary}`,
-			`เหมาะกับ: ${best.domain.bestFor}`,
-			`จุดเด่น: ${best.domain.strengths.join(', ')}`,
+			`${best.domain.iconToken} ${best.domain.name} เป็น domain สี ${best.domain.colorName}. ${best.domain.summary}`,
+			`โดยรวมเหมาะกับ ${best.domain.bestFor}`,
+			`จุดเด่นหลักคือ ${best.domain.strengths.join(', ')}`,
 			`ข้อดี: ${best.domain.pros.join(' | ')}`,
-			`ข้อเสีย: ${best.domain.cons.join(' | ')}`,
+			`จุดที่ต้องระวัง: ${best.domain.cons.join(' | ')}`,
 			'',
 			...best.domain.description,
 			relatedText,
 			'',
-			'หมายเหตุ: นี่เป็น offline helper จากข้อมูลในเว็บ ไม่ใช่ official ruling สุดท้าย'
+			'หมายเหตุ: ผมตอบจากข้อมูลสรุปในเว็บ ถ้าเป็นเคสแข่งหรือ ruling ละเอียดควรเช็ก official rules อีกครั้ง'
 		]
 			.filter(Boolean)
 			.join('\n');
 	}
 
-	function formatCards(matches: Card[]) {
+	function formatCards(matches: ScoredCard[]) {
 		return matches
-			.map((card, index) => {
+			.map(({ card }, index) => {
 				const domains = card.domains?.length ? ` | ${card.domains.join(', ')}` : '';
 				const tags = card.tags?.length ? ` | #${card.tags.join(' #')}` : '';
 				const ability = card.ability_th || card.ability_en || 'ไม่มี ability text';
@@ -364,43 +627,57 @@
 	}
 
 	function buildAnswer(query: string) {
-		const domainIntent = isDomainIntent(query);
-		const domains = findDomains(query);
-		if (domainIntent) {
-			if (domains.length > 0) {
-				return formatDomains(domains, query);
-			}
-
-			return [
-				'Domains ใน Riftbound มี 6 แบบ: Fury, Calm, Mind, Body, Chaos และ Order.',
-				'',
-				'สรุปเร็ว:',
-				...domainAnswers.map((domain) => `${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`),
-				'',
-				'ถ้าอยากเจาะลึก พิมพ์ชื่อ domain เช่น "Fury" หรือ "Calm"'
-			].join('\n');
-		}
-
-		if (domains.length > 0) {
-			return formatDomains(domains, query);
-		}
-
-		const rules = findRules(query);
-		if (rules.length > 0 && rules[0].score >= 24) {
-			return `${formatRules(rules)}\n\nหมายเหตุ: นี่เป็น offline helper จากข้อมูลสรุปในเว็บ ไม่ใช่ official ruling สุดท้าย`;
+		const matches = findCards(query);
+		if (matches.length > 0 && matches[0].score >= 60) {
+			return `ผมเจอการ์ดที่น่าจะเกี่ยวข้องกับคำถามนี้:\n${formatCards(matches)}`;
 		}
 
 		const keyword = findKeyword(query);
-		if (keyword) {
-			return `${keyword.name_en}: ${keyword.description_th}\n\nหมายเหตุ: ถ้าเป็นเคสซับซ้อน ให้เทียบกับข้อความบนการ์ดและกฎ official อีกครั้ง`;
+		if (isDirectKeywordQuestion(query, keyword) && keyword && keyword.score >= 45) {
+			return `${keyword.keyword.name_en} คือ ${keyword.keyword.description_th}\n\nถ้าเป็นเคสซับซ้อน ให้เทียบกับข้อความบนการ์ดและ official rules อีกครั้ง`;
 		}
 
-		const matches = findCards(query);
-		if (matches.length > 0) {
-			return `เจอการ์ดที่เกี่ยวข้อง:\n${formatCards(matches)}`;
+		const qa = findQA(query);
+		if (qa.length > 0 && qa[0].score >= 45) {
+			return formatQA(qa);
 		}
 
-		return 'ยังหาไม่เจอในข้อมูล local ลองถามด้วยชื่อการ์ด, keyword, domain หรือคำอังกฤษสั้น ๆ เช่น Hidden, Reaction, Fury, Order';
+		const phases = findPhases(query);
+		if (phases.length > 0 && phases[0].score >= 45) {
+			return formatPhases(phases);
+		}
+
+		const rules = findRules(query);
+		if (rules.length > 0 && rules[0].score >= 55) {
+			return `${formatRules(rules)}\n\nหมายเหตุ: ผมตอบจากข้อมูลสรุปในเว็บ ถ้าเป็นเคสแข่งหรือ ruling ละเอียดควรเช็ก official rules อีกครั้ง`;
+		}
+
+		if (keyword && keyword.score >= 55) {
+			return `${keyword.keyword.name_en} คือ ${keyword.keyword.description_th}\n\nถ้าเป็นเคสซับซ้อน ให้เทียบกับข้อความบนการ์ดและ official rules อีกครั้ง`;
+		}
+
+		const domainIntent = isDomainIntent(query);
+		const domains = findDomains(query);
+		if (domainIntent) {
+			if (domains.length > 0 && (isGenericDomainIntent(query) || domains[0].score >= 55)) {
+				return formatDomains(domains, query);
+			}
+
+			if (isGenericDomainIntent(query)) {
+				return [
+					'ใน Riftbound มี domain หลัก 6 แบบ: Fury, Calm, Mind, Body, Chaos และ Order.',
+					'',
+					'สรุปแบบเร็ว ๆ คือ:',
+					...domainAnswers.map((domain) => `${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`)
+				].join('\n');
+			}
+		}
+
+		if (matches.length > 0 && matches[0].score >= 30) {
+			return `ผมเจอการ์ดที่อาจเกี่ยวข้องกับคำถามนี้:\n${formatCards(matches)}`;
+		}
+
+		return noAnswerText;
 	}
 
 	function sendMessage(text = input) {
@@ -417,8 +694,8 @@
 		<div class="mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl shadow-black/70 backdrop-blur-2xl">
 			<div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
 				<div>
-					<div class="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Helper</div>
-					<div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Offline search</div>
+					<div class="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Rules Chat</div>
+					<div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Local answer helper</div>
 				</div>
 				<button
 					type="button"
@@ -434,7 +711,7 @@
 			</div>
 
 			<div class="border-b border-white/10 px-4 py-2 text-[11px] font-medium leading-relaxed text-slate-500">
-				ตอบจาก rule summary, keyword, domain และ card data ในเว็บ
+				ตอบจาก card data, keywords, phases, Q&A, domains และ rule summary ในเว็บ
 			</div>
 
 			<div class="flex-1 space-y-3 overflow-y-auto p-3">
@@ -452,18 +729,6 @@
 			</div>
 
 			<div class="border-t border-white/10 p-3">
-				<div class="mb-2 flex gap-2 overflow-x-auto pb-1">
-					{#each quickPrompts as prompt}
-						<button
-							type="button"
-							class="shrink-0 rounded-full border border-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-300"
-							onclick={() => sendMessage(prompt)}
-						>
-							{prompt}
-						</button>
-					{/each}
-				</div>
-
 				<form
 					class="flex gap-2"
 					onsubmit={(event) => {
@@ -474,7 +739,7 @@
 					<input
 						bind:value={input}
 						class="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-						placeholder="ถาม rule, keyword, domain, card..."
+						placeholder="ถามการ์ด กฎ keyword phase..."
 					/>
 					<button
 						type="submit"

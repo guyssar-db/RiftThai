@@ -13,7 +13,7 @@ export const ruleAnswers: RuleAnswer[] = [
 	{
 		keys: ['deck', 'deckbuilding', 'deck construction', 'สร้างเด็ค', 'จัดเด็ค'],
 		title: 'Deck Construction',
-		text: 'เด็คหนึ่งชุดมี Champion Legend 1 ใบ, Battlefield 3 ใบ, Main Deck 40 ใบ และ Rune Deck 12 ใบ โดย Rune Deck ใช้เป็นทรัพยากรสำหรับจ่ายค่าเล่นการ์ด'
+		text: 'เด็คหนึ่งชุดมี Champion Legend 1 ใบ, Battlefield 3 ใบ, Main Deck 40 ใบ และ Rune Deck 12 ใบ โดย Rune Deck ใช้เป็นทรัพยากรสำหรับจ่ายค่าเล่นการ์ด Battlefield ทั้ง 3 ใบในเด็คต้องไม่ซ้ำกัน'
 	},
 	{
 		keys: ['zone', 'zones', 'public', 'private', 'hidden information', 'hand', 'trash', 'โซน', 'มือ', 'สุสาน'],
@@ -33,7 +33,7 @@ export const ruleAnswers: RuleAnswer[] = [
 	{
 		keys: ['chain', 'stack', 'resolve', 'ตอบสนอง', 'สแต็ก'],
 		title: 'Chain',
-		text: 'Chain เกิดเมื่อผู้เล่นร่าย spell, ใช้ activated ability หรือมี triggered ability ถูกสร้างขึ้น ผู้เล่นสามารถตอบด้วย Reaction ได้ตาม priority แล้วสิ่งบน chain จะ resolve จากรายการล่าสุดย้อนกลับไปก่อนหน้า'
+		text: 'Chain ใช้ระบบ pending และ finalizing: สิ่งที่ถูกเล่นหรือ trigger จะถูกใส่เป็น pending chain item ก่อน แล้วจึง finalize โดยเลือกเป้าหมาย จ่าย cost และเช็กความถูกต้อง หลังจากนั้นจึง resolve ตามลำดับ chain'
 	},
 	{
 		keys: ['turn', 'phase', 'start', 'awaken', 'draw', 'action phase', 'end', 'เทิร์น', 'เฟส'],
@@ -58,7 +58,7 @@ export const ruleAnswers: RuleAnswer[] = [
 	{
 		keys: ['showdown', 'combat', 'battlefield', 'ต่อสู้', 'สู้', 'แย่งสนาม'],
 		title: 'Showdown',
-		text: 'Showdown เกิดเมื่อ battlefield ถูก contest โดยมี unit ของมากกว่าหนึ่งฝ่ายมาแย่งพื้นที่กัน ถ้า showdown ใหม่เกิดระหว่างที่อันเดิมยังไม่จบ จะรอ resolve หลังอันปัจจุบันจบก่อน'
+		text: 'Showdown ถูก mark เป็น staged ระหว่าง cleanup หลังจาก battlefield ได้รับสถานะ Contested ไม่ใช่ทันทีที่ยูนิตขยับเสมอไป คำว่า pending สำหรับ combat/showdown ถูกเปลี่ยนเป็น staged เพื่อไม่ชนกับระบบ pending chain item'
 	},
 	{
 		keys: ['attacker', 'defender', 'attack', 'defend', 'ฝ่ายบุก', 'ฝ่ายรับ'],
@@ -68,7 +68,7 @@ export const ruleAnswers: RuleAnswer[] = [
 	{
 		keys: ['move', 'movement', 'recall', 'base', 'ย้าย', 'เคลื่อน', 'กลับฐาน'],
 		title: 'Movement And Recall',
-		text: 'การ move ปกติเป็นการขยับใน lane ของตัวเอง เช่น จาก base ไป battlefield หรือย้อนกลับตามกฎ movement แต่ spell/ability ที่สั่ง Move a unit สามารถข้ามข้อจำกัดปกติได้ตามข้อความการ์ด'
+		text: 'การ move ปกติเป็นการขยับใน lane ของตัวเอง เช่น จาก base ไป battlefield หรือย้อนกลับตามกฎ movement แต่ spell/ability ที่สั่ง Move a unit สามารถข้ามข้อจำกัดปกติได้ตามข้อความการ์ด ส่วน Recall จะกลับไปยัง base ของ object นั้นเท่านั้น ไม่ถือว่าเป็น move และไม่เปลี่ยน state ของ object'
 	},
 	{
 		keys: ['damage', 'might', 'combat damage', 'kill', 'heal', 'ดาเมจ', 'พลัง', 'ตาย', 'ฮีล'],
@@ -93,12 +93,12 @@ export const ruleAnswers: RuleAnswer[] = [
 	{
 		keys: ['target', 'choose', 'เลือกเป้าหมาย', 'เป้าหมาย'],
 		title: 'Targeting',
-		text: 'โดยทั่วไป target คือวัตถุหรือผู้เล่นใน public zone ที่ผู้เล่นคนเดียวเลือกให้ spell/ability กระทบโดยตรง คำสั่งที่ให้ผู้เล่นแต่ละคนเลือกของตัวเองพร้อมกันมักไม่ถือว่าเป็น target'
+		text: 'Targeting มีนิยามแยกจากการ choose ทั่วไป คำสั่งที่ให้ผู้เล่นแต่ละคนเลือกของตัวเองพร้อมกันมักไม่ถือว่าเป็น target สำหรับเอฟเฟกต์ที่ move object ปลายทางของการ move เป็น choice ที่ต้องเลือกตอนนำ spell หรือ ability ขึ้น chain'
 	},
 	{
 		keys: ['hidden', 'facedown', 'ซ่อน'],
 		title: 'Hidden',
-		text: 'Hidden เล่นได้สองแบบ: เล่นจากมือโดยจ่าย cost ปกติ หรือ recycle rune 1 ใบเพื่อซ่อนไว้ที่ battlefield ที่คุณคุม แล้วเล่นจาก facedown ในเทิร์นถัดไปแบบ Reaction โดยไม่จ่าย cost ถ้าเสียการคุม battlefield นั้น การ์ด Hidden ที่ซ่อนอยู่จะไป trash'
+		text: 'Hidden ใช้ cost เป็น [A] หรือ power ของ domain ใดก็ได้เพื่อ hide การ์ดไว้ facedown การ์ดที่เล่นจาก facedown จะ gain Reaction จริง ๆ และ restriction เรื่อง targeting ถูกปรับตามกฎ targeting ใหม่ การ์ดใน Champion Zone สามารถใช้ Hidden abilities ได้ถ้ามีข้อความรองรับ'
 	},
 	{
 		keys: ['ambush'],
@@ -153,6 +153,31 @@ export const ruleAnswers: RuleAnswer[] = [
 	{
 		keys: ['2v2', 'multiplayer', 'friendly', 'ally', 'ทีม'],
 		title: '2v2 And Friendly Units',
-		text: 'ใน 2v2 คำว่า friendly unit หมายถึง unit ของคุณและ unit ของเพื่อนร่วมทีม แต่คำว่า your units โดยทั่วไปหมายถึง unit ที่คุณควบคุมเอง'
+		text: 'ใน 2v2 คำว่า friendly unit หมายถึง unit ของคุณและ unit ของเพื่อนร่วมทีม แต่คำว่า your units โดยทั่วไปหมายถึง unit ที่คุณควบคุมเอง คู่หูในทีมเดียวกันใช้ Champion Legend ซ้ำกันไม่ได้ และ battlefield ของทั้งสองเด็คต้องไม่ซ้ำกัน'
+	},
+	{
+		keys: ['cleanup', 'special cleanup', 'cleanups'],
+		title: 'Cleanups',
+		text: 'Cleanup เกิดซ้ำจนกว่าจะไม่มีสิ่งสำคัญให้จัดการแล้ว ส่วน Special Cleanup มีขั้นตอนพิเศษแทรกเข้ามาเพียงครั้งเดียว ถ้าต้อง cleanup ต่อจะกลับไปเป็น normal cleanup'
+	},
+	{
+		keys: ['contested', 'control battlefield', 'control', 'คุมสนาม', 'contested status'],
+		title: 'Contested Status And Control',
+		text: 'ผู้เล่นจะไม่เสีย control ของ battlefield ที่กำลังมี Showdown หรือ Combat อยู่ แม้จะไม่มียูนิตของตัวเองอยู่ที่นั่น Control และ Contested status จะถูกจัดการระหว่าง cleanup ตามลำดับของกฎ'
+	},
+	{
+		keys: ['add', 'energy pool', 'เพิ่มพลังงาน'],
+		title: 'Add',
+		text: 'Add abilities finalize ทันทีแบบเดียวกับ Units และ Gear และเมื่อ Add abilities resolve แล้ว focus และ priority จะไม่ pass จากการ resolve นั้น'
+	},
+	{
+		keys: ['accelerate', 'เร่งความเร็ว'],
+		title: 'Accelerate',
+		text: 'Accelerate ให้จ่าย cost เพิ่มเติมเพื่อให้ unit ลงสนามในสภาพ Ready โดย cost [C] ของ Accelerate จะตรงกับ domain ของ unit ที่มี ability นั้น ถ้า unit ไม่มี domain หรือมีมากกว่าหนึ่ง domain cost จะกลายเป็น [A]'
+	},
+	{
+		keys: ['basic rune ability', 'basic rune abilities', 'rune ability', 'รูนพื้นฐาน'],
+		title: 'Basic Rune Abilities',
+		text: 'Basic rune abilities มี Reaction ตาม official patch note จึงสามารถใช้ในจังหวะที่มี priority ได้ตามข้อจำกัดของกฎ'
 	}
 ];
