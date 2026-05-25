@@ -22,7 +22,7 @@ export const keywords: Keyword[] = [
     { id: 'deathknell', name_en: 'Deathknell', name_th: 'เสียงระฆังมรณะ', description_th: 'ความสามารถที่จะทำงานเมื่อยูนิตนี้ตายและถูกส่งลงสุสาน (Trash)', color: '#97B028' },
     { id: 'temporary', name_en: 'Temporary', name_th: 'ชั่วคราว', description_th: 'ยูนิตนี้จะถูกทำลายหรือสลายหายไปเองโดยอัตโนมัติเมื่อจบเทิร์น (End of Turn)', color: '#97B028' },
     { id: 'level', name_en: 'Level', name_th: 'เลเวล', description_th: 'ระบบสะสมค่าประสบการณ์ (XP) ของแชมเปี้ยนในเซ็ต Unleashed เมื่อเงื่อนไขครบ แชมเปี้ยนจะอัปเกรดร่างและได้รับความสามารถใหม่', color: '#97B028' },
-    { id: 'ganking', name_en: 'Ganking', name_th: 'แก๊งค์', description_th: 'ยูนิตสามารถสั่งเคลื่อนที่ (Move) ข้ามจาก Battlefield หนึ่งไปยังอีก Battlefield หนึ่งได้โดยตรง (ไม่ต้องเดินกลับ Base ก่อน)', color: '#97B028' },
+    { id: 'ganking', name_en: 'Ganking', name_th: 'แก๊งค์', description_th: 'ความสามารถพิเศษที่ทำให้ยูนิตเคลื่อนที่จาก Battlefield หนึ่งไปยังอีก Battlefield หนึ่งได้โดยตรง โดยไม่ต้องกลับ Base ก่อน ซึ่งต่างจาก Move ปกติที่โดยทั่วไปเป็น Base ไป Battlefield หรือ Battlefield กลับ Base เท่านั้น', color: '#97B028' },
     
     { id: 'mighty', name_en: 'Mighty', name_th: 'ทรงพลัง', description_th: 'สถานะที่บ่งบอกว่ายูนิตนั้นมีค่าพลังโจมตี (Might) ตั้งแต่ 5 แต้มขึ้นไป (มีการ์ดบางใบเช็กเงื่อนไขนี้)', color: '#717171' },
     { id: 'vision', name_en: 'Vision', name_th: 'นิมิต', description_th: 'เมื่อยูนิตนี้ลงสนาม ให้ทำการ Predict 1 (ดูการ์ดใบบนสุดของกอง 1 ใบ เลือกได้ว่าจะ Recycle ทิ้ง หรือวางกลับไว้ที่เดิม)', color: '#717171' },

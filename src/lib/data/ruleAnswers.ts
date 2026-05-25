@@ -68,7 +68,7 @@ export const ruleAnswers: RuleAnswer[] = [
 	{
 		keys: ['move', 'movement', 'recall', 'base', 'ย้าย', 'เคลื่อน', 'กลับฐาน'],
 		title: 'Movement And Recall',
-		text: 'การ move ปกติเป็นการขยับใน lane ของตัวเอง เช่น จาก base ไป battlefield หรือย้อนกลับตามกฎ movement แต่ spell/ability ที่สั่ง Move a unit สามารถข้ามข้อจำกัดปกติได้ตามข้อความการ์ด ส่วน Recall จะกลับไปยัง base ของ object นั้นเท่านั้น ไม่ถือว่าเป็น move และไม่เปลี่ยน state ของ object'
+		text: 'การ move ปกติเป็นการขยับใน lane ของตัวเอง เช่น จาก base ไป battlefield หรือจาก battlefield กลับ base เท่านั้น ไม่ใช่การย้ายข้ามจาก battlefield หนึ่งไปอีก battlefield หนึ่งโดยตรง การข้าม battlefield โดยตรงต้องมี Ganking หรือ spell/ability ที่ระบุให้ทำได้ ส่วน Recall จะกลับไปยัง base ของ object นั้นเท่านั้น ไม่ถือว่าเป็น move และไม่เปลี่ยน state ของ object'
 	},
 	{
 		keys: ['damage', 'might', 'combat damage', 'kill', 'heal', 'ดาเมจ', 'พลัง', 'ตาย', 'ฮีล'],

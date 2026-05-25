@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import cardsData from '$lib/data/riftbound_cards_all.json';
 import { domainAnswers } from '$lib/data/domainAnswers';
@@ -27,6 +29,7 @@ const cards = cardsData as Card[];
 
 export function buildRagDocuments(): RagDocument[] {
 	return [
+		...coreRuleDocuments(),
 		...keywords.map((keyword) => ({
 			source: `keyword:${keyword.id}`,
 			source_type: 'keyword',
@@ -80,6 +83,28 @@ export function buildRagDocuments(): RagDocument[] {
 			}
 		})),
 		...cards.map(cardToDocument)
+	];
+}
+
+function coreRuleDocuments(): RagDocument[] {
+	const filePath = join(process.cwd(), 'core_rules.md');
+	if (!existsSync(filePath)) return [];
+
+	const content = readFileSync(filePath, 'utf-8').trim();
+	if (!content) return [];
+
+	return [
+		{
+			source: 'core_rules:summary',
+			source_type: 'core_rules',
+			title: 'Riftbound Core Rules Summary',
+			content,
+			metadata: {
+				file: 'core_rules.md',
+				source_url:
+					'https://cmsassets.rgpub.io/sanity/files/dsfx7636/news_live/572377fcaa704a05f72eb42c104079d3b3bcf740.pdf'
+			}
+		}
 	];
 }
 

@@ -38,6 +38,7 @@ src/lib/components/TurnPhasesModal.svelte
 # Documentation
 *.md
 !README.md
+!core_rules.md
 !GEMINI.md
 !docs/
 !docs/*.md
