@@ -3,6 +3,7 @@ node_modules
 /build
 .env
 .env.*
+!.env.example
 .DS_Store
 Thumbs.db
 .vscode/
@@ -28,6 +29,8 @@ src/lib/data/riftbound_cards_all_backup.json
 temp_chunks/
 .output/
 dev-server.*
+dev-server*.log
+dev-server*.err
 
 # Ignore unused components
 src/lib/components/TurnPhasesModal.svelte

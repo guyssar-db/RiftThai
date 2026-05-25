@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import cardsData from '$lib/data/riftbound_cards_all.json';
 	import { domainAnswers, type DomainAnswer } from '$lib/data/domainAnswers';
 	import { iconMappings, keywords } from '$lib/data/keywords';
@@ -8,6 +9,34 @@
 	type Message = {
 		role: 'bot' | 'user';
 		text: string;
+	};
+
+	type RagChatResponse = {
+		answer?: string;
+		mode?: 'rag' | 'local' | 'setup_required';
+		usage?: ChatUsage;
+		sources?: Array<{
+			source: string;
+			title: string;
+			source_type: string;
+			similarity?: number;
+		}>;
+		error?: string;
+	};
+
+	type ChatUsage = {
+		used: number;
+		limit: number;
+		isAdmin?: boolean;
+	};
+
+	type AuthSession = {
+		user: {
+			email: string;
+			isAdmin: boolean;
+			usage: ChatUsage;
+		} | null;
+		error?: string;
 	};
 
 	type ScoredRule = {
@@ -227,12 +256,71 @@
 
 	let isOpen = $state(false);
 	let input = $state('');
+	let isSending = $state(false);
+	let authLoading = $state(true);
+	let loginEmail = $state('');
+	let loginPassword = $state('');
+	let loginError = $state('');
+	let authMode = $state<'login' | 'register'>('login');
+	let registerSent = $state(false);
+	let currentUser = $state<AuthSession['user']>(null);
 	let messages = $state<Message[]>([
 		{
 			role: 'bot',
 			text: 'ถามกฎ, การ์ด, keyword, phase, Q&A หรือ domain มาได้เลย ผมจะตอบจากข้อมูลที่มีในเว็บและจะไม่เดาถ้าไม่มั่นใจ'
 		}
 	]);
+
+	onMount(() => {
+		void loadSession();
+	});
+
+	async function loadSession() {
+		authLoading = true;
+		try {
+			const response = await fetch('/api/auth/session');
+			const data = (await response.json()) as AuthSession;
+			currentUser = data.user;
+		} finally {
+			authLoading = false;
+		}
+	}
+
+	async function login() {
+		loginError = '';
+		authLoading = true;
+		try {
+			const response = await fetch(authMode === 'login' ? '/api/auth/login' : '/api/auth/register', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					email: loginEmail,
+					password: loginPassword
+				})
+			});
+			const data = (await response.json()) as AuthSession;
+			if (!response.ok) throw new Error(data.error || 'Auth failed');
+			if (authMode === 'register') {
+				registerSent = true;
+				loginPassword = '';
+				return;
+			}
+			if (!data.user) throw new Error(data.error || 'Login failed');
+			currentUser = data.user;
+			loginPassword = '';
+		} catch (error) {
+			loginError = error instanceof Error ? error.message : 'Auth failed';
+		} finally {
+			authLoading = false;
+		}
+	}
+
+	async function logout() {
+		await fetch('/api/auth/logout', { method: 'POST' });
+		currentUser = null;
+	}
 
 	function normalize(value: unknown) {
 		return String(value ?? '')
@@ -256,6 +344,7 @@
 		let processed = escapeHtml(text);
 		const placeholders: Record<string, string> = {};
 		let placeholderIndex = 0;
+		const domainIconByName = new Map(domainAnswers.map((domain) => [domain.name.toLowerCase(), domain.iconToken]));
 
 		function addPlaceholder(html: string) {
 			const id = `___CHAT_PH_${placeholderIndex++}___`;
@@ -280,12 +369,23 @@
 			);
 		});
 
+		processed = processed.replace(/\b(Fury|Calm|Mind|Body|Chaos|Order)\b/g, (match) => {
+			const token = domainIconByName.get(String(match).toLowerCase());
+			const icon = token ? iconMappings[token] : null;
+			if (!icon) return match;
+
+			return addPlaceholder(
+				`<span class="chat-domain-name"><img src="/images/icons/${icon.icon}" class="chat-inline-icon" title="${escapeHtml(icon.hint)}" alt="${escapeHtml(match)} domain" /><span>${escapeHtml(match)}</span></span>`
+			);
+		});
+
 		processed = processed.replace(/\[([^\]]+)\]/g, (_match, keywordText) => {
 			const displayText = String(keywordText).trim();
 			const keywordName = displayText.split(' ')[0];
 			const keyword = keywords.find(
 				(item) => normalize(item.name_en) === normalize(keywordName) || normalize(item.name_th) === normalize(keywordName)
 			);
+			if (!keyword) return `[${displayText}]`;
 			const color = keyword?.color ?? '#107361';
 
 			return addPlaceholder(
@@ -680,12 +780,65 @@
 		return noAnswerText;
 	}
 
-	function sendMessage(text = input) {
-		const query = text.trim();
-		if (!query) return;
+	async function askRagApi(query: string) {
+		const response = await fetch('/api/rag/chat', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ question: query })
+		});
+		const data = (await response.json()) as RagChatResponse;
 
-		messages = [...messages, { role: 'user', text: query }, { role: 'bot', text: buildAnswer(query) }];
+		if (response.status === 401) {
+			currentUser = null;
+			throw new Error('กรุณา login ก่อนใช้แชท');
+		}
+
+		if (data.usage && currentUser) {
+			currentUser = {
+				...currentUser,
+				usage: data.usage
+			};
+		}
+
+		if (response.status === 429) {
+			return buildAnswer(query);
+		}
+
+		if (!response.ok || data.mode === 'setup_required' || !data.answer) {
+			throw new Error(data.error || 'RAG API is not ready');
+		}
+
+		const alreadyHasSources = data.answer.includes('อ้างอิง') || data.answer.includes('แหล่งข้อมูล');
+		const sources = !alreadyHasSources && data.sources?.length
+			? `\n\nแหล่งข้อมูล:\n${data.sources.map((source) => `- ${source.title}`).join('\n')}`
+			: '';
+
+		return `${data.answer}${sources}`;
+	}
+
+	async function sendMessage(text = input) {
+		const query = text.trim();
+		if (!query || isSending) return;
+		if (!currentUser) {
+			loginError = 'กรุณา login ก่อนใช้แชท';
+			return;
+		}
+
 		input = '';
+		isSending = true;
+		messages = [...messages, { role: 'user', text: query }, { role: 'bot', text: 'กำลังค้นข้อมูล...' }];
+
+		try {
+			const answer = await askRagApi(query);
+			messages = [...messages.slice(0, -1), { role: 'bot', text: answer }];
+		} catch (error) {
+			const message = error instanceof Error ? error.message : '';
+			messages = [...messages.slice(0, -1), { role: 'bot', text: message || buildAnswer(query) }];
+		} finally {
+			isSending = false;
+		}
 	}
 </script>
 
@@ -694,9 +847,20 @@
 		<div class="mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl shadow-black/70 backdrop-blur-2xl">
 			<div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
 				<div>
-					<div class="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Rules Chat</div>
-					<div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Local answer helper</div>
+					<div class="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">RAG Chat</div>
+					<div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+						{currentUser ? (currentUser.isAdmin ? 'Admin access' : `${currentUser.usage.used}/${currentUser.usage.limit} today`) : 'Login required'}
+					</div>
 				</div>
+				{#if currentUser}
+					<button
+						type="button"
+						class="rounded-lg border border-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400 transition hover:bg-white/5"
+						onclick={logout}
+					>
+						Logout
+					</button>
+				{/if}
 				<button
 					type="button"
 					class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-slate-300 transition hover:bg-white/5"
@@ -714,7 +878,76 @@
 				ตอบจาก card data, keywords, phases, Q&A, domains และ rule summary ในเว็บ
 			</div>
 
-			<div class="flex-1 space-y-3 overflow-y-auto p-3">
+			{#if authLoading}
+				<div class="flex flex-1 items-center justify-center px-4 text-sm font-bold text-slate-500">Loading...</div>
+			{:else if !currentUser}
+				<div class="flex-1 p-4">
+					<form
+						class="space-y-3"
+						onsubmit={(event) => {
+							event.preventDefault();
+							login();
+						}}
+					>
+						<div class="grid grid-cols-2 rounded-xl border border-white/10 bg-slate-900 p-1">
+							<button
+								type="button"
+								class="rounded-lg px-3 py-2 text-xs font-black uppercase tracking-widest {authMode === 'login' ? 'bg-cyan-400 text-slate-950' : 'text-slate-500'}"
+								onclick={() => {
+									authMode = 'login';
+									loginError = '';
+									registerSent = false;
+								}}
+							>
+								Login
+							</button>
+							<button
+								type="button"
+								class="rounded-lg px-3 py-2 text-xs font-black uppercase tracking-widest {authMode === 'register' ? 'bg-cyan-400 text-slate-950' : 'text-slate-500'}"
+								onclick={() => {
+									authMode = 'register';
+									loginError = '';
+									registerSent = false;
+								}}
+							>
+								Register
+							</button>
+						</div>
+						{#if registerSent}
+							<div class="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200">
+								Check your email and click the verification link before logging in.
+							</div>
+						{/if}
+						<input
+							bind:value={loginEmail}
+							type="email"
+							autocomplete="email"
+							class="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+							placeholder="Email"
+						/>
+						<input
+							bind:value={loginPassword}
+							type="password"
+							autocomplete="current-password"
+							class="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+							placeholder="Password"
+						/>
+						{#if loginError}
+							<div class="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200">
+								{loginError}
+							</div>
+						{/if}
+						<button
+							type="submit"
+							class="h-11 w-full rounded-xl bg-cyan-400 text-sm font-black uppercase tracking-widest text-slate-950 transition active:scale-[0.98]"
+							disabled={authLoading}
+						>
+							{authMode === 'login' ? 'Login' : 'Create account'}
+						</button>
+					</form>
+				</div>
+			{:else}
+				<div class="flex-1 space-y-3 overflow-y-auto p-3">
 				{#each messages as message}
 					<div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
 						<div class="max-w-[86%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed {message.role === 'user' ? 'bg-cyan-400 text-slate-950' : 'border border-white/10 bg-white/7 text-slate-100'}">
@@ -728,7 +961,7 @@
 				{/each}
 			</div>
 
-			<div class="border-t border-white/10 p-3">
+				<div class="border-t border-white/10 p-3">
 				<form
 					class="flex gap-2"
 					onsubmit={(event) => {
@@ -739,12 +972,14 @@
 					<input
 						bind:value={input}
 						class="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+						disabled={isSending}
 						placeholder="ถามการ์ด กฎ keyword phase..."
 					/>
 					<button
 						type="submit"
 						class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-cyan-400 text-slate-950 transition active:scale-95"
 						aria-label="Send"
+						disabled={isSending}
 					>
 						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
 							<path d="m22 2-7 20-4-9-9-4Z" />
@@ -752,7 +987,8 @@
 						</svg>
 					</button>
 				</form>
-			</div>
+				</div>
+			{/if}
 		</div>
 	{/if}
 
@@ -804,6 +1040,14 @@
 		color: black;
 		font-size: 0.72em;
 		font-weight: 900;
+		vertical-align: middle;
+	}
+
+	:global(.chat-domain-name) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+		font-weight: 800;
 		vertical-align: middle;
 	}
 

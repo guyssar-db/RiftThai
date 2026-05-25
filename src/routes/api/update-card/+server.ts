@@ -2,8 +2,14 @@ import { json } from '@sveltejs/kit';
 import fs from 'fs';
 import path from 'path';
 
-export async function POST({ request }) {
+import { getAuthenticatedUser } from '$lib/server/auth';
+
+export async function POST({ request, cookies }) {
     try {
+        const user = await getAuthenticatedUser(cookies);
+        if (!user) return json({ success: false, message: 'login required' }, { status: 401 });
+        if (!user.isAdmin) return json({ success: false, message: 'admin required' }, { status: 403 });
+
         const { code, ability_en, ability_th } = await request.json();
 
         const filePath = path.join(process.cwd(), 'src/lib/data/riftbound_cards_all.json');

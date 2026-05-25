@@ -68,7 +68,7 @@
 	});
 </script>
 
-<div class="sticky top-[4.75rem] z-[120] mb-8 space-y-4 rounded-[1.75rem] bg-slate-950/72 p-2 shadow-2xl shadow-slate-950/45 backdrop-blur-2xl sm:mb-10 sm:space-y-5 sm:p-3">
+<div class="sticky top-[4.75rem] z-[60] mb-8 space-y-4 rounded-[1.75rem] bg-slate-950/72 p-2 shadow-2xl shadow-slate-950/45 backdrop-blur-2xl sm:mb-10 sm:space-y-5 sm:p-3">
 	<div class="flex flex-wrap items-center justify-between gap-3 px-1 sm:px-2">
 		<div class="flex items-center gap-3">
 			<div class="h-6 w-1.5 rounded-full bg-cyan-400"></div>
@@ -79,7 +79,7 @@
 		</div>
 	</div>
 
-	<div class="relative z-[120] rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-3xl">
+	<div class="relative z-[60] rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-3xl">
 		<div class="flex flex-col gap-3 lg:flex-row">
 			<div class="flex min-w-0 flex-grow gap-2">
 				<div class="group relative min-w-0 flex-grow">

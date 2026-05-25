@@ -12,6 +12,7 @@
 	let menuItems = $derived<MenuItem[]>([
 		{ label: 'Domains', href: '/domains', active: active === 'domains' },
 		{ label: 'Q&A', href: '/qa', active: active === 'qa' },
+		{ label: 'Chat', href: '/chat' },
 		{ label: 'Official', href: 'https://riftbound.com', external: true }
 	]);
 </script>
@@ -52,7 +53,7 @@
 	</button>
 
 	{#if isOpen}
-		<div class="absolute right-0 top-14 z-[80] w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl md:hidden">
+		<div class="absolute right-0 top-14 z-[220] w-56 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl md:hidden">
 			{#each menuItems as item}
 				<a
 					href={item.href}

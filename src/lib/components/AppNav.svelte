@@ -19,7 +19,7 @@
 	}
 </script>
 
-<nav class="sticky top-0 z-50 border-b border-white/5 bg-slate-950/75 backdrop-blur-2xl">
+<nav class="sticky top-0 z-[180] border-b border-white/5 bg-slate-950/75 backdrop-blur-2xl">
 	<div class="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10">
 		<a href="/" class="shrink-0 text-xl font-black uppercase italic tracking-tight text-white sm:text-2xl">
 			Rift<span class="text-cyan-400">Thai</span>
@@ -40,7 +40,7 @@
 	</div>
 </nav>
 
-<div class="pointer-events-none fixed inset-x-0 bottom-4 z-50 px-4 md:hidden">
+<div class="pointer-events-none fixed inset-x-0 bottom-4 z-[180] px-4 md:hidden">
 	<div class="pointer-events-auto mx-auto grid max-w-sm grid-cols-3 gap-1 rounded-[1.75rem] border border-white/10 bg-slate-950/85 p-2 shadow-2xl shadow-black/70 backdrop-blur-2xl">
 		{#each navItems as item}
 			<button
