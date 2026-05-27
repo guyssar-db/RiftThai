@@ -7,6 +7,7 @@ export interface Keyword {
 }
 
 export const keywords: Keyword[] = [
+    { id: 'recycle', name_en: 'Recycle', name_th: 'รีไซเคิล', description_th: 'การนำการ์ดรูนหรือการ์ดจากมือ ตามที่มาของการ์ดนั้น ส่งกลับเข้าใต้กอง', color: '#107361' },
     { id: 'legion', name_en: 'Legion', name_th: 'กองทัพ', description_th: 'ความสามารถจะทำงานก็ต่อเมื่อคุณได้ทำการ \'เล่นการ์ดใบอื่น\' ไปแล้วอย่างน้อย 1 ใบในเทิร์นนี้ (คอมโบต่อเนื่อง)', color: '#107361' },
     { id: 'hidden', name_en: 'Hidden', name_th: 'ซ่อน', description_th: 'จ่ายค่าร่าย 1 Power (โดยการ Recycle รูน) เพื่อนำการ์ดไปวางคว่ำหน้าซ่อนไว้ใน Battlefield และสามารถเปิดหงายใช้งาน (Trigger) ได้ฟรีในภายหลัง', color: '#107361' },
     { id: 'accelerate', name_en: 'Accelerate', name_th: 'เร่งความเร็ว', description_th: 'ทางเลือกในการจ่ายค่าร่ายเพิ่มเติม (มักจะเป็น 1 Energy + Recycle 1 รูน) เพื่อให้ยูนิตลงสนามมาในสภาพ Ready (ตั้งตรง) พร้อมใช้งานทันทีโดยไม่ต้องรอเทิร์นถัดไป', color: '#107361' },
@@ -25,13 +26,13 @@ export const keywords: Keyword[] = [
     { id: 'ganking', name_en: 'Ganking', name_th: 'แก๊งค์', description_th: 'ความสามารถพิเศษที่ทำให้ยูนิตเคลื่อนที่จาก Battlefield หนึ่งไปยังอีก Battlefield หนึ่งได้โดยตรง โดยไม่ต้องกลับ Base ก่อน ซึ่งต่างจาก Move ปกติที่โดยทั่วไปเป็น Base ไป Battlefield หรือ Battlefield กลับ Base เท่านั้น', color: '#97B028' },
     
     { id: 'mighty', name_en: 'Mighty', name_th: 'ทรงพลัง', description_th: 'สถานะที่บ่งบอกว่ายูนิตนั้นมีค่าพลังโจมตี (Might) ตั้งแต่ 5 แต้มขึ้นไป (มีการ์ดบางใบเช็กเงื่อนไขนี้)', color: '#717171' },
-    { id: 'vision', name_en: 'Vision', name_th: 'นิมิต', description_th: 'เมื่อยูนิตนี้ลงสนาม ให้ทำการ Predict 1 (ดูการ์ดใบบนสุดของกอง 1 ใบ เลือกได้ว่าจะ Recycle ทิ้ง หรือวางกลับไว้ที่เดิม)', color: '#717171' },
+    { id: 'vision', name_en: 'Vision', name_th: 'นิมิต', description_th: 'เมื่อยูนิตนี้ลงสนาม ให้ทำการ Predict 1 (ดูการ์ดใบบนสุดของกอง 1 ใบ เลือกได้ว่าจะ Recycle โดยส่งกลับเข้าใต้กอง หรือวางกลับไว้ที่เดิม)', color: '#717171' },
     { id: 'weaponmaster', name_en: 'Weaponmaster', name_th: 'Weaponmaster', description_th: 'ผู้ชำนาญอาวุธ: มักมีความสามารถพิเศษเมื่อติดตั้งอุปกรณ์ (Equip) หรือสามารถจ่ายค่าร่ายพิเศษเพื่อขโมยหรือสวมใส่อุปกรณ์จากสนามได้ทันที', color: '#717171' },
     { id: 'equip', name_en: 'Equip', name_th: 'Equip', description_th: 'การติดตั้งการ์ดประเภท Gear (อาวุธ/ชุดเกราะ) เข้ากับยูนิตเพื่อเพิ่มค่าพลังหรือความสามารถ', color: '#717171' },
     { id: 'add', name_en: 'Add', name_th: 'Add', description_th: 'คำสั่งเพิ่มทรัพยากร (เช่น \'ADD 1\') หมายถึงการได้รับ 1 Energy เข้ามาใน Pool ทันทีโดยที่คู่แข่งห้าม Reaction สวน', color: '#717171' },
     { id: 'stun', name_en: 'Stun', name_th: 'Stun', description_th: 'สถานะมึนงง: ยูนิตไม่สามารถโจมตี, เคลื่อนที่ หรือกดใช้สกิลได้ (หายเองเมื่อเริ่มเทิร์นเจ้าของยูนิต)', color: '#717171' },
     { id: 'buff', name_en: 'Buff', name_th: 'Buff', description_th: 'การเพิ่มค่าพลัง (Might) หรือความสามารถให้ยูนิต (อาจเป็นชั่วคราวในเทิร์นนี้ หรือถาวร)', color: '#717171' },
-    { id: 'predict', name_en: 'Predict', name_th: 'ทำนาย', description_th: 'ดูการ์ดจากใบบนสุดของกองการ์ดตามจำนวนที่กำหนด เลือก Recycle ใบที่ไม่ต้องการทิ้งได้ และเรียงใบที่เหลือกลับไว้บนกอง', color: '#717171' },
+    { id: 'predict', name_en: 'Predict', name_th: 'ทำนาย', description_th: 'ดูการ์ดจากใบบนสุดของกองการ์ดตามจำนวนที่กำหนด เลือก Recycle ใบที่ไม่ต้องการโดยส่งกลับเข้าใต้กองได้ และเรียงใบที่เหลือกลับไว้บนกอง', color: '#717171' },
 
     { id: 'backline', name_en: 'Backline', name_th: 'แนวหลัง', description_th: 'ยูนิตนี้จะได้รับความเสียหายจากการต่อสู้ (Combat Damage) เป็นลำดับสุดท้าย (ตรงข้ามกับ Tank)', color: '#CD2E6F' },
     { id: 'tank', name_en: 'Tank', name_th: 'แทงค์', description_th: 'ยูนิตนี้จะเป็นตัวรับความเสียหายจากการต่อสู้ (Combat Damage) เป็นลำดับแรกสุดในเลนนั้นเสมอ', color: '#CD2E6F' },
@@ -47,6 +48,6 @@ export const iconMappings: Record<string, { icon: string, hint: string }> = {
     ':rb_rune_chaos:': { icon: 'rune_chaos.svg', hint: 'Chaos Rune (รูนแห่งความโกลาหล)' },
     ':rb_rune_mind:': { icon: 'rune_mind.svg', hint: 'Mind Rune (รูนแห่งจิตใจ)' },
     ':rb_rune_body:': { icon: 'rune_body.svg', hint: 'Body Rune (รูนแห่งร่างกาย)' },
-    ':rb_rune_order:': { icon: '8bb1b193a8e1adc26ca28e1a21da8d1e2f5d2f72-64x64.png', hint: 'Order Rune (รูนแห่งระเบียบ)' },
+    ':rb_rune_order:': { icon: 'rune_order.svg', hint: 'Order Rune (รูนแห่งระเบียบ)' },
     ':rb_rune_rainbow:': { icon: 'rune_rainbow.svg', hint: 'Any Rune (รูนใดก็ได้)' }
 };

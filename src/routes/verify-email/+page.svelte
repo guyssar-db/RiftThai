@@ -31,8 +31,9 @@
 	});
 </script>
 
-<div class="min-h-dvh bg-slate-950 px-4 py-16 text-slate-100">
-	<div class="mx-auto max-w-md rounded-lg border border-white/10 bg-slate-900 p-6 shadow-2xl">
+<div class="rt-page-shell px-4 py-16 text-slate-100">
+	<div class="mesh-gradient"></div>
+	<div class="rt-panel mx-auto max-w-md rounded-xl p-6">
 		<p class="text-xs font-black uppercase tracking-[0.3em] text-cyan-300">RiftThai</p>
 		<h1 class="mt-3 text-2xl font-black">
 			{#if isVerifying}
@@ -50,7 +51,7 @@
 		</p>
 		<a
 			href="/"
-			class="mt-5 inline-flex h-11 items-center rounded-lg bg-cyan-400 px-4 text-sm font-black uppercase tracking-widest text-slate-950"
+			class="mt-5 inline-flex h-11 items-center rounded-lg bg-cyan-300 px-4 text-sm font-black uppercase tracking-widest text-slate-950"
 		>
 			Back
 		</a>

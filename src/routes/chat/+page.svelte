@@ -73,11 +73,12 @@
 	}
 </script>
 
-<div class="min-h-dvh bg-slate-950 px-4 py-6 text-slate-100 sm:py-8">
-	<div class="mx-auto flex min-h-[calc(100dvh-3rem)] max-w-4xl flex-col overflow-hidden rounded-lg border border-white/10 bg-slate-900 shadow-2xl shadow-black/40 sm:min-h-[82dvh]">
+<div class="rt-page-shell px-4 py-6 text-slate-100 sm:py-8">
+	<div class="mesh-gradient"></div>
+	<div class="rt-panel mx-auto flex min-h-[calc(100dvh-3rem)] max-w-4xl flex-col overflow-hidden rounded-xl sm:min-h-[82dvh]">
 		<header class="flex items-center justify-between gap-4 border-b border-white/10 bg-slate-950/55 px-4 py-4 sm:px-5">
 			<div class="flex min-w-0 items-center gap-3">
-				<div class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-cyan-400 text-slate-950">
+				<div class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950">
 					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
 						<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
 						<path d="M8 9h8" />
@@ -106,7 +107,7 @@
 						{#each quickTopics as topic}
 							<button
 								type="button"
-								class="rounded-full border border-white/10 bg-slate-950/70 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-200"
+							class="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-200"
 								onclick={() => chooseTopic(topic)}
 							>
 								{topic}
@@ -117,7 +118,7 @@
 			{:else}
 				{#each messages as message}
 					<div class="flex {message.sender_role === 'user' ? 'justify-end' : 'justify-start'}">
-						<div class="max-w-[82%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-lg {message.sender_role === 'user' ? 'bg-cyan-400 text-slate-950 shadow-cyan-950/20' : 'border border-white/10 bg-slate-800 text-slate-100 shadow-black/20'}">
+						<div class="max-w-[82%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-lg {message.sender_role === 'user' ? 'bg-cyan-300 text-slate-950 shadow-cyan-950/20' : 'border border-white/10 bg-slate-800 text-slate-100 shadow-black/20'}">
 							<div class="whitespace-pre-wrap">{message.body}</div>
 							<div class="mt-1 text-[10px] opacity-60">{new Date(message.created_at).toLocaleString()}</div>
 						</div>
@@ -139,7 +140,7 @@
 				class="min-h-12 min-w-0 flex-1 resize-none rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white focus:border-cyan-400/60 focus:outline-none"
 				placeholder="Message admin..."
 			></textarea>
-			<button class="rounded-lg bg-cyan-400 px-4 text-sm font-black uppercase tracking-widest text-slate-950 transition active:scale-95">Send</button>
+			<button class="rounded-lg bg-cyan-300 px-4 text-sm font-black uppercase tracking-widest text-slate-950 transition active:scale-95">Send</button>
 		</form>
 	</div>
 </div>

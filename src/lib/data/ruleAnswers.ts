@@ -6,6 +6,16 @@ export type RuleAnswer = {
 
 export const ruleAnswers: RuleAnswer[] = [
 	{
+		keys: ['official', 'official website', 'riftbound official', 'riftbound.com', 'เว็บ official', 'เว็บทางการ'],
+		title: 'Official Website',
+		text: 'เว็บ official ของ Riftbound คือ https://riftbound.com/'
+	},
+	{
+		keys: ['recycle', 'รีไซเคิล', 'recycle คือ', 'รีไซเคิล คือ'],
+		title: 'Recycle',
+		text: 'Recycle คือ การนำการ์ดรูนหรือการ์ดจากมือ ตามที่มาของการ์ดนั้น ส่งกลับเข้าใต้กอง'
+	},
+	{
 		keys: ['golden rule', 'silver rule', 'cannot', "can't", 'can not', 'ห้าม', 'ทำไม่ได้'],
 		title: 'Golden Rule / Silver Rule',
 		text: 'ถ้าข้อความบนการ์ดขัดกับกฎพื้นฐาน ให้ทำตามข้อความบนการ์ด แต่ถ้ามีเอฟเฟกต์หนึ่งบอกว่าทำได้ และอีกเอฟเฟกต์บอกว่าทำไม่ได้ ให้ยึดฝั่งที่บอกว่า "ทำไม่ได้" ก่อน'

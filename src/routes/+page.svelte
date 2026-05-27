@@ -149,7 +149,7 @@
 	}
 </script>
 
-<div class="relative min-h-dvh overflow-x-clip pb-24 font-sans text-slate-100 selection:bg-cyan-400/30 md:pb-0">
+<div class="rt-page-shell pb-24 font-sans selection:bg-cyan-400/30 md:pb-0">
 	<div class="mesh-gradient"></div>
 
 	{#if !!$navigating}
@@ -160,16 +160,36 @@
 
 	<AppNav bind:viewMode />
 
-	<main class="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
+	<main class="rt-container py-5 sm:py-8 lg:py-10">
 		{#if viewMode === 'gallery'}
-			<header class="mb-8 sm:mb-10">
-				<div class="mx-auto max-w-4xl text-center">
-					<p class="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-cyan-300/80">
+			<header class="rt-panel rt-topline mb-5 grid overflow-hidden rounded-xl lg:mb-7 lg:grid-cols-[minmax(0,1fr)_360px]">
+				<div class="rt-rule-line min-w-0 p-5 pl-7 sm:p-7 sm:pl-9 lg:p-8 lg:pl-10">
+					<p class="rt-kicker mb-3">
 						Riftbound Thai Card Database
 					</p>
-					<h1 class="text-4xl font-black uppercase italic tracking-tight text-white sm:text-6xl lg:text-7xl">
-						Rift<span class="text-cyan-400">Thai</span>
+					<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl lg:text-7xl">
+						Rift<span class="text-cyan-300">Thai</span>
 					</h1>
+					<p class="rt-copy mt-4 max-w-2xl text-sm sm:text-base">
+						ค้นการ์ด, อ่านคำแปลไทย, กรองตาม set, type และ domain ได้จากหน้าเดียว พร้อมข้อมูล keyword และลำดับ phase สำหรับใช้เตรียมเล่น
+					</p>
+				</div>
+
+				<div class="border-t border-white/10 bg-slate-950/32 p-4 lg:border-l lg:border-t-0">
+					<div class="grid h-full grid-cols-3 gap-2 text-center lg:grid-cols-1">
+						<div class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3">
+							<div class="text-[10px] font-black uppercase tracking-widest text-slate-500">Cards</div>
+							<div class="text-xl font-black text-white">{cards.length}</div>
+						</div>
+						<div class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3">
+							<div class="text-[10px] font-black uppercase tracking-widest text-slate-500">Sets</div>
+							<div class="text-xl font-black text-white">{sets.length - 1}</div>
+						</div>
+						<div class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3">
+							<div class="text-[10px] font-black uppercase tracking-widest text-slate-500">Domains</div>
+							<div class="text-xl font-black text-white">{domains.length - 2}</div>
+						</div>
+					</div>
 				</div>
 			</header>
 
@@ -220,38 +240,6 @@
 
 	.animate-loading-bar {
 		animation: loading-bar 1.5s infinite linear;
-	}
-
-	:global(.card-grid) {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 1.25rem;
-	}
-
-	@media (min-width: 640px) {
-		:global(.card-grid) {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: 1.5rem;
-		}
-	}
-
-	@media (min-width: 900px) {
-		:global(.card-grid) {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
-		}
-	}
-
-	@media (min-width: 1180px) {
-		:global(.card-grid) {
-			grid-template-columns: repeat(5, minmax(0, 1fr));
-			gap: 2rem;
-		}
-	}
-
-	@media (min-width: 1440px) {
-		:global(.card-grid) {
-			grid-template-columns: repeat(6, minmax(0, 1fr));
-		}
 	}
 
 	:global(.kw-inline-badge) {

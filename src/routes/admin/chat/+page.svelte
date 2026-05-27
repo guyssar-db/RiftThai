@@ -108,8 +108,9 @@
 	}
 </script>
 
-<div class="min-h-dvh bg-slate-950 px-4 py-6 text-slate-100 sm:py-8">
-	<div class="mx-auto grid min-h-[calc(100dvh-3rem)] max-w-6xl overflow-hidden rounded-lg border border-white/10 bg-slate-900 shadow-2xl shadow-black/40 md:min-h-[82dvh] md:grid-cols-[340px_1fr]">
+<div class="rt-page-shell px-4 py-6 text-slate-100 sm:py-8">
+	<div class="mesh-gradient"></div>
+	<div class="rt-panel mx-auto grid min-h-[calc(100dvh-3rem)] max-w-6xl overflow-hidden rounded-xl md:min-h-[82dvh] md:grid-cols-[340px_1fr]">
 		<aside class="border-b border-white/10 bg-slate-950/40 md:border-b-0 md:border-r">
 			<div class="border-b border-white/10 px-4 py-4">
 				<div class="flex items-start justify-between gap-3">
@@ -132,10 +133,10 @@
 					{#each conversations as conversation}
 						<button
 							type="button"
-							class="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-white/5 {selectedId === conversation.id ? 'bg-cyan-400/10' : ''}"
+							class="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-white/5 {selectedId === conversation.id ? 'bg-cyan-300/10' : ''}"
 							onclick={() => selectConversation(conversation.id)}
 						>
-							<span class="h-2.5 w-2.5 shrink-0 rounded-full {conversation.hasUnread ? 'bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.7)]' : 'bg-slate-700'}"></span>
+							<span class="h-2.5 w-2.5 shrink-0 rounded-full {conversation.hasUnread ? 'bg-cyan-300 shadow-[0_0_12px_rgba(45,212,191,0.7)]' : 'bg-slate-700'}"></span>
 							<span class="min-w-0 flex-1">
 								<span class="block truncate text-sm font-bold">{conversation.app_users?.email ?? conversation.user_id}</span>
 								<span class="text-xs text-slate-500">{conversation.last_message_at ? new Date(conversation.last_message_at).toLocaleString() : 'No messages'}</span>
@@ -155,7 +156,7 @@
 					</p>
 				</div>
 				{#if selectedConversation?.hasUnread}
-					<span class="rounded-full bg-cyan-400 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-950">New</span>
+					<span class="rounded-lg bg-cyan-300 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-950">New</span>
 				{/if}
 			</div>
 			<div class="flex-1 space-y-3 overflow-y-auto p-4">
@@ -166,7 +167,7 @@
 				{:else}
 					{#each messages as message}
 						<div class="flex {message.sender_role === 'admin' ? 'justify-end' : 'justify-start'}">
-							<div class="max-w-[82%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-lg {message.sender_role === 'admin' ? 'bg-cyan-400 text-slate-950 shadow-cyan-950/20' : 'border border-white/10 bg-slate-800 text-slate-100 shadow-black/20'}">
+							<div class="max-w-[82%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-lg {message.sender_role === 'admin' ? 'bg-cyan-300 text-slate-950 shadow-cyan-950/20' : 'border border-white/10 bg-slate-800 text-slate-100 shadow-black/20'}">
 								<div class="whitespace-pre-wrap">{message.body}</div>
 								<div class="mt-1 text-[10px] opacity-60">{new Date(message.created_at).toLocaleString()}</div>
 							</div>
@@ -188,7 +189,7 @@
 					class="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white focus:border-cyan-400/60 focus:outline-none disabled:opacity-50"
 					placeholder="Reply..."
 				/>
-				<button class="rounded-lg bg-cyan-400 px-4 text-sm font-black uppercase tracking-widest text-slate-950 transition active:scale-95 disabled:opacity-50" disabled={!selectedId}>Send</button>
+				<button class="rounded-lg bg-cyan-300 px-4 text-sm font-black uppercase tracking-widest text-slate-950 transition active:scale-95 disabled:opacity-50" disabled={!selectedId}>Send</button>
 			</form>
 		</section>
 	</div>

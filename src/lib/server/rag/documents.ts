@@ -6,6 +6,7 @@ import cardsData from '$lib/data/riftbound_cards_all.json';
 import { domainAnswers } from '$lib/data/domainAnswers';
 import { keywords } from '$lib/data/keywords';
 import { ruleAnswers } from '$lib/data/ruleAnswers';
+import { spiritforgedFaq } from '$lib/data/spiritforgedFaq';
 import type { Card } from '$lib/types/card';
 
 import { chunkText, estimateTokenCount, repairThaiMojibake } from './text';
@@ -57,6 +58,25 @@ export function buildRagDocuments(): RagDocument[] {
 			),
 			metadata: {
 				keys: rule.keys.map(repairThaiMojibake)
+			}
+		})),
+		...spiritforgedFaq.map((item, index) => ({
+			source: `faq:spiritforged:${index + 1}`,
+			source_type: 'faq',
+			title: `Spiritforged FAQ: ${item.question}`,
+			content: repairThaiMojibake(
+				[
+					`Category: ${item.category}`,
+					`Question: ${item.question}`,
+					`Answer: ${item.answer}`,
+					item.source ? `Source: ${item.source}` : ''
+				]
+					.filter(Boolean)
+					.join('\n')
+			),
+			metadata: {
+				category: repairThaiMojibake(item.category),
+				source_url: item.source
 			}
 		})),
 		...domainAnswers.map((domain) => ({

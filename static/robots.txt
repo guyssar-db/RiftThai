@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /admin/
+Disallow: /chat
+Disallow: /verify-email
 
-Sitemap: https://riftbound-thai.vercel.app/sitemap.xml
+Sitemap: https://riftthai.guyssar.com/sitemap.xml

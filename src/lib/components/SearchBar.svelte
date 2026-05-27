@@ -68,35 +68,35 @@
 	});
 </script>
 
-<div class="sticky top-[4.75rem] z-[60] mb-8 space-y-4 rounded-[1.75rem] bg-slate-950/72 p-2 shadow-2xl shadow-slate-950/45 backdrop-blur-2xl sm:mb-10 sm:space-y-5 sm:p-3">
+<div class="rt-panel rt-topline sticky top-[4.75rem] z-[60] mb-7 space-y-3 rounded-xl p-3 sm:mb-9 sm:p-4">
 	<div class="flex flex-wrap items-center justify-between gap-3 px-1 sm:px-2">
 		<div class="flex items-center gap-3">
-			<div class="h-6 w-1.5 rounded-full bg-cyan-400"></div>
-			<h2 class="text-sm font-black uppercase tracking-[0.3em] text-white">Search</h2>
+			<div class="h-7 w-1 rounded-sm bg-amber-200"></div>
+			<h2 class="text-sm font-black uppercase tracking-[0.22em] text-white">Card Index</h2>
 		</div>
-		<div class="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-cyan-300">
+		<div class="rt-chip">
 			{resultsCount} Cards
 		</div>
 	</div>
 
-	<div class="relative z-[60] rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-3xl">
+	<div class="relative z-[60] rounded-lg border border-white/10 bg-black/20 p-2">
 		<div class="flex flex-col gap-3 lg:flex-row">
 			<div class="flex min-w-0 flex-grow gap-2">
 				<div class="group relative min-w-0 flex-grow">
-					<div class="pointer-events-none absolute inset-y-0 left-5 flex items-center text-slate-500 transition-colors group-focus-within:text-cyan-400 sm:left-6">
+					<div class="pointer-events-none absolute inset-y-0 left-5 flex items-center text-slate-500 transition-colors group-focus-within:text-amber-200 sm:left-6">
 						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
 					</div>
 					<input
 						type="text"
 						placeholder="ค้นหาชื่อการ์ด, รหัส, ความสามารถ หรือแท็ก..."
-						class="w-full rounded-2xl border border-white/5 bg-slate-950/60 py-4 pl-14 pr-4 text-sm font-medium text-white transition-all placeholder:text-slate-600 focus:border-cyan-400/50 focus:outline-none focus:ring-4 focus:ring-cyan-400/10 sm:py-5 sm:pl-16"
+						class="w-full rounded-md border border-white/10 bg-[#080b12]/80 py-4 pl-14 pr-4 text-sm font-medium text-white transition-all placeholder:text-slate-600 focus:border-amber-200/50 focus:outline-none focus:ring-4 focus:ring-amber-200/10 sm:py-5 sm:pl-16"
 						bind:value={searchTerm}
 					/>
 				</div>
 
 				<button
 					type="button"
-					class="relative flex h-auto min-w-14 shrink-0 items-center justify-center rounded-2xl border border-white/5 bg-slate-950/60 px-4 text-white transition-all active:scale-95 focus:border-cyan-400/50 focus:outline-none focus:ring-4 focus:ring-cyan-400/10 lg:hidden"
+					class="relative flex h-auto min-w-14 shrink-0 items-center justify-center rounded-md border border-white/10 bg-[#080b12]/80 px-4 text-white transition-all active:scale-95 focus:border-amber-200/50 focus:outline-none focus:ring-4 focus:ring-amber-200/10 lg:hidden"
 					aria-label="Toggle filters"
 					aria-expanded={filtersOpen}
 					onclick={() => (filtersOpen = !filtersOpen)}
@@ -107,7 +107,7 @@
 						<path d="M10 19h4" />
 					</svg>
 					{#if activeFilterCount > 0}
-						<span class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-cyan-400 px-1 text-[10px] font-black text-slate-950">
+						<span class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-md bg-amber-200 px-1 text-[10px] font-black text-slate-950">
 							{activeFilterCount}
 						</span>
 					{/if}

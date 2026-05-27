@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import cardsData from '$lib/data/riftbound_cards_all.json';
 	import { domainAnswers, type DomainAnswer } from '$lib/data/domainAnswers';
 	import { iconMappings, keywords } from '$lib/data/keywords';
 	import { ruleAnswers, type RuleAnswer } from '$lib/data/ruleAnswers';
+	import { spiritforgedFaq } from '$lib/data/spiritforgedFaq';
 	import type { Card } from '$lib/types/card';
 
 	type Message = {
@@ -44,6 +46,9 @@
 		score: number;
 	};
 
+	let pathname = $derived(page.url.pathname.replace(/\/$/, '') || '/');
+	let isHomePage = $derived(pathname === '/');
+
 	type ScoredDomain = {
 		domain: DomainAnswer;
 		score: number;
@@ -83,6 +88,7 @@
 
 	const cards = cardsData as Card[];
 	const qaAnswers: QAAnswer[] = [
+		...spiritforgedFaq,
 		{
 			category: 'Keywords & Abilities',
 			question: 'สกิล Soaring Scout ที่เขียนว่า DEATHKNELL: Channel 1 rune exhausted ทำงานอย่างไร?',
@@ -253,6 +259,8 @@
 
 	const noAnswerText =
 		'ข้อนี้ผมยังตอบให้มั่นใจไม่ได้จากข้อมูลที่มีในเว็บ เลยไม่อยากเดาให้ผิด ถ้าเป็นเคสเฉพาะการ์ด ให้ลองเช็กข้อความบนการ์ดหรือ official rules เพิ่มอีกชั้น';
+	const aiDisclaimer =
+		'หมายเหตุ: คำตอบจาก AI และข้อมูลใน RiftThai อาจไม่ถูกต้อง 100% สำหรับการตัดสินกฎ การแข่งขัน หรือเคสที่มีผลต่อเกมจริง ควรตรวจสอบ Official Rules และเว็บไซต์ทางการ https://riftbound.com/ ประกอบเสมอ';
 
 	let isOpen = $state(false);
 	let input = $state('');
@@ -267,7 +275,9 @@
 	let messages = $state<Message[]>([
 		{
 			role: 'bot',
-			text: 'ถามกฎ, การ์ด, keyword, phase, Q&A หรือ domain มาได้เลย ผมจะตอบจากข้อมูลที่มีในเว็บและจะไม่เดาถ้าไม่มั่นใจ'
+			text: withAiDisclaimer(
+				'ถามกฎ, การ์ด, keyword, phase, Q&A หรือ domain มาได้เลย ผมจะตอบจากข้อมูลที่มีในเว็บและจะไม่เดาถ้าไม่มั่นใจ'
+			)
 		}
 	]);
 
@@ -726,7 +736,36 @@
 			.join('\n\n');
 	}
 
+	function withAiDisclaimer(answer: string) {
+		if (answer.includes(aiDisclaimer)) return answer;
+		return `${answer}\n\n${aiDisclaimer}`;
+	}
+
+	function getCanonicalQuickAnswer(query: string) {
+		const normalizedQuery = normalize(query);
+		const asksRecycle =
+			normalizedQuery.includes('recycle') || normalizedQuery.includes('รีไซเคิล');
+		const asksOfficial =
+			normalizedQuery.includes('official') ||
+			normalizedQuery.includes('เว็บทางการ') ||
+			normalizedQuery.includes('เว็บ official') ||
+			(normalizedQuery.includes('เว็บ') && normalizedQuery.includes('riftbound'));
+
+		if (asksOfficial) {
+			return 'เว็บ official ของ Riftbound คือ https://riftbound.com/';
+		}
+
+		if (asksRecycle) {
+			return 'Recycle คือ การนำการ์ดรูนหรือการ์ดจากมือ ตามที่มาของการ์ดนั้น ส่งกลับเข้าใต้กอง';
+		}
+
+		return '';
+	}
+
 	function buildAnswer(query: string) {
+		const quickAnswer = getCanonicalQuickAnswer(query);
+		if (quickAnswer) return quickAnswer;
+
 		const matches = findCards(query);
 		if (matches.length > 0 && matches[0].score >= 60) {
 			return `ผมเจอการ์ดที่น่าจะเกี่ยวข้องกับคำถามนี้:\n${formatCards(matches)}`;
@@ -781,6 +820,9 @@
 	}
 
 	async function askRagApi(query: string) {
+		const quickAnswer = getCanonicalQuickAnswer(query);
+		if (quickAnswer) return quickAnswer;
+
 		const response = await fetch('/api/rag/chat', {
 			method: 'POST',
 			headers: {
@@ -832,19 +874,19 @@
 
 		try {
 			const answer = await askRagApi(query);
-			messages = [...messages.slice(0, -1), { role: 'bot', text: answer }];
+			messages = [...messages.slice(0, -1), { role: 'bot', text: withAiDisclaimer(answer) }];
 		} catch (error) {
 			const message = error instanceof Error ? error.message : '';
-			messages = [...messages.slice(0, -1), { role: 'bot', text: message || buildAnswer(query) }];
+			messages = [...messages.slice(0, -1), { role: 'bot', text: withAiDisclaimer(message || buildAnswer(query)) }];
 		} finally {
 			isSending = false;
 		}
 	}
 </script>
 
-<div class="fixed bottom-24 right-4 z-[900] font-sans md:bottom-5 md:right-5">
+<div class="fixed z-[900] font-sans {isHomePage ? 'bottom-24 right-4 md:bottom-5 md:right-5' : 'bottom-5 right-5'}">
 	{#if isOpen}
-		<div class="mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-2xl shadow-black/70 backdrop-blur-2xl">
+		<div class="rt-panel mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-xl">
 			<div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
 				<div>
 					<div class="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">RAG Chat</div>
@@ -863,7 +905,7 @@
 				{/if}
 				<button
 					type="button"
-					class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-slate-300 transition hover:bg-white/5"
+					class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5"
 					aria-label="Close chat"
 					onclick={() => (isOpen = false)}
 				>
@@ -877,6 +919,9 @@
 			<div class="border-b border-white/10 px-4 py-2 text-[11px] font-medium leading-relaxed text-slate-500">
 				ตอบจาก card data, keywords, phases, Q&A, domains และ rule summary ในเว็บ
 			</div>
+			<div class="border-b border-amber-300/15 bg-amber-300/[0.07] px-4 py-2 text-[11px] font-bold leading-relaxed text-amber-100">
+				AI อาจตอบคลาดเคลื่อนได้ ควรตรวจสอบ Official Rules ที่ https://riftbound.com/ ก่อนใช้อ้างอิงจริง
+			</div>
 
 			{#if authLoading}
 				<div class="flex flex-1 items-center justify-center px-4 text-sm font-bold text-slate-500">Loading...</div>
@@ -889,10 +934,10 @@
 							login();
 						}}
 					>
-						<div class="grid grid-cols-2 rounded-xl border border-white/10 bg-slate-900 p-1">
+						<div class="grid grid-cols-2 rounded-lg border border-white/10 bg-slate-900 p-1">
 							<button
 								type="button"
-								class="rounded-lg px-3 py-2 text-xs font-black uppercase tracking-widest {authMode === 'login' ? 'bg-cyan-400 text-slate-950' : 'text-slate-500'}"
+								class="rounded-lg px-3 py-2 text-xs font-black uppercase tracking-widest {authMode === 'login' ? 'bg-cyan-300 text-slate-950' : 'text-slate-500'}"
 								onclick={() => {
 									authMode = 'login';
 									loginError = '';
@@ -903,7 +948,7 @@
 							</button>
 							<button
 								type="button"
-								class="rounded-lg px-3 py-2 text-xs font-black uppercase tracking-widest {authMode === 'register' ? 'bg-cyan-400 text-slate-950' : 'text-slate-500'}"
+								class="rounded-lg px-3 py-2 text-xs font-black uppercase tracking-widest {authMode === 'register' ? 'bg-cyan-300 text-slate-950' : 'text-slate-500'}"
 								onclick={() => {
 									authMode = 'register';
 									loginError = '';
@@ -914,7 +959,7 @@
 							</button>
 						</div>
 						{#if registerSent}
-							<div class="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200">
+							<div class="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200">
 								Check your email and click the verification link before logging in.
 							</div>
 						{/if}
@@ -922,24 +967,24 @@
 							bind:value={loginEmail}
 							type="email"
 							autocomplete="email"
-							class="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+							class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
 							placeholder="Email"
 						/>
 						<input
 							bind:value={loginPassword}
 							type="password"
 							autocomplete="current-password"
-							class="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+							class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
 							placeholder="Password"
 						/>
 						{#if loginError}
-							<div class="rounded-xl border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200">
+							<div class="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200">
 								{loginError}
 							</div>
 						{/if}
 						<button
 							type="submit"
-							class="h-11 w-full rounded-xl bg-cyan-400 text-sm font-black uppercase tracking-widest text-slate-950 transition active:scale-[0.98]"
+							class="h-11 w-full rounded-lg bg-cyan-300 text-sm font-black uppercase tracking-widest text-slate-950 transition active:scale-[0.98]"
 							disabled={authLoading}
 						>
 							{authMode === 'login' ? 'Login' : 'Create account'}
@@ -950,7 +995,7 @@
 				<div class="flex-1 space-y-3 overflow-y-auto p-3">
 				{#each messages as message}
 					<div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-						<div class="max-w-[86%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed {message.role === 'user' ? 'bg-cyan-400 text-slate-950' : 'border border-white/10 bg-white/7 text-slate-100'}">
+						<div class="max-w-[86%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm leading-relaxed {message.role === 'user' ? 'bg-cyan-300 text-slate-950' : 'border border-white/10 bg-white/7 text-slate-100'}">
 							{#if message.role === 'bot'}
 								{@html parseAnswerText(message.text)}
 							{:else}
@@ -971,13 +1016,13 @@
 				>
 					<input
 						bind:value={input}
-						class="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+						class="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
 						disabled={isSending}
 						placeholder="ถามการ์ด กฎ keyword phase..."
 					/>
 					<button
 						type="submit"
-						class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-cyan-400 text-slate-950 transition active:scale-95"
+						class="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950 transition active:scale-95"
 						aria-label="Send"
 						disabled={isSending}
 					>
@@ -994,7 +1039,7 @@
 
 	<button
 		type="button"
-		class="ml-auto grid h-14 w-14 place-items-center rounded-2xl border border-cyan-300/30 bg-cyan-400 text-slate-950 shadow-2xl shadow-cyan-950/40 transition hover:scale-105 active:scale-95"
+		class="ml-auto grid h-14 w-14 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300 text-slate-950 shadow-2xl shadow-cyan-950/40 transition hover:scale-105 active:scale-95"
 		aria-label="Open rule helper"
 		aria-expanded={isOpen}
 		onclick={() => (isOpen = !isOpen)}

@@ -35,7 +35,7 @@
 	<div class="card-grid">
 		{#each Array(12) as _}
 			<div class="flex flex-col gap-4 animate-pulse">
-				<div class="aspect-[744/1039] rounded-2xl border border-white/10 bg-white/5 sm:rounded-3xl"></div>
+				<div class="aspect-[744/1039] rounded-xl border border-white/10 bg-white/5"></div>
 				<div class="space-y-3 px-1">
 					<div class="h-4 w-3/4 rounded-lg bg-white/5"></div>
 					<div class="h-3 w-1/2 rounded-lg bg-white/5"></div>
@@ -48,12 +48,12 @@
 		{#each cards as card}
 			<button
 				type="button"
-				class="group min-w-0 text-left transition duration-300 hover:-translate-y-2 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25"
+				class="group min-w-0 rounded-xl text-left transition duration-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25"
 				onpointerenter={() => preloadPopupImage(card)}
 				onfocus={() => preloadPopupImage(card)}
 				onclick={() => handleOpenPopup(card)}
 			>
-				<div class="relative flex aspect-[744/1039] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/5 bg-slate-900 shadow-[0_16px_36px_rgba(0,0,0,0.42)] transition duration-300 group-hover:border-cyan-400/50 group-hover:shadow-[0_0_36px_rgba(34,211,238,0.12)] group-active:scale-[0.98] sm:rounded-3xl">
+				<div class="relative flex aspect-[744/1039] w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-[0_16px_36px_rgba(0,0,0,0.42)] transition duration-300 group-hover:border-cyan-300/50 group-hover:shadow-[0_0_36px_rgba(45,212,191,0.13)] group-active:scale-[0.98]">
 					{#if card.image_url}
 						{@const imageSources = getCardImageSources(card.image_url, [240, 320, 480, 744])}
 						<img
@@ -71,13 +71,13 @@
 						</div>
 					{/if}
 
-					<div class="absolute inset-x-0 bottom-0 hidden bg-gradient-to-t from-slate-950/90 to-transparent p-4 opacity-0 transition group-hover:opacity-100 sm:block">
-						<div class="rounded-xl bg-cyan-400 py-2 text-center text-xs font-black uppercase tracking-widest text-slate-950">
+					<div class="absolute inset-x-0 bottom-0 hidden bg-gradient-to-t from-slate-950/92 to-transparent p-4 opacity-0 transition group-hover:opacity-100 sm:block">
+						<div class="rounded-lg bg-cyan-300 py-2 text-center text-xs font-black uppercase tracking-widest text-slate-950">
 							View Details
 						</div>
 					</div>
 
-					<div class="absolute right-3 top-3 rounded-full border border-white/10 bg-slate-950/80 px-2.5 py-1 text-[9px] font-black tracking-widest text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
+					<div class="absolute right-3 top-3 rounded-lg border border-white/10 bg-slate-950/80 px-2.5 py-1 text-[9px] font-black tracking-widest text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
 						{card.code}
 					</div>
 

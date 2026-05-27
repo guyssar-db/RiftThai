@@ -2,12 +2,9 @@
 	const updated = 'May 25, 2026';
 </script>
 
-<svelte:head>
-	<title>Privacy Policy - RiftThai</title>
-</svelte:head>
-
-<div class="min-h-dvh bg-slate-950 px-4 py-10 text-slate-100">
-	<article class="prose prose-invert prose-slate mx-auto max-w-4xl prose-headings:font-black prose-a:text-cyan-300">
+<div class="rt-page-shell px-4 py-10 text-slate-100">
+	<div class="mesh-gradient"></div>
+	<article class="rt-panel prose prose-invert prose-slate mx-auto max-w-4xl rounded-xl p-5 prose-headings:font-black prose-a:text-cyan-300 sm:p-8">
 		<a href="/" class="not-prose inline-flex rounded-lg border border-white/10 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300 hover:bg-white/5">Back</a>
 		<p class="mt-8 text-xs font-black uppercase tracking-[0.3em] text-cyan-300">RiftThai</p>
 		<h1>Privacy Policy</h1>
@@ -92,4 +89,3 @@
 		</p>
 	</article>
 </div>
-

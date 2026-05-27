@@ -130,11 +130,11 @@
     ];
 </script>
 
-<div class="space-y-24 py-12 animate-in fade-in duration-1000">
+<div class="space-y-20 py-8 animate-in fade-in duration-1000">
     <!-- Header -->
     <div class="text-center space-y-4">
-        <h2 class="text-5xl sm:text-7xl font-black text-white tracking-tighter uppercase italic">Tactical <span class="text-emerald-500">Flow</span></h2>
-        <p class="text-slate-500 font-bold tracking-[0.3em] uppercase text-xs">Standard Engagement Sequence Protocol</p>
+        <p class="rt-kicker">Turn Structure</p>
+        <h2 class="rt-heading text-4xl uppercase italic sm:text-6xl">Tactical <span class="text-emerald-400">Flow</span></h2>
     </div>
 
     <!-- Flowchart Container -->
@@ -144,8 +144,7 @@
             <!-- Phases 1-4 (Fast Flow) -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
                 {#each phases.slice(0, 4) as phase}
-                    <div class="bg-white/5 border border-white/5 rounded-[2rem] p-8 hover:bg-white/10 transition-all duration-500 group relative overflow-hidden">
-                        <div class="absolute -top-12 -right-12 w-24 h-24 {phase.bg} opacity-5 rounded-full blur-3xl group-hover:opacity-20 transition-opacity"></div>
+                    <div class="rt-panel rounded-xl p-6 transition-all duration-300 hover:bg-white/10">
                         <div class="{phase.color} font-black text-xs tracking-[0.3em] mb-2 uppercase italic">Phase 0{phase.id}</div>
                         <h3 class="text-xl sm:text-2xl font-black text-white mb-6 tracking-tight uppercase">{phase.name}</h3>
                         <ul class="space-y-4">
@@ -171,9 +170,7 @@
 
             <!-- Phase 5: Action HUB -->
             <div class="w-full relative">
-                <div class="absolute -inset-4 bg-emerald-500/5 rounded-[4rem] blur-3xl -z-0"></div>
-                
-                <div class="glass-panel border-emerald-500/20 rounded-[3rem] p-10 relative z-10 shadow-[0_40px_100px_rgba(0,0,0,0.6)]">
+                <div class="rt-panel relative z-10 rounded-xl border-emerald-500/20 p-6 shadow-[0_40px_100px_rgba(0,0,0,0.45)] sm:p-10">
                     <div class="flex flex-col lg:flex-row gap-12">
                         <!-- Main HUB Info -->
                         <div class="lg:w-1/2 space-y-8">
@@ -183,7 +180,7 @@
                             </div>
                             <p class="text-slate-400 text-base italic font-medium leading-relaxed max-w-md">{phases[4].description}</p>
                             
-                            <div class="items-center bg-amber-500/5 border border-amber-500/10 p-6 rounded-[2rem] flex gap-4 backdrop-blur-xl">
+                            <div class="flex items-center gap-4 rounded-lg border border-amber-500/10 bg-amber-500/5 p-5 backdrop-blur-xl">
                                 <span class="text-amber-500 text-2xl font-black">!</span>
                                 <div class="text-sm leading-relaxed text-amber-200/60 font-medium italic">
                                     คู่แข่งสามารถประกาศร่าย [Reaction] เพื่อขัดจังหวะได้ทุกครั้งที่คุณทำการ Action ใดๆ บนสนามรบ
@@ -194,7 +191,7 @@
                         <!-- Actions Grid -->
                         <div class="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {#each phases[4].actions as action}
-                                <div class="bg-slate-950/50 border border-white/5 p-6 rounded-[2rem] hover:border-emerald-500/40 transition-all duration-500 group/item relative overflow-hidden">
+                                <div class="group/item relative overflow-hidden rounded-lg border border-white/5 bg-slate-950/50 p-5 transition-all duration-300 hover:border-emerald-500/40">
                                     <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover/item:opacity-100 transition-opacity"></div>
                                     <div class="text-emerald-400 font-black text-xs uppercase tracking-[0.2em] mb-2">{action.label}</div>
                                     <div class="text-slate-400 text-sm leading-relaxed italic">{action.desc}</div>
@@ -202,7 +199,7 @@
                             {/each}
                             
                             <!-- Showdown Trigger -->
-                            <div class="sm:col-span-2 bg-rose-500/10 border border-rose-500/20 p-8 rounded-[2rem] flex items-center justify-between group/sd cursor-pointer hover:bg-rose-500/20 hover:border-rose-500/40 transition-all duration-500 shadow-xl shadow-rose-500/5">
+                            <div class="group/sd flex cursor-pointer items-center justify-between rounded-lg border border-rose-500/20 bg-rose-500/10 p-6 shadow-xl shadow-rose-500/5 transition-all duration-300 hover:border-rose-500/40 hover:bg-rose-500/20">
                                 <div class="space-y-1">
                                     <div class="text-rose-200/40 text-md font-bold uppercase tracking-tight italic">ประกาศเปิดศึกตัดสินพื้นที่ในเลนทันที</div>
                                 </div>
@@ -221,7 +218,7 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                             {#each combatSteps as step, i}
                                 <div class="relative flex flex-col items-center text-center group/step">
-                                    <div class="w-12 h-12 rounded-2xl bg-slate-950 border border-rose-500/20 flex items-center justify-center text-sm font-black text-rose-500 mb-4 group-hover:scale-110 group-hover:border-rose-500/50 transition-all duration-500 shadow-2xl">
+                                    <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-rose-500/20 bg-slate-950 text-sm font-black text-rose-500 shadow-2xl transition-all duration-300 group-hover:border-rose-500/50">
                                         {i + 1}
                                     </div>
                                     <div class="text-slate-200 text-sm font-black uppercase tracking-tight mb-1 italic">{step.title}</div>
@@ -255,7 +252,7 @@
 
             <!-- Phase 6: End -->
             <div class="w-full max-w-lg group">
-                <div class="bg-white/5 border border-white/5 rounded-[2.5rem] p-10 relative overflow-hidden transition-all duration-700 hover:bg-white/10 hover:border-rose-500/30">
+                <div class="rt-panel relative overflow-hidden rounded-xl p-8 transition-all duration-300 hover:border-rose-500/30 hover:bg-white/10">
                     <div class="text-rose-500 font-black text-xs tracking-[0.4em] mb-2 uppercase italic">Phase 06 — Termination</div>
                     <h3 class="text-4xl font-black text-white mb-6 tracking-tighter uppercase italic">{phases[5].name}</h3>
                     <ul class="space-y-4">
@@ -284,9 +281,9 @@
 
     <!-- Card Speeds Section -->
     <div class="max-w-6xl mx-auto px-6 pt-24 border-t border-white/5">
-        <div class="text-center mb-24 space-y-2">
-            <h3 class="text-4xl font-black text-white italic uppercase tracking-tighter">Engagement <span class="text-cyan-500">Velocities</span></h3>
-            <p class="text-slate-500 font-bold tracking-[0.3em] uppercase text-[10px]">Neural Processing Speeds & Timing Logic</p>
+        <div class="text-center mb-16 space-y-2">
+            <p class="rt-kicker">Timing Windows</p>
+            <h3 class="rt-heading text-3xl uppercase italic sm:text-4xl">Engagement <span class="text-cyan-400">Velocities</span></h3>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16">
@@ -294,20 +291,18 @@
                 <div class="flex flex-col gap-10 group">
                     <!-- Sample Card -->
                     <div class="relative w-full aspect-[744/1039] max-w-[280px] mx-auto perspective-1000">
-                        <div class="absolute -inset-4 bg-cyan-500/10 blur-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-700"></div>
-                        <div class="w-full h-full bg-slate-900 rounded-[2rem] overflow-hidden border border-white/5 shadow-2xl transition-all duration-700 group-hover:scale-110 group-hover:rotate-2 group-hover:border-cyan-500/30">
+                        <div class="h-full w-full overflow-hidden rounded-xl border border-white/5 bg-slate-900 shadow-2xl transition-all duration-300 group-hover:border-cyan-500/30">
                             <img src={speed.sampleImage} alt={speed.name} class="w-full h-full object-cover" />
                             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
                         </div>
                         <!-- Float Tag -->
-                        <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 glass-panel px-6 py-2 rounded-full border border-white/10 shadow-2xl z-20 whitespace-nowrap">
+                        <div class="glass-panel absolute -bottom-4 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/10 px-6 py-2 shadow-2xl">
                             <span class="text-[10px] font-black uppercase tracking-widest text-cyan-400">Sample Card</span>
                         </div>
                     </div>
 
                     <!-- Info Panel -->
-                    <div class="bg-white/5 border border-white/5 rounded-[2.5rem] p-10 hover:bg-white/10 transition-all duration-700 relative overflow-hidden flex-grow">
-                        <div class="absolute -bottom-12 -right-12 w-32 h-32 opacity-5 rounded-full blur-3xl group-hover:opacity-20 transition-opacity" style="background-color: {speed.badgeColor};"></div>
+                    <div class="rt-panel relative flex-grow overflow-hidden rounded-xl p-6 transition-all duration-300 hover:bg-white/10 sm:p-8">
                         <div class="flex flex-col gap-6 mb-8">
                             <span 
                                 class="kw-inline-badge shadow-none scale-125 origin-left w-fit" 
@@ -335,14 +330,14 @@
 
     <!-- Chain Stack Section -->
     <div class="max-w-5xl mx-auto pt-24">
-        <div class="glass-panel border-white/10 rounded-[4rem] p-16 relative overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.4)]">
+        <div class="rt-panel relative overflow-hidden rounded-xl p-6 shadow-[0_40px_100px_rgba(0,0,0,0.4)] sm:p-10 lg:p-14">
             <div class="absolute top-0 right-0 p-12 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-64 h-64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
             </div>
 
             <div class="flex flex-col items-center text-center space-y-6 mb-20 relative z-10">
-                <div class="px-6 py-2 bg-amber-500/10 text-amber-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] border border-amber-500/20">Advanced engagement Protocol</div>
-                <h4 class="text-white text-5xl font-black tracking-tighter uppercase italic">Neural <span class="text-amber-500">Chain</span> Stack</h4>
+                <div class="rounded-lg border border-amber-500/20 bg-amber-500/10 px-6 py-2 text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Advanced engagement Protocol</div>
+                <h4 class="rt-heading text-4xl uppercase italic sm:text-5xl">Neural <span class="text-amber-500">Chain</span> Stack</h4>
                 <p class="text-slate-400 text-sm max-w-md font-medium italic leading-relaxed">เมื่อมีการร่ายเวทหรือใช้สกิลสวนกัน ระบบจะประมวลผลจากจุดศูนย์กลางความขัดแย้งย้อนกลับมา <b>"หลังสุดย้อนกลับมาหน้าสุด"</b> (LIFO Logic)</p>
             </div>
             
@@ -351,7 +346,7 @@
                 <div class="absolute h-px bg-gradient-to-r from-transparent via-white/10 to-transparent left-20 right-20 top-8 hidden lg:block -z-10"></div>
 
                 <div class="flex flex-col items-center gap-4 group cursor-default">
-                    <div class="w-16 h-16 rounded-[1.5rem] bg-slate-950 border border-white/10 flex items-center justify-center text-amber-500 font-black text-xl group-hover:border-amber-500 group-hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] transition-all duration-700 italic">1</div>
+                    <div class="flex h-16 w-16 items-center justify-center rounded-lg border border-white/10 bg-slate-950 text-xl font-black italic text-amber-500 transition-all duration-300 group-hover:border-amber-500 group-hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]">1</div>
                     <div class="space-y-1 text-center">
                         <div class="text-white text-xs font-black uppercase tracking-widest italic">Initialize</div>
                         <div class="text-slate-500 text-[9px] max-w-[120px] font-medium leading-relaxed italic">ผู้เล่นประกาศร่ายการ์ดใบแรกเปิดลำดับ</div>
@@ -363,7 +358,7 @@
                 </div>
 
                 <div class="flex flex-col items-center gap-4 group cursor-default">
-                    <div class="w-16 h-16 rounded-[1.5rem] bg-slate-950 border border-white/10 flex items-center justify-center text-amber-500 font-black text-xl group-hover:border-amber-500 group-hover:shadow-[0_0_20px_rgba(245,158,11,0.2)] transition-all duration-700 italic">2</div>
+                    <div class="flex h-16 w-16 items-center justify-center rounded-lg border border-white/10 bg-slate-950 text-xl font-black italic text-amber-500 transition-all duration-300 group-hover:border-amber-500 group-hover:shadow-[0_0_20px_rgba(245,158,11,0.2)]">2</div>
                     <div class="space-y-1 text-center">
                         <div class="text-white text-xs font-black uppercase tracking-widest italic">Interference</div>
                         <div class="text-slate-500 text-[9px] max-w-[120px] font-medium leading-relaxed italic">คู่แข่งร่าย [Reaction] สวนกลับได้ไม่จำกัด</div>
@@ -375,7 +370,7 @@
                 </div>
 
                 <div class="flex flex-col items-center gap-4 group cursor-default">
-                    <div class="w-16 h-16 rounded-[1.5rem] bg-amber-500 border border-amber-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all duration-700 italic">3</div>
+                    <div class="flex h-16 w-16 items-center justify-center rounded-lg border border-amber-400 bg-amber-500 text-xl font-black italic text-slate-950 shadow-[0_0_30px_rgba(245,158,11,0.4)] transition-all duration-300">3</div>
                     <div class="space-y-1 text-center">
                         <div class="text-amber-500 text-xs font-black uppercase tracking-widest italic">Resolution</div>
                         <div class="text-slate-500 text-[9px] max-w-[120px] font-medium leading-relaxed italic">ประมวลผลจากใบสุดท้ายย้อนกลับมา</div>
@@ -385,12 +380,12 @@
 
             <!-- Additional Rules Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                <div class="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] hover:bg-white/10 transition-all duration-500">
+                <div class="rounded-lg border border-white/10 bg-white/5 p-6 transition-all duration-300 hover:bg-white/10">
                     <div class="text-white font-black text-sm mb-4 flex items-center gap-3 italic tracking-tight">
                         <div class=" border-l-3 border-l-amber-500 p-2"> ต้องจ่าย Energy และทรัพยากรที่จำเป็นทันทีที่ประกาศร่าย (ประกาศเข้า Stack) โดยไม่คำนึงว่าผลลัพธ์สุดท้ายจะโดนยกเลิกหรือไม่</div>
                     </div>
                 </div>
-                <div class="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] hover:bg-white/10 transition-all duration-500">
+                <div class="rounded-lg border border-white/10 bg-white/5 p-6 transition-all duration-300 hover:bg-white/10">
                     <div class="text-white font-black text-sm mb-4 flex items-center gap-3 italic tracking-tight">
                         <div class="border-l-3 border-l-rose-500 p-2"> หากเป้าหมายของการ์ด (ยูนิต/พื้นที่) หายไปหรือถูกทำลายก่อนที่ลำดับความสามารถจะประมวลผล การ์ดใบนั้นจะทำให้เป้าหมายเป็นโมฆะทันที</div>
                     </div>

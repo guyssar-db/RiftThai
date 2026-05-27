@@ -134,7 +134,7 @@
 		{
 			name: 'Order',
 			colorName: 'Yellow',
-			icon: '8bb1b193a8e1adc26ca28e1a21da8d1e2f5d2f72-64x64.png',
+			icon: 'rune_order.svg',
 			accent: 'yellow',
 			summary: 'token, sacrifice, Deathknell, kill effect',
 			bestFor: 'ผู้เล่นที่ชอบสร้างบอร์ดกว้างและแลกทรัพยากรคุ้ม',
@@ -166,23 +166,15 @@
 	};
 </script>
 
-<svelte:head>
-	<title>Domains - RiftThai</title>
-	<meta
-		name="description"
-		content="สรุปจุดเด่นของแต่ละ Domain ใน Riftbound ทั้ง Fury, Calm, Mind, Body, Chaos และ Order"
-	/>
-</svelte:head>
-
-<div class="relative min-h-dvh overflow-x-hidden pb-20 font-sans text-slate-100 selection:bg-cyan-400/30">
+<div class="rt-page-shell pb-20 font-sans text-slate-100 selection:bg-cyan-400/30">
 	<div class="mesh-gradient"></div>
 
-	<nav class="sticky top-0 z-50 border-b border-white/5 bg-slate-950/75 backdrop-blur-2xl">
-		<div class="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-10">
+	<nav class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/82 backdrop-blur-2xl">
+		<div class="rt-container flex items-center justify-between gap-4 py-3">
 			<div class="flex min-w-0 items-center gap-3">
 				<a
 					href="/"
-					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 sm:w-auto sm:px-4"
+					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 sm:w-auto sm:px-4"
 					aria-label="Back to gallery"
 				>
 					<svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -200,23 +192,23 @@
 		</div>
 	</nav>
 
-	<main class="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-16">
+	<main class="rt-container py-8 sm:py-12 lg:py-14">
 		<header class="mb-10 grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.55fr)] lg:items-end">
 			<div class="max-w-4xl">
-				<p class="mb-3 text-[10px] font-black uppercase tracking-[0.35em] text-cyan-300/80">
+				<p class="rt-kicker mb-3">
 					Riftbound Domain Guide
 				</p>
-				<h1 class="text-4xl font-black uppercase italic tracking-tight text-white sm:text-6xl lg:text-7xl">
+				<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl lg:text-7xl">
 					จุดเด่นของแต่ละ <span class="text-cyan-400">Domain</span>
 				</h1>
-				<p class="mt-5 max-w-2xl text-sm font-medium leading-7 text-slate-400 sm:text-base">
+				<p class="rt-copy mt-5 max-w-2xl text-sm sm:text-base">
 					Domain คือแนวทางหลักของการ์ดและเด็คใน Riftbound แต่ละ Domain มี identity,
 					mechanic และจังหวะการเล่นต่างกัน การเลือกคู่ Domain จึงเป็นตัวกำหนดว่าเด็คจะบุกเร็ว,
 					ตั้งรับ, วางแผนยาว หรือแลกทรัพยากรแบบไหน
 				</p>
 			</div>
 
-			<div class="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-2xl">
+			<div class="rt-panel rounded-xl p-5">
 				<div class="mb-4 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
 					Beginner Picks
 				</div>
@@ -230,7 +222,7 @@
 			</div>
 		</header>
 
-		<section class="mb-12 overflow-hidden rounded-2xl border border-white/10 bg-slate-950/55 backdrop-blur-2xl">
+		<section class="rt-panel mb-12 overflow-hidden rounded-xl">
 			<div class="grid grid-cols-[0.75fr_1.25fr] border-b border-white/10 bg-white/5 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 sm:grid-cols-[0.6fr_1.4fr_1fr]">
 				<div>Domain</div>
 				<div>จุดเด่นหลัก</div>
@@ -264,11 +256,11 @@
 			{#each domains as domain}
 				<article
 					id={domain.name.toLowerCase()}
-					class="scroll-mt-24 rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-2xl transition hover:border-cyan-400/20 sm:p-6"
+					class="rt-panel scroll-mt-24 rounded-xl p-5 transition hover:border-cyan-400/20 sm:p-6"
 				>
 					<div class="mb-5 flex items-start justify-between gap-4">
 						<div class="flex min-w-0 items-center gap-4">
-							<div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/10 bg-slate-950/70">
+							<div class="grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-white/10 bg-slate-950/70">
 								<img src="/images/icons/{domain.icon}" class="h-9 w-9 object-contain" alt="{domain.name} rune" />
 							</div>
 							<div class="min-w-0">
@@ -280,14 +272,14 @@
 								</p>
 							</div>
 						</div>
-						<span class="rounded-xl border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest {accentClasses[domain.accent]}">
+						<span class="rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest {accentClasses[domain.accent]}">
 							{domain.colorName}
 						</span>
 					</div>
 
 					<div class="mb-5 flex flex-wrap gap-2">
 						{#each domain.strengths as strength}
-							<span class="rounded-xl border border-white/10 bg-slate-950/60 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-300">
+							<span class="rounded-lg border border-white/10 bg-slate-950/60 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-300">
 								{strength}
 							</span>
 						{/each}
@@ -300,7 +292,7 @@
 					</div>
 
 					<div class="mt-5 grid gap-3 sm:grid-cols-2">
-						<div class="rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.06] p-4">
+						<div class="rounded-lg border border-emerald-400/15 bg-emerald-400/[0.06] p-4">
 							<div class="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-emerald-300">
 								ข้อดี
 							</div>
@@ -314,7 +306,7 @@
 							</ul>
 						</div>
 
-						<div class="rounded-2xl border border-rose-400/15 bg-rose-400/[0.06] p-4">
+						<div class="rounded-lg border border-rose-400/15 bg-rose-400/[0.06] p-4">
 							<div class="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-rose-300">
 								ข้อเสีย
 							</div>
@@ -329,7 +321,7 @@
 						</div>
 					</div>
 
-					<div class="mt-5 rounded-2xl border border-white/10 bg-slate-950/55 p-4 text-xs font-bold leading-relaxed text-slate-400">
+					<div class="mt-5 rounded-lg border border-white/10 bg-slate-950/55 p-4 text-xs font-bold leading-relaxed text-slate-400">
 						<span class="text-white">เหมาะกับ:</span> {domain.bestFor}
 					</div>
 				</article>

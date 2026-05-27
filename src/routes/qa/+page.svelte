@@ -1,7 +1,9 @@
 <script lang="ts">
+    import RuleDisclaimer from '$lib/components/RuleDisclaimer.svelte';
     import SiteMenu from '$lib/components/SiteMenu.svelte';
+    import { spiritforgedFaq } from '$lib/data/spiritforgedFaq';
 
-    interface QAItem { category: string; question: string; answer: string; }
+    interface QAItem { category: string; question: string; answer: string; source?: string; }
     
     const qaData: {
         game_title: string;
@@ -11,6 +13,7 @@
         "game_title": "Riftbound TCG",
         "data_type": "Rules and Mechanics QA",
         "qa_list": [
+            ...spiritforgedFaq,
             {
                 "category": "Keywords & Abilities",
                 "question": "สกิล Soaring Scout ที่เขียนว่า DEATHKNELL: Channel 1 rune exhausted ทำงานอย่างไร",
@@ -216,13 +219,14 @@
     }
 </script>
 
-<div class="min-h-dvh bg-slate-950 text-slate-100 font-sans p-4 sm:p-8">
-    <div class="max-w-4xl mx-auto">
+<div class="rt-page-shell font-sans text-slate-100">
+    <div class="mesh-gradient"></div>
+    <div class="rt-container py-4 sm:py-8">
         <div class="mb-8 flex items-center justify-between gap-4">
             <div class="flex min-w-0 items-center gap-3">
                 <a
                     href="/"
-                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 sm:w-auto sm:px-4"
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 sm:w-auto sm:px-4"
                     aria-label="Back to gallery"
                 >
                     <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -238,24 +242,25 @@
             <SiteMenu active="qa" />
         </div>
 
-        <div class="mb-12 text-center space-y-4">
-            <h1 class="text-3xl sm:text-4xl font-black text-white">{qaData.game_title}</h1>
-            <p class="text-slate-500 font-medium">{qaData.data_type}</p>
+        <div class="mx-auto mb-10 max-w-5xl space-y-4 text-center">
+            <p class="rt-kicker">Rules Q&A</p>
+            <h1 class="rt-heading text-3xl sm:text-5xl">{qaData.game_title}</h1>
+            <p class="rt-copy mx-auto max-w-2xl text-sm">{qaData.data_type}</p>
             
             <div class="relative max-w-lg mx-auto mt-8">
                 <input 
                     type="text" 
                     placeholder="ค้นหาคำถามหรือคำตอบ..." 
                     bind:value={searchTerm}
-                    class="w-full bg-slate-900 border border-slate-800 text-white p-4 rounded-2xl focus:outline-none focus:border-sky-500 transition-all"
+                    class="w-full rounded-lg border border-white/10 bg-slate-950/70 p-4 text-white transition-all placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none focus:ring-4 focus:ring-cyan-400/10"
                 />
             </div>
 
-            <div class="mx-auto mt-4 max-w-3xl rounded-2xl border border-slate-800 bg-slate-900/45 p-2">
+            <div class="rt-panel mx-auto mt-4 max-w-3xl rounded-xl p-2">
                 <div class="flex flex-col gap-2 sm:hidden">
                     <select
                         bind:value={selectedCategory}
-                        class="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs font-black uppercase tracking-widest text-white focus:border-sky-500 focus:outline-none"
+                        class="w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-xs font-black uppercase tracking-widest text-white focus:border-cyan-300 focus:outline-none"
                     >
                         {#each categories as category}
                             <option value={category}>{category === "All" ? "All Categories" : category}</option>
@@ -265,7 +270,7 @@
                     {#if searchTerm || selectedCategory !== "All"}
                         <button
                             type="button"
-                            class="rounded-xl border border-slate-800 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-400 transition active:bg-slate-800"
+                            class="rounded-lg border border-white/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-400 transition active:bg-slate-800"
                             onclick={resetFilters}
                         >
                             Reset
@@ -277,7 +282,7 @@
                     {#each categories as category}
                         <button
                             type="button"
-                            class="rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition {selectedCategory === category ? 'border-sky-400 bg-sky-400 text-slate-950' : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-sky-300'}"
+                            class="rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition {selectedCategory === category ? 'border-cyan-300 bg-cyan-300 text-slate-950' : 'border-white/10 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-cyan-300'}"
                             onclick={() => (selectedCategory = category)}
                         >
                             {category === "All" ? "All" : category}
@@ -287,7 +292,7 @@
                     {#if searchTerm || selectedCategory !== "All"}
                         <button
                             type="button"
-                            class="rounded-xl border border-slate-800 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:text-white"
+                            class="rounded-lg border border-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 transition hover:text-white"
                             onclick={resetFilters}
                         >
                             Reset
@@ -299,20 +304,32 @@
             <div class="text-xs font-black uppercase tracking-widest text-slate-600">
                 {filteredQA.length} / {qaData.qa_list.length} Questions
             </div>
+
+            <RuleDisclaimer compact class="mx-auto max-w-3xl text-left" />
         </div>
 
-        <div class="space-y-6">
+        <div class="mx-auto max-w-5xl space-y-4">
             {#each filteredQA as item}
-                <div class="bg-slate-900/40 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all">
+                <div class="rt-panel rounded-xl p-5 transition-all hover:border-cyan-300/25 sm:p-6">
                     <div class="flex items-center gap-2 mb-3">
-                        <span class="text-[0.6rem] font-black uppercase tracking-widest bg-slate-950 text-sky-500 px-3 py-1 rounded-lg border border-slate-800">
+                        <span class="rounded-lg border border-white/10 bg-slate-950 px-3 py-1 text-[0.6rem] font-black uppercase tracking-widest text-cyan-300">
                             {item.category}
                         </span>
                     </div>
                     <h3 class="text-lg font-bold text-white mb-3">{item.question}</h3>
-                    <p class="text-slate-300 leading-relaxed font-medium bg-slate-950 p-4 rounded-xl border border-slate-900/50">
+                    <p class="rounded-lg border border-white/10 bg-slate-950/60 p-4 font-medium leading-relaxed text-slate-300">
                         {item.answer}
                     </p>
+                    {#if item.source}
+                        <a
+                            class="mt-3 inline-flex text-xs font-black uppercase tracking-widest text-cyan-300 transition hover:text-cyan-100"
+                            href={item.source}
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            Official Source
+                        </a>
+                    {/if}
                 </div>
             {:else}
                 <div class="text-center py-20 text-slate-600">ไม่พบคำถามที่ค้นหา</div>

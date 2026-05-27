@@ -49,7 +49,7 @@
         'Chaos': 'rune_chaos.svg',
         'Mind': 'rune_mind.svg',
         'Body': 'rune_body.svg',
-        'Order': '8bb1b193a8e1adc26ca28e1a21da8d1e2f5d2f72-64x64.png'
+        'Order': 'rune_order.svg'
     };
 
     const rarityStyles: Record<string, string> = {
@@ -71,7 +71,7 @@
         'Exhaust': 'Exhaust: การสั่งให้นอนตะแคงเพื่อใช้งานความสามารถหรือเคลื่อนที่',
         'Buff': 'Buff: การเพิ่มค่าพลังหรือความสามารถให้ยูนิต',
         'Channel': 'Channel: การจั่วเปิดการ์ดรูนใบใหม่จากกองรูน',
-        'Recycle': 'Recycle: การนำการ์ดรูนหรือจากมือตามที่มาของการ์ดนั้นส่งกลับเข้าใต้กอง',
+        'Recycle': 'Recycle: การนำการ์ดรูนหรือการ์ดจากมือตามที่มาของการ์ดนั้นส่งกลับเข้าใต้กอง',
         'Conquer': 'Conquer: ชนะการประจันหน้า (Showdown) และยึดพื้นที่สำเร็จ',
         'Hold': 'Hold: การควบคุมสนามรบต่อเนื่องจนถึง BEGINNING PHASE',
         'Banish': 'Banish: การ์ดที่โดนส่งมาโซนนี้จะหลุดออกนอกวงโคจรของระบบเกมโดยสิ้นเชิง มันจะไม่ได้อยู่บนสนาม ไม่ได้อยู่ในมือ ไม่ได้อยู่ในกองทิ้ง และไม่สามารถใช้การ์ดชุบชีวิตทั่วไปดึงกลับมาใช้งานได้อีกเลย'
@@ -267,7 +267,7 @@
     <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-2xl transition-opacity"></div>
     
     <div 
-        class="relative flex max-h-[96dvh] w-full max-w-6xl flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-900 shadow-[0_40px_100px_rgba(0,0,0,0.8)] transition-all duration-500 animate-in zoom-in-95 sm:max-h-[92dvh] sm:rounded-[2rem] lg:rounded-[2.5rem]" 
+        class="rt-panel relative flex max-h-[96dvh] w-full max-w-6xl flex-col overflow-hidden rounded-xl transition-all duration-500 animate-in zoom-in-95 sm:max-h-[92dvh]" 
         onclick={(e) => { e.stopPropagation(); activeTooltip = ""; }}
     >
         <!-- Mobile Header -->
@@ -283,7 +283,7 @@
 
         <!-- Desktop Close -->
         <button 
-            class="hidden lg:flex absolute top-10 right-10 bg-white/5 hover:bg-rose-500 hover:text-white text-slate-400 w-14 h-14 rounded-[1.5rem] items-center justify-center transition-all duration-500 z-50 group border border-white/5 backdrop-blur-xl" 
+            class="absolute right-5 top-5 z-50 hidden h-12 w-12 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 transition-all duration-300 hover:bg-rose-500 hover:text-white lg:flex" 
             onclick={closePopup}
             aria-label="Close Modal"
         >
@@ -296,7 +296,6 @@
                 <div class="group relative flex items-center justify-center border-b border-white/5 bg-slate-950/40 p-5 sm:p-8 lg:border-b-0 lg:border-r lg:p-10 xl:p-12">
                     <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/5 opacity-50"></div>
                     <div class="relative z-10 w-full max-w-[250px] sm:max-w-[340px] lg:max-w-[380px]">
-                        <div class="absolute -inset-10 bg-cyan-500/10 blur-[80px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                         <picture>
                             {#if modalImageSources.webpSrcset}
                                 <source
@@ -314,7 +313,7 @@
                                 decoding="async"
                                 fetchpriority="high"
                                 draggable="false"
-                                class="pointer-events-none h-auto w-full rounded-2xl border border-white/5 object-contain shadow-[0_30px_70px_rgba(0,0,0,0.6)] transition-transform duration-700 group-hover:scale-[1.02] sm:rounded-3xl lg:group-hover:-rotate-1"
+                                class="pointer-events-none h-auto w-full rounded-xl border border-white/5 object-contain shadow-[0_30px_70px_rgba(0,0,0,0.6)] transition-transform duration-500 group-hover:scale-[1.01]"
                             />
                         </picture>
                     </div>
@@ -324,16 +323,16 @@
                 <div class="space-y-7 bg-slate-900/50 p-5 backdrop-blur-3xl sm:p-8 lg:p-10 xl:p-12">
                     <div class="space-y-5">
                         <div class="flex flex-wrap items-center gap-2.5">
-                            <span class="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">
+                            <span class="rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">
                                 {card.code}
                             </span>
                             {#if card.set_name}
-                                <span class="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                <span class="rounded-lg border border-white/10 bg-white/5 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
                                     {card.set_name}
                                 </span>
                             {/if}
                             <!-- {#if card.rarity}
-                                <span class="rounded-full border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] {rarityClass(card.rarity)}">
+                                <span class="rounded-lg border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] {rarityClass(card.rarity)}">
                                     {card.rarity}
                                 </span>
                             {/if} -->
@@ -434,7 +433,7 @@
                             <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-violet-500 rounded-full group-hover/thai:shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-shadow"></div>
                             <h4 class="mb-4 text-[10px] font-black uppercase italic tracking-[0.32em] text-cyan-500 opacity-70">Localized Intel (TH)</h4>
                             {#if isEditing && canEdit}
-                                <textarea bind:value={tempAbilityTh} class="w-full h-40 bg-slate-950 border border-white/10 p-6 rounded-[2rem] text-white text-sm focus:outline-none focus:border-cyan-500/50 transition-all font-medium leading-relaxed"></textarea>
+                                <textarea bind:value={tempAbilityTh} class="h-40 w-full rounded-lg border border-white/10 bg-slate-950 p-5 text-sm font-medium leading-relaxed text-white transition-all focus:border-cyan-500/50 focus:outline-none"></textarea>
 {:else}
                                 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_mouse_events_have_key_events -->
                                 <div class="break-words text-lg font-black leading-relaxed tracking-tight text-white sm:text-xl"
@@ -448,7 +447,7 @@
                         <div class="relative border-t border-white/5 pt-8 group/en">
                             <h4 class="mb-4 text-[10px] font-black uppercase italic tracking-[0.32em] text-slate-600 opacity-70">Source Transmission (EN)</h4>
                             {#if isEditing && canEdit}
-                                <textarea bind:value={tempAbilityEn} class="w-full h-40 bg-slate-950 border border-white/10 p-6 rounded-[2rem] text-slate-300 text-sm focus:outline-none focus:border-cyan-500/50 transition-all font-medium leading-relaxed italic"></textarea>
+                                <textarea bind:value={tempAbilityEn} class="h-40 w-full rounded-lg border border-white/10 bg-slate-950 p-5 text-sm font-medium italic leading-relaxed text-slate-300 transition-all focus:border-cyan-500/50 focus:outline-none"></textarea>
                             {:else}
                                 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_mouse_events_have_key_events -->
                                 <div class="break-words text-sm font-medium leading-relaxed text-slate-400 sm:text-base lg:text-lg"
