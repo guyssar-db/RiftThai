@@ -115,10 +115,10 @@
 	<div class="fixed inset-x-0 top-0 z-[1000] h-1 overflow-hidden bg-slate-950">
 		<div class="h-full bg-cyan-300 animate-global-loading-bar"></div>
 	</div>
-	<div class="pointer-events-none fixed left-1/2 top-4 z-[1000] -translate-x-1/2 rounded-lg border border-cyan-300/20 bg-slate-950/92 px-4 py-2 shadow-2xl shadow-black/35 backdrop-blur animate-global-loading-toast">
-		<div class="flex items-center gap-3">
-			<div class="h-4 w-4 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"></div>
-			<span class="text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100">Loading</span>
+	<div class="fixed inset-0 z-[990] grid place-items-center bg-black/80 p-4 backdrop-blur-sm animate-global-loading-fade">
+		<div class="rt-panel w-full max-w-xs rounded-xl p-5 text-center shadow-2xl shadow-black/40">
+			<div class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"></div>
+			<div class="mt-4 text-sm font-black uppercase tracking-widest text-white">Loading</div>
 		</div>
 	</div>
 {/if}
@@ -138,14 +138,12 @@
 		}
 	}
 
-	@keyframes global-loading-toast {
+	@keyframes global-loading-fade {
 		0% {
 			opacity: 0;
-			transform: translate(-50%, -0.5rem);
 		}
 		100% {
 			opacity: 1;
-			transform: translate(-50%, 0);
 		}
 	}
 
@@ -153,7 +151,7 @@
 		animation: global-loading-bar 1.3s infinite linear;
 	}
 
-	.animate-global-loading-toast {
-		animation: global-loading-toast 0.16s ease-out both;
+	.animate-global-loading-fade {
+		animation: global-loading-fade 0.16s ease-out both;
 	}
 </style>
