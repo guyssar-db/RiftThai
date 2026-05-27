@@ -2,7 +2,6 @@
 	import { page } from '$app/state';
 	import './layout.css';
 	import FakeAiChat from '$lib/components/FakeAiChat.svelte';
-	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
 
@@ -11,7 +10,8 @@
 	const defaultTitle = 'RiftThai - ฐานข้อมูลการ์ด Riftbound ภาษาไทย';
 	const defaultDescription =
 		'RiftThai ฐานข้อมูลการ์ด Riftbound ภาษาไทย ค้นหาการ์ด อ่านคำแปล คีย์เวิร์ด กฎ และคำอธิบาย Domain สำหรับผู้เล่นไทย';
-	const shareImage = `${siteUrl}/images/icons/a088ae851d94b5c34aa4900e8ccb4cc103144dce-354x354.png`;
+	const logoPath = '/logo.png';
+	const shareImage = `${siteUrl}${logoPath}`;
 
 	const publicPages: Record<string, { title: string; description: string }> = {
 		'/': {
@@ -91,7 +91,8 @@
 	/>
 	<meta name="robots" content={robots} />
 	<link rel="canonical" href={canonicalUrl} />
-	<link rel="icon" href={favicon} />
+	<link rel="icon" type="image/png" href={logoPath} />
+	<link rel="apple-touch-icon" href={logoPath} />
 	<meta property="og:site_name" content={siteName} />
 	<meta property="og:type" content="website" />
 	<meta property="og:locale" content="th_TH" />
@@ -99,6 +100,8 @@
 	<meta property="og:title" content={seo.title} />
 	<meta property="og:description" content={seo.description} />
 	<meta property="og:image" content={shareImage} />
+	<meta property="og:image:width" content="1254" />
+	<meta property="og:image:height" content="1254" />
 	<meta property="og:image:alt" content="RiftThai - Riftbound Thai card database" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:url" content={canonicalUrl} />
