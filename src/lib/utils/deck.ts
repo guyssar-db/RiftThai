@@ -47,7 +47,15 @@ export const maxChampionCards = 1;
 export const maxRuneCards = 12;
 
 const mainExclusions = new Set(['Rune', 'Battlefield', 'Legend']);
-const tokenCardNames = new Set(['Bird', 'Recruit (DE)', 'Recruit (NX)', 'Recruit (ZN)', 'Reflection', 'Sprite']);
+const tokenCardNames = new Set([
+	'Bird',
+	'Recruit (DE)',
+	'Recruit (NX)',
+	'Recruit (ZN)',
+	'Reflection',
+	'Sand Soldier',
+	'Sprite'
+]);
 
 export function normalizeDeck(entries: DeckEntry[]) {
 	const byCode = new Map<string, number>();

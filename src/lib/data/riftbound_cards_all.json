@@ -20954,5 +20954,30 @@
             "Icathia",
             "Zilean"
         ]
+    },
+    {
+        "code": "SFD-T02",
+        "name_en": "Sand Soldier",
+        "name_th": "Sand Soldier",
+        "ability_en": "",
+        "ability_th": "",
+        "image_url": "/images/SFD-T02.webp",
+        "type": "Unit",
+        "energy": null,
+        "power": {
+            "label": "Might",
+            "value": {
+                "id": 1,
+                "label": "2"
+            }
+        },
+        "rarity": "Common",
+        "domains": [
+            "Colorless"
+        ],
+        "set_name": "Spiritforged",
+        "tags": [
+            "Shurima"
+        ]
     }
 ]

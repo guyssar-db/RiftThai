@@ -130,7 +130,7 @@
 				if (!selectedLegend && !isLegendCard(card)) return false;
 				if (selectedLegend && isLegendCard(card)) return false;
 				if (selectedLegend && !isCardAllowedForLegend(card, selectedLegend)) return false;
-				if (zoneFilter === 'unit' && card.type !== 'Unit') return false;
+				if (zoneFilter === 'unit' && (card.type !== 'Unit' || isTokenCard(card))) return false;
 				if (zoneFilter === 'spell' && card.type !== 'Spell') return false;
 				if (zoneFilter === 'gear' && card.type !== 'Gear') return false;
 				// if (zoneFilter === 'main' && !isMainDeckCard(card)) return false;
