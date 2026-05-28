@@ -2,15 +2,36 @@ import { json } from '@sveltejs/kit';
 
 import { buildRagChunks } from '$lib/server/rag/documents';
 import { embedText } from '$lib/server/rag/gemini';
-import { countRagChunksForDocument, replaceRagChunks, upsertRagDocument } from '$lib/server/rag/supabase';
+import {
+	countRagChunksForDocument,
+	replaceRagChunks,
+	upsertRagDocument
+} from '$lib/server/rag/supabase';
 import { getRagConfig } from '$lib/server/rag/config';
+import {
+	checkRateLimit,
+	clientKey,
+	constantTimeEquals,
+	rateLimitHeaders
+} from '$lib/server/security';
 
-export const POST = async ({ request }) => {
+export const POST = async ({ request, getClientAddress }) => {
 	const config = getRagConfig();
 	const authHeader = request.headers.get('authorization') ?? '';
 	const providedSecret = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '';
 
-	if (!config.ingestSecret || providedSecret !== config.ingestSecret) {
+	const rateLimit = checkRateLimit(`rag-ingest:${clientKey(getClientAddress())}`, {
+		windowMs: 60_000,
+		max: 10
+	});
+	if (rateLimit.limited) {
+		return json(
+			{ error: 'too many ingest requests. please try again later' },
+			{ status: 429, headers: rateLimitHeaders(rateLimit.retryAfter) }
+		);
+	}
+
+	if (!config.ingestSecret || !constantTimeEquals(providedSecret, config.ingestSecret)) {
 		return json({ error: 'unauthorized' }, { status: 401 });
 	}
 

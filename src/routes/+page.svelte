@@ -19,7 +19,7 @@
 	let loadedSearchTerm = $state<string | null>(null);
 	let selectedSet = $state('All');
 	let selectedType = $state('All');
-	let selectedDomain = $state('All');
+	let selectedDomains = $state<string[]>([]);
 	let viewMode = $state<'gallery' | 'keywords' | 'phases'>('gallery');
 	let currentPage = $state(1);
 	let selectedPopupCard = $state<Card | null>(null);
@@ -56,7 +56,8 @@
 			const matchesSet = selectedSet === 'All' || card.set_name === selectedSet;
 			const matchesType = selectedType === 'All' || card.type === selectedType;
 			const matchesDomain =
-				selectedDomain === 'All' || (card.domains ?? []).includes(selectedDomain);
+				selectedDomains.length === 0 ||
+				selectedDomains.some((domain) => (card.domains ?? []).includes(domain));
 
 			return matchesSearch && matchesSet && matchesType && matchesDomain;
 		})
@@ -79,7 +80,7 @@
 		searchTerm;
 		selectedSet;
 		selectedType;
-		selectedDomain;
+		selectedDomains;
 		currentPage = 1;
 	});
 
@@ -87,7 +88,7 @@
 		searchTerm;
 		selectedSet;
 		selectedType;
-		selectedDomain;
+		selectedDomains;
 		isFiltering = true;
 		const timer = setTimeout(() => (isFiltering = false), 220);
 		return () => clearTimeout(timer);
@@ -154,7 +155,7 @@
 
 	{#if !!$navigating}
 		<div class="fixed inset-x-0 top-0 z-[200] h-1 overflow-hidden bg-slate-950">
-			<div class="h-full bg-cyan-400 animate-loading-bar"></div>
+			<div class="animate-loading-bar h-full bg-cyan-400"></div>
 		</div>
 	{/if}
 
@@ -162,31 +163,44 @@
 
 	<main class="rt-container py-5 sm:py-8 lg:py-10">
 		{#if viewMode === 'gallery'}
-			<header class="rt-panel rt-topline mb-5 grid overflow-hidden rounded-xl lg:mb-7 lg:grid-cols-[minmax(0,1fr)_360px]">
+			<header
+				class="rt-panel rt-topline mb-5 grid overflow-hidden rounded-xl lg:mb-7 lg:grid-cols-[minmax(0,1fr)_360px]"
+			>
 				<div class="rt-rule-line min-w-0 p-5 pl-7 sm:p-7 sm:pl-9 lg:p-8 lg:pl-10">
-					<p class="rt-kicker mb-3">
-						Riftbound Thai Card Database
-					</p>
+					<p class="rt-kicker mb-3">Riftbound Thai Card Database</p>
 					<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl lg:text-7xl">
 						Rift<span class="text-cyan-300">Thai</span>
 					</h1>
 					<p class="rt-copy mt-4 max-w-2xl text-sm sm:text-base">
-						ค้นการ์ด, อ่านคำแปลไทย, กรองตาม set, type และ domain ได้จากหน้าเดียว พร้อมข้อมูล keyword และลำดับ phase สำหรับใช้เตรียมเล่น
+						ค้นการ์ด, อ่านคำแปลไทย, กรองตาม set, type และ domain ได้จากหน้าเดียว พร้อมข้อมูล keyword
+						และลำดับ phase สำหรับใช้เตรียมเล่น
 					</p>
 				</div>
 
-				<div class="border-t border-white/10 bg-slate-950/32 p-4 lg:border-l lg:border-t-0">
+				<div class="border-t border-white/10 bg-slate-950/32 p-4 lg:border-t-0 lg:border-l">
 					<div class="grid h-full grid-cols-3 gap-2 text-center lg:grid-cols-1">
-						<div class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3">
-							<div class="text-[10px] font-black uppercase tracking-widest text-slate-500">Cards</div>
+						<div
+							class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3"
+						>
+							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Cards
+							</div>
 							<div class="text-xl font-black text-white">{cards.length}</div>
 						</div>
-						<div class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3">
-							<div class="text-[10px] font-black uppercase tracking-widest text-slate-500">Sets</div>
+						<div
+							class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3"
+						>
+							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Sets
+							</div>
 							<div class="text-xl font-black text-white">{sets.length - 1}</div>
 						</div>
-						<div class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3">
-							<div class="text-[10px] font-black uppercase tracking-widest text-slate-500">Domains</div>
+						<div
+							class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3"
+						>
+							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Domains
+							</div>
 							<div class="text-xl font-black text-white">{domains.length - 2}</div>
 						</div>
 					</div>
@@ -197,7 +211,7 @@
 				bind:searchTerm
 				bind:selectedSet
 				bind:selectedType
-				bind:selectedDomain
+				bind:selectedDomains
 				{sets}
 				{types}
 				{domains}
@@ -222,7 +236,7 @@
 </div>
 
 {#if selectedPopupCard}
-	<CardModal card={selectedPopupCard} closePopup={closePopup} canEdit={data.canEdit} />
+	<CardModal card={selectedPopupCard} {closePopup} canEdit={data.canEdit} />
 {/if}
 
 <style>

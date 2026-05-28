@@ -51,7 +51,9 @@ export async function embedText(text: string) {
 	const values = data.embedding?.values;
 	if (!values?.length) throw new Error('Gemini embedding response is empty');
 	if (values.length !== RAG_EMBEDDING_DIMENSIONS) {
-		throw new Error(`Gemini embedding returned ${values.length} dimensions, expected ${RAG_EMBEDDING_DIMENSIONS}`);
+		throw new Error(
+			`Gemini embedding returned ${values.length} dimensions, expected ${RAG_EMBEDDING_DIMENSIONS}`
+		);
 	}
 
 	return values;
@@ -73,7 +75,8 @@ export async function generateRagAnswer(question: string, context: string) {
 				system_instruction: {
 					parts: {
 						text:
-							'คุณคือผู้ช่วยตอบคำถาม Riftbound ภาษาไทย ตอบจาก CONTEXT เท่านั้น ถ้าข้อมูลไม่พอให้บอกว่าไม่พบข้อมูลพอในฐานความรู้ ห้ามเดา ruling ใหม่เอง และให้ตอบกระชับ อ่านง่าย'
+							'คุณคือผู้ช่วยตอบคำถาม Riftbound ภาษาไทย ตอบจาก CONTEXT เท่านั้น ถ้าข้อมูลไม่พอให้บอกว่าไม่พบข้อมูลพอในฐานความรู้ ห้ามเดา ruling ใหม่เอง และให้ตอบกระชับ อ่านง่าย' +
+							' ตอบเฉพาะสิ่งที่ผู้ใช้ถาม ถ้าถามประเภท/โดเมน/cost/ชุด/rarity/tag ให้ตอบแค่ค่านั้น ไม่ต้องสรุปข้อมูลการ์ดทั้งใบ'
 					}
 				},
 				contents: [
@@ -87,7 +90,7 @@ export async function generateRagAnswer(question: string, context: string) {
 									'',
 									`QUESTION: ${question}`,
 									'',
-									'ตอบเป็นภาษาไทย และปิดท้ายด้วยหัวข้อ "อ้างอิง" แบบ bullet จาก source ที่ใช้'
+									'ตอบเป็นภาษาไทย ตอบเฉพาะคำถาม ไม่ต้องใส่ข้อมูลเสริมที่ไม่ได้ถาม และปิดท้ายด้วยหัวข้อ "อ้างอิง" แบบ bullet จาก source ที่ใช้'
 								].join('\n')
 							}
 						]
@@ -105,9 +108,11 @@ export async function generateRagAnswer(question: string, context: string) {
 	const data = (await response.json()) as GeminiGenerateResponse;
 	if (!response.ok) throw new Error(data.error?.message ?? 'Gemini generation failed');
 
-	const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('').trim();
+	const text = data.candidates?.[0]?.content?.parts
+		?.map((part) => part.text ?? '')
+		.join('')
+		.trim();
 	if (!text) throw new Error('Gemini generation response is empty');
 
 	return text;
 }
-

@@ -174,7 +174,8 @@
 		{
 			category: 'Rules & Tokens',
 			question: 'Token ที่ไม่มี cost ถือว่า cost เท่าไหร่?',
-			answer: 'สำหรับเอฟเฟกต์ที่ต้องดู cost ของ token ข้อมูลในเว็บสรุปให้ถือว่า token มี cost เป็น 0'
+			answer:
+				'สำหรับเอฟเฟกต์ที่ต้องดู cost ของ token ข้อมูลในเว็บสรุปให้ถือว่า token มี cost เป็น 0'
 		},
 		{
 			category: 'Rules & Multiplayer',
@@ -262,14 +263,19 @@
 
 	let cachedLocalCards: Card[] | null = null;
 	let isOpen = $state(false);
+	let authModalOpen = $state(false);
 	let input = $state('');
 	let isSending = $state(false);
 	let authLoading = $state(true);
 	let loginEmail = $state('');
 	let loginPassword = $state('');
+	let confirmPassword = $state('');
 	let loginError = $state('');
 	let authMode = $state<'login' | 'register'>('login');
 	let registerSent = $state(false);
+	let acceptedTerms = $state(false);
+	let showPassword = $state(false);
+	let showConfirmPassword = $state(false);
 	let currentUser = $state<AuthSession['user']>(null);
 	let messages = $state<Message[]>([
 		{
@@ -282,6 +288,20 @@
 
 	onMount(() => {
 		void loadSession();
+		const openAuth = (event: Event) => {
+			const detail = (event as CustomEvent<{ mode?: 'login' | 'register' }>).detail;
+			authMode = detail?.mode === 'register' ? 'register' : 'login';
+			loginError = '';
+			registerSent = false;
+			authModalOpen = true;
+		};
+		const syncAuth = () => void loadSession();
+		window.addEventListener('riftthai-open-auth', openAuth);
+		window.addEventListener('riftthai-auth-changed', syncAuth);
+		return () => {
+			window.removeEventListener('riftthai-open-auth', openAuth);
+			window.removeEventListener('riftthai-auth-changed', syncAuth);
+		};
 	});
 
 	async function loadSession() {
@@ -290,6 +310,7 @@
 			const response = await fetch('/api/auth/session');
 			const data = (await response.json()) as AuthSession;
 			currentUser = data.user;
+			if (!currentUser) isOpen = false;
 		} finally {
 			authLoading = false;
 		}
@@ -297,28 +318,45 @@
 
 	async function login() {
 		loginError = '';
+		if (authMode === 'register') {
+			if (loginPassword !== confirmPassword) {
+				loginError = 'Passwords do not match';
+				return;
+			}
+			if (!acceptedTerms) {
+				loginError = 'Please accept the Privacy Policy and Terms of Use';
+				return;
+			}
+		}
 		authLoading = true;
 		try {
-			const response = await fetch(authMode === 'login' ? '/api/auth/login' : '/api/auth/register', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					email: loginEmail,
-					password: loginPassword
-				})
-			});
+			const response = await fetch(
+				authMode === 'login' ? '/api/auth/login' : '/api/auth/register',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						email: loginEmail,
+						password: loginPassword
+					})
+				}
+			);
 			const data = (await response.json()) as AuthSession;
 			if (!response.ok) throw new Error(data.error || 'Auth failed');
 			if (authMode === 'register') {
 				registerSent = true;
 				loginPassword = '';
+				confirmPassword = '';
 				return;
 			}
 			if (!data.user) throw new Error(data.error || 'Login failed');
 			currentUser = data.user;
+			authModalOpen = false;
+			window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 			loginPassword = '';
+			confirmPassword = '';
 		} catch (error) {
 			loginError = error instanceof Error ? error.message : 'Auth failed';
 		} finally {
@@ -329,6 +367,9 @@
 	async function logout() {
 		await fetch('/api/auth/logout', { method: 'POST' });
 		currentUser = null;
+		isOpen = false;
+		authModalOpen = false;
+		window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 	}
 
 	function normalize(value: unknown) {
@@ -353,7 +394,9 @@
 		let processed = escapeHtml(text);
 		const placeholders: Record<string, string> = {};
 		let placeholderIndex = 0;
-		const domainIconByName = new Map(domainAnswers.map((domain) => [domain.name.toLowerCase(), domain.iconToken]));
+		const domainIconByName = new Map(
+			domainAnswers.map((domain) => [domain.name.toLowerCase(), domain.iconToken])
+		);
 
 		function addPlaceholder(html: string) {
 			const id = `___CHAT_PH_${placeholderIndex++}___`;
@@ -362,7 +405,9 @@
 		}
 
 		processed = processed.replace(/\[c\]/gi, () =>
-			addPlaceholder('<img src="/images/icons/rune_rainbow.svg" class="chat-inline-icon" title="Any Rune" alt="Any Rune" />')
+			addPlaceholder(
+				'<img src="/images/icons/rune_rainbow.svg" class="chat-inline-icon" title="Any Rune" alt="Any Rune" />'
+			)
 		);
 
 		processed = processed.replace(/:rb_energy_(\d+):/g, (_match, value) =>
@@ -392,7 +437,9 @@
 			const displayText = String(keywordText).trim();
 			const keywordName = displayText.split(' ')[0];
 			const keyword = keywords.find(
-				(item) => normalize(item.name_en) === normalize(keywordName) || normalize(item.name_th) === normalize(keywordName)
+				(item) =>
+					normalize(item.name_en) === normalize(keywordName) ||
+					normalize(item.name_th) === normalize(keywordName)
 			);
 			if (!keyword) return `[${displayText}]`;
 			const color = keyword?.color ?? '#107361';
@@ -413,6 +460,42 @@
 		return normalize(value)
 			.split(' ')
 			.filter((token) => token.length >= 2 && !stopWords.has(token));
+	}
+
+	const cardSearchStopWords = new Set([
+		...stopWords,
+		'เป็น',
+		'อะไร',
+		'ไหม',
+		'มั้ย',
+		'ใบนี้',
+		'การ์ด',
+		'ประเภท',
+		'ชนิด',
+		'สี',
+		'ชุด',
+		'ค่าร่าย',
+		'ทำอะไร',
+		'สกิล',
+		'ความสามารถ',
+		'type',
+		'domain',
+		'cost',
+		'energy',
+		'set',
+		'rarity',
+		'tag',
+		'tags',
+		'ability',
+		'power',
+		'might',
+		'card'
+	]);
+
+	function getCardTokens(value: string) {
+		return normalize(value)
+			.split(' ')
+			.filter((token) => token.length >= 2 && !cardSearchStopWords.has(token));
 	}
 
 	function scoreText(text: string, tokens: string[]) {
@@ -464,7 +547,12 @@
 	function findDomains(query: string) {
 		const tokens = getTokens(query);
 		const normalizedQuery = normalize(query);
-		if (tokens.length === 0 && !normalizedQuery.includes('domain') && !normalizedQuery.includes('โดเมน')) return [];
+		if (
+			tokens.length === 0 &&
+			!normalizedQuery.includes('domain') &&
+			!normalizedQuery.includes('โดเมน')
+		)
+			return [];
 
 		return domainAnswers
 			.map((domain): ScoredDomain => ({ domain, score: scoreDomain(domain, query, tokens) }))
@@ -510,7 +598,10 @@
 
 	function scoreQA(item: QAAnswer, query: string, tokens: string[]) {
 		const normalizedQuery = normalize(query);
-		let score = scoreText(item.question, tokens) * 3 + scoreText(item.answer, tokens) + scoreText(item.category, tokens);
+		let score =
+			scoreText(item.question, tokens) * 3 +
+			scoreText(item.answer, tokens) +
+			scoreText(item.category, tokens);
 
 		if (normalize(item.question).includes(normalizedQuery)) score += 35;
 		if (normalize(item.answer).includes(normalizedQuery)) score += 18;
@@ -548,7 +639,12 @@
 	function findPhases(query: string): ScoredPhase[] {
 		const tokens = getTokens(query);
 		const normalizedQuery = normalize(query);
-		if (tokens.length === 0 && !normalizedQuery.includes('phase') && !normalizedQuery.includes('เฟส')) return [];
+		if (
+			tokens.length === 0 &&
+			!normalizedQuery.includes('phase') &&
+			!normalizedQuery.includes('เฟส')
+		)
+			return [];
 
 		return phaseAnswers
 			.map((phase): ScoredPhase => ({ phase, score: scorePhase(phase, query, tokens) }))
@@ -600,11 +696,16 @@
 
 		if (allKeywordMatches.length !== 1) return false;
 
-		const keywordTerms = [result.keyword.name_en, result.keyword.name_th, result.keyword.id].map(normalize);
+		const keywordTerms = [result.keyword.name_en, result.keyword.name_th, result.keyword.id].map(
+			normalize
+		);
 		const hasKeyword = keywordTerms.some((term) => term && normalizedQuery.includes(term));
 		const isShortQuestion = getTokens(query).length <= 3;
 
-		return hasKeyword && (isShortQuestion || normalizedQuery.includes('คือ') || normalizedQuery.includes('keyword'));
+		return (
+			hasKeyword &&
+			(isShortQuestion || normalizedQuery.includes('คือ') || normalizedQuery.includes('keyword'))
+		);
 	}
 
 	async function getLocalCards() {
@@ -631,27 +732,71 @@
 		);
 	}
 
-	function scoreCard(card: Card, queryTokens: string[]) {
-		const name = normalize(`${card.name_en} ${card.name_th}`);
+	function getCardNameTerms(card: Card) {
+		return [card.name_en, card.name_th]
+			.map((name) => normalize(name))
+			.filter((name, index, names) => name && names.indexOf(name) === index);
+	}
+
+	function scoreCard(card: Card, query: string, queryTokens: string[]) {
+		const normalizedQuery = normalize(query);
+		const names = getCardNameTerms(card);
 		const code = normalize(card.code);
 		const allText = searchableCardText(card);
 
-		return queryTokens.reduce((score, token) => {
-			if (name === token || code === token) return score + 100;
-			if (name.includes(token)) return score + 30;
-			if (code.includes(token)) return score + 24;
-			if (allText.includes(token)) return score + 5;
-			return score;
-		}, 0);
+		let score = 0;
+
+		for (const name of names) {
+			if (normalizedQuery === name) score += 260;
+			else if (normalizedQuery.includes(name)) score += 220;
+			else if (name.includes(normalizedQuery) && normalizedQuery.length >= 5) score += 90;
+		}
+
+		if (code) {
+			if (normalizedQuery === code) score += 260;
+			else if (normalizedQuery.includes(code)) score += 220;
+		}
+
+		return queryTokens.reduce((currentScore, token) => {
+			if (names.some((name) => name === token) || code === token) return currentScore + 100;
+			if (names.some((name) => name.includes(token))) return currentScore + 38;
+			if (code.includes(token)) return currentScore + 30;
+			if (token.length >= 4 && allText.includes(token)) return currentScore + 4;
+			return currentScore;
+		}, score);
+	}
+
+	function findExactCard(cards: Card[], query: string) {
+		const normalizedQuery = normalize(query);
+		return cards.find((card) => {
+			const names = getCardNameTerms(card);
+			const code = normalize(card.code);
+			return (
+				names.some((name) => normalizedQuery === name || normalizedQuery.includes(name)) ||
+				(code && normalizedQuery.includes(code))
+			);
+		});
 	}
 
 	async function findCards(query: string): Promise<ScoredCard[]> {
-		const tokens = getTokens(query);
-		if (tokens.length === 0) return [];
+		const tokens = getCardTokens(query);
 		const cards = await getLocalCards();
+		const exactCard = findExactCard(cards, query);
+		if (exactCard) {
+			const related = cards
+				.filter((card) => card.code !== exactCard.code)
+				.map((card) => ({ card, score: scoreCard(card, query, tokens) }))
+				.filter((result) => result.score > 0)
+				.sort((a, b) => b.score - a.score)
+				.slice(0, 2);
+
+			return [{ card: exactCard, score: 300 }, ...related];
+		}
+
+		if (tokens.length === 0) return [];
 
 		return cards
-			.map((card) => ({ card, score: scoreCard(card, tokens) }))
+			.map((card) => ({ card, score: scoreCard(card, query, tokens) }))
 			.filter((result) => result.score > 0)
 			.sort((a, b) => b.score - a.score)
 			.slice(0, 3);
@@ -701,7 +846,9 @@
 				'ใน Riftbound มี domain หลัก 6 แบบ: Fury, Calm, Mind, Body, Chaos และ Order.',
 				'',
 				'สรุปแบบเร็ว ๆ คือ:',
-				...domainAnswers.map((domain) => `${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`)
+				...domainAnswers.map(
+					(domain) => `${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`
+				)
 			].join('\n');
 		}
 
@@ -743,6 +890,130 @@
 			.join('\n\n');
 	}
 
+	function getCardFieldIntents(query: string) {
+		const normalizedQuery = normalize(query);
+		const hasAny = (terms: string[]) =>
+			terms.some((term) => normalizedQuery.includes(normalize(term)));
+
+		return {
+			type: hasAny(['type', 'ประเภท', 'ชนิด']),
+			domain: hasAny(['domain', 'โดเมน', 'สีอะไร', 'สีไหน']),
+			cost: hasAny(['cost', 'energy', 'ค่าร่าย']),
+			set: hasAny(['set', 'ชุด', 'อยู่ชุด']),
+			rarity: hasAny(['rarity', 'ระดับความหายาก', 'หายาก']),
+			tags: hasAny(['tag', 'tags', 'แท็ก', 'เผ่า']),
+			ability: hasAny(['ability', 'ทำอะไร', 'ความสามารถ', 'สกิล']),
+			power: hasAny(['power', 'might', 'พลัง', 'ไมท์']),
+			code: hasAny(['code', 'รหัส', 'เลขการ์ด']),
+			image: hasAny(['image', 'รูป', 'ภาพ'])
+		};
+	}
+
+	function isCardIdentityQuestion(query: string) {
+		const normalizedQuery = normalize(query);
+		return ['คืออะไร', 'เป็นการ์ดอะไร', 'ข้อมูล', 'รายละเอียด', 'what is'].some((term) =>
+			normalizedQuery.includes(normalize(term))
+		);
+	}
+
+	function cardValue(value: unknown, fallback = 'ไม่ระบุ') {
+		if (value === null || value === undefined || value === '') return fallback;
+		return String(value);
+	}
+
+	function cardPowerLabel(card: Card) {
+		return card.power?.label ?? card.power?.value?.label ?? null;
+	}
+
+	function formatCardSummary(card: Card) {
+		const domains = card.domains?.length ? card.domains.join(', ') : 'ไม่ระบุ';
+		const cost = card.energy ?? 0;
+		const tags = card.tags?.length ? ` | tags: ${card.tags.join(', ')}` : '';
+		return `${card.name_en} คือการ์ด ${cardValue(card.type)} | cost ${cost} | domain ${domains} | set ${cardValue(card.set_name)}${tags}`;
+	}
+
+	function formatCardFieldAnswer(query: string, card: Card) {
+		const intents = getCardFieldIntents(query);
+		const cardName = card.name_en || card.name_th || card.code;
+		const domains = card.domains?.length ? card.domains.join(', ') : 'ไม่ระบุ';
+		const tags = card.tags?.length ? card.tags.join(', ') : 'ไม่ระบุ';
+		const ability = card.ability_th || card.ability_en || 'ไม่มี ability text';
+		const image = card.image_url || 'ไม่ระบุ';
+		const power = cardPowerLabel(card) ?? 'ไม่ระบุ';
+		const answers: string[] = [];
+
+		if (intents.type) answers.push(`${cardName} เป็นประเภท ${cardValue(card.type)}`);
+		if (intents.domain) answers.push(`${cardName} มี domain ${domains}`);
+		if (intents.cost) answers.push(`${cardName} มี cost ${card.energy ?? 0}`);
+		if (intents.set) answers.push(`${cardName} อยู่ในชุด ${cardValue(card.set_name)}`);
+		if (intents.rarity) answers.push(`${cardName} มี rarity ${cardValue(card.rarity)}`);
+		if (intents.tags) answers.push(`${cardName} มี tag ${tags}`);
+		if (intents.power) answers.push(`${cardName} มี power/might ${power}`);
+		if (intents.code) answers.push(`${cardName} มีรหัสการ์ด ${cardValue(card.code)}`);
+		if (intents.image) answers.push(`${cardName} รูปการ์ด: ${image}`);
+		if (intents.ability) answers.push(`${cardName}: ${ability}`);
+
+		if (answers.length > 0) return answers.join('\n');
+		if (isCardIdentityQuestion(query)) return formatCardSummary(card);
+
+		return '';
+	}
+
+	function formatFocusedCardAnswer(query: string, matches: ScoredCard[]) {
+		const best = matches[0];
+		if (!best || best.score < 80) return '';
+
+		const preciseAnswer = formatCardFieldAnswer(query, best.card);
+		if (preciseAnswer) return preciseAnswer;
+
+		const card = best.card;
+		const normalizedQuery = normalize(query);
+		const cardName = card.name_en || card.name_th || card.code;
+		const asksType =
+			normalizedQuery.includes('type') ||
+			normalizedQuery.includes('ประเภท') ||
+			normalizedQuery.includes('ชนิด');
+		const asksDomain =
+			normalizedQuery.includes('domain') ||
+			normalizedQuery.includes('โดเมน') ||
+			normalizedQuery.includes('สีอะไร') ||
+			normalizedQuery.includes('สีไหน');
+		const asksCost =
+			normalizedQuery.includes('cost') ||
+			normalizedQuery.includes('energy') ||
+			normalizedQuery.includes('ค่าร่าย');
+		const asksSet =
+			normalizedQuery.includes('set') ||
+			normalizedQuery.includes('ชุด') ||
+			normalizedQuery.includes('อยู่ชุด');
+		const asksRarity =
+			normalizedQuery.includes('rarity') ||
+			normalizedQuery.includes('ระดับความหายาก') ||
+			normalizedQuery.includes('หายาก');
+		const asksTags =
+			normalizedQuery.includes('tag') ||
+			normalizedQuery.includes('แท็ก') ||
+			normalizedQuery.includes('เผ่า');
+		const asksAbility =
+			normalizedQuery.includes('ability') ||
+			normalizedQuery.includes('ทำอะไร') ||
+			normalizedQuery.includes('ความสามารถ') ||
+			normalizedQuery.includes('สกิล');
+
+		if (asksType) return `${cardName} เป็นประเภท ${card.type || 'ไม่ระบุ'}`;
+		if (asksDomain)
+			return `${cardName} มี domain ${card.domains?.length ? card.domains.join(', ') : 'ไม่ระบุ'}`;
+		if (asksCost) return `${cardName} มี cost ${card.energy ?? 0}`;
+		if (asksSet) return `${cardName} อยู่ในชุด ${card.set_name || 'ไม่ระบุ'}`;
+		if (asksRarity) return `${cardName} มี rarity ${card.rarity || 'ไม่ระบุ'}`;
+		if (asksTags)
+			return `${cardName} มี tag ${card.tags?.length ? card.tags.join(', ') : 'ไม่ระบุ'}`;
+		if (asksAbility)
+			return `${cardName}: ${card.ability_th || card.ability_en || 'ไม่มี ability text'}`;
+
+		return '';
+	}
+
 	function withAiDisclaimer(answer: string) {
 		if (answer.includes(aiDisclaimer)) return answer;
 		return `${answer}\n\n${aiDisclaimer}`;
@@ -750,8 +1021,7 @@
 
 	function getCanonicalQuickAnswer(query: string) {
 		const normalizedQuery = normalize(query);
-		const asksRecycle =
-			normalizedQuery.includes('recycle') || normalizedQuery.includes('รีไซเคิล');
+		const asksRecycle = normalizedQuery.includes('recycle') || normalizedQuery.includes('รีไซเคิล');
 		const asksOfficial =
 			normalizedQuery.includes('official') ||
 			normalizedQuery.includes('เว็บทางการ') ||
@@ -774,6 +1044,9 @@
 		if (quickAnswer) return quickAnswer;
 
 		const matches = await findCards(query);
+		const focusedCardAnswer = formatFocusedCardAnswer(query, matches);
+		if (focusedCardAnswer) return focusedCardAnswer;
+
 		if (matches.length > 0 && matches[0].score >= 60) {
 			return `ผมเจอการ์ดที่น่าจะเกี่ยวข้องกับคำถามนี้:\n${formatCards(matches)}`;
 		}
@@ -814,7 +1087,10 @@
 					'ใน Riftbound มี domain หลัก 6 แบบ: Fury, Calm, Mind, Body, Chaos และ Order.',
 					'',
 					'สรุปแบบเร็ว ๆ คือ:',
-					...domainAnswers.map((domain) => `${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`)
+					...domainAnswers.map(
+						(domain) =>
+							`${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`
+					)
 				].join('\n');
 			}
 		}
@@ -829,6 +1105,14 @@
 	async function askRagApi(query: string) {
 		const quickAnswer = getCanonicalQuickAnswer(query);
 		if (quickAnswer) return quickAnswer;
+
+		const localCardMatches = await findCards(query);
+		const focusedCardAnswer = formatFocusedCardAnswer(query, localCardMatches);
+		if (focusedCardAnswer) return focusedCardAnswer;
+
+		if (localCardMatches.length > 0 && localCardMatches[0].score >= 60) {
+			return `ผมเจอการ์ดในฐานข้อมูลเว็บ:\n${formatCards(localCardMatches)}`;
+		}
 
 		const response = await fetch('/api/rag/chat', {
 			method: 'POST',
@@ -859,10 +1143,12 @@
 			throw new Error(data.error || 'RAG API is not ready');
 		}
 
-		const alreadyHasSources = data.answer.includes('อ้างอิง') || data.answer.includes('แหล่งข้อมูล');
-		const sources = !alreadyHasSources && data.sources?.length
-			? `\n\nแหล่งข้อมูล:\n${data.sources.map((source) => `- ${source.title}`).join('\n')}`
-			: '';
+		const alreadyHasSources =
+			data.answer.includes('อ้างอิง') || data.answer.includes('แหล่งข้อมูล');
+		const sources =
+			!alreadyHasSources && data.sources?.length
+				? `\n\nแหล่งข้อมูล:\n${data.sources.map((source) => `- ${source.title}`).join('\n')}`
+				: '';
 
 		return `${data.answer}${sources}`;
 	}
@@ -877,7 +1163,11 @@
 
 		input = '';
 		isSending = true;
-		messages = [...messages, { role: 'user', text: query }, { role: 'bot', text: 'กำลังค้นข้อมูล...' }];
+		messages = [
+			...messages,
+			{ role: 'user', text: query },
+			{ role: 'bot', text: 'กำลังค้นข้อมูล...' }
+		];
 
 		try {
 			const answer = await askRagApi(query);
@@ -885,186 +1175,393 @@
 		} catch (error) {
 			const message = error instanceof Error ? error.message : '';
 			const fallbackAnswer = message || (await buildAnswer(query));
-			messages = [...messages.slice(0, -1), { role: 'bot', text: withAiDisclaimer(fallbackAnswer) }];
+			messages = [
+				...messages.slice(0, -1),
+				{ role: 'bot', text: withAiDisclaimer(fallbackAnswer) }
+			];
 		} finally {
 			isSending = false;
 		}
 	}
 </script>
 
-<div class="fixed z-[900] font-sans {isHomePage ? 'bottom-24 right-4 md:bottom-5 md:right-5' : 'bottom-5 right-5'}">
-	{#if isOpen}
-		<div class="rt-panel mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-xl">
+{#if authModalOpen}
+	<div class="fixed inset-0 z-[950] grid place-items-center bg-black/75 p-4 backdrop-blur-sm">
+		<div class="rt-panel w-full max-w-sm overflow-hidden rounded-xl shadow-2xl shadow-black/50">
 			<div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
 				<div>
-					<div class="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">RAG Chat</div>
-					<div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-						{currentUser ? (currentUser.isAdmin ? 'Admin access' : `${currentUser.usage.used}/${currentUser.usage.limit} today`) : 'Login required'}
+					<div class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">Account</div>
+					<div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+						{authMode === 'login' ? 'Login to use RAG chat' : 'Create RiftThai account'}
 					</div>
 				</div>
-				{#if currentUser}
-					<button
-						type="button"
-						class="rounded-lg border border-white/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-400 transition hover:bg-white/5"
-						onclick={logout}
-					>
-						Logout
-					</button>
-				{/if}
 				<button
 					type="button"
 					class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5"
-					aria-label="Close chat"
-					onclick={() => (isOpen = false)}
+					aria-label="Close account popup"
+					onclick={() => (authModalOpen = false)}
 				>
-					<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+					<svg
+						class="h-4 w-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3"
+						stroke-linecap="round"
+					>
 						<path d="M6 18 18 6" />
 						<path d="m6 6 12 12" />
 					</svg>
 				</button>
 			</div>
 
-			<div class="border-b border-white/10 px-4 py-2 text-[11px] font-medium leading-relaxed text-slate-500">
+			<form
+				class="space-y-3 p-4"
+				onsubmit={(event) => {
+					event.preventDefault();
+					login();
+				}}
+			>
+				<div class="grid grid-cols-2 rounded-lg border border-white/10 bg-slate-900 p-1">
+					<button
+						type="button"
+						class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
+						'login'
+							? 'bg-cyan-300 text-slate-950'
+							: 'text-slate-500'}"
+						onclick={() => {
+							authMode = 'login';
+							loginError = '';
+							registerSent = false;
+							confirmPassword = '';
+						}}
+					>
+						Login
+					</button>
+					<button
+						type="button"
+						class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
+						'register'
+							? 'bg-cyan-300 text-slate-950'
+							: 'text-slate-500'}"
+						onclick={() => {
+							authMode = 'register';
+							loginError = '';
+							registerSent = false;
+						}}
+					>
+						Register
+					</button>
+				</div>
+				{#if registerSent}
+					<div
+						class="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200"
+					>
+						Check your email and click the verification link before logging in.
+					</div>
+				{/if}
+				<input
+					bind:value={loginEmail}
+					type="email"
+					autocomplete="email"
+					class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+					placeholder="Email"
+				/>
+				<div class="relative">
+					<input
+						bind:value={loginPassword}
+						type={showPassword ? 'text' : 'password'}
+						autocomplete={authMode === 'register' ? 'new-password' : 'current-password'}
+						class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 pr-12 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+						placeholder="Password"
+					/>
+					<button
+						type="button"
+						class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200"
+						aria-label={showPassword ? 'Hide password' : 'Show password'}
+						title={showPassword ? 'Hide password' : 'Show password'}
+						onclick={() => (showPassword = !showPassword)}
+					>
+						{#if showPassword}
+							<svg
+								class="h-4 w-4"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M3 3l18 18" />
+								<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+								<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
+								<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
+							</svg>
+						{:else}
+							<svg
+								class="h-4 w-4"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.6"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+								<circle cx="12" cy="12" r="3" />
+							</svg>
+						{/if}
+					</button>
+				</div>
+				{#if authMode === 'register'}
+					<div class="relative">
+						<input
+							bind:value={confirmPassword}
+							type={showConfirmPassword ? 'text' : 'password'}
+							autocomplete="new-password"
+							class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 pr-12 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+							placeholder="Confirm password"
+						/>
+						<button
+							type="button"
+							class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200"
+							aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+							title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+							onclick={() => (showConfirmPassword = !showConfirmPassword)}
+						>
+							{#if showConfirmPassword}
+								<svg
+									class="h-4 w-4"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2.6"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<path d="M3 3l18 18" />
+									<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+									<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
+									<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
+								</svg>
+							{:else}
+								<svg
+									class="h-4 w-4"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2.6"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+									<circle cx="12" cy="12" r="3" />
+								</svg>
+							{/if}
+						</button>
+					</div>
+				{/if}
+				{#if loginError}
+					<div
+						class="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200"
+					>
+						{loginError}
+					</div>
+				{/if}
+				<button
+					type="submit"
+					class="h-11 w-full rounded-lg bg-cyan-300 text-sm font-black tracking-widest text-slate-950 uppercase transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+					disabled={authLoading ||
+						(authMode === 'register' &&
+							(!acceptedTerms || !loginPassword || loginPassword !== confirmPassword))}
+				>
+					{authMode === 'login' ? 'Login' : 'Create account'}
+				</button>
+				{#if authMode === 'register'}
+					<label
+						class="flex gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-[11px] leading-relaxed font-semibold text-slate-500"
+					>
+						<input
+							bind:checked={acceptedTerms}
+							type="checkbox"
+							class="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-slate-950 accent-cyan-300"
+							required
+						/>
+						<span>
+							ฉันอ่านและยอมรับ
+							<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy"
+								>นโยบายความเป็นส่วนตัว</a
+							>
+							และ
+							<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms"
+								>ข้อกำหนดการใช้งาน</a
+							>
+						</span>
+					</label>
+				{/if}
+			</form>
+		</div>
+	</div>
+{/if}
+
+<div
+	class="fixed z-[900] font-sans {isHomePage
+		? 'right-4 bottom-24 md:right-5 md:bottom-5'
+		: 'right-5 bottom-5'}"
+>
+	{#if isOpen}
+		<div
+			class="rt-panel mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-xl"
+		>
+			<div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
+				<div>
+					<div class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">RAG Chat</div>
+					<div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+						{currentUser
+							? currentUser.isAdmin
+								? 'Admin access'
+								: `${currentUser.usage.used}/${currentUser.usage.limit} today`
+							: 'Login required'}
+					</div>
+				</div>
+				<button
+					type="button"
+					class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5"
+					aria-label="Close chat"
+					onclick={() => (isOpen = false)}
+				>
+					<svg
+						class="h-4 w-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3"
+						stroke-linecap="round"
+					>
+						<path d="M6 18 18 6" />
+						<path d="m6 6 12 12" />
+					</svg>
+				</button>
+			</div>
+
+			<div
+				class="border-b border-white/10 px-4 py-2 text-[11px] leading-relaxed font-medium text-slate-500"
+			>
 				ตอบจาก card data, keywords, phases, Q&A, domains และ rule summary ในเว็บ
 			</div>
-			<div class="border-b border-amber-300/15 bg-amber-300/[0.07] px-4 py-2 text-[11px] font-bold leading-relaxed text-amber-100">
-				AI อาจตอบคลาดเคลื่อนได้ ควรตรวจสอบ Official Rules ที่ https://riftbound.com/ ก่อนใช้อ้างอิงจริง
+			<div
+				class="border-b border-amber-300/15 bg-amber-300/[0.07] px-4 py-2 text-[11px] leading-relaxed font-bold text-amber-100"
+			>
+				AI อาจตอบคลาดเคลื่อนได้ ควรตรวจสอบ Official Rules ที่ https://riftbound.com/
+				ก่อนใช้อ้างอิงจริง
 			</div>
 
 			{#if authLoading}
-				<div class="flex flex-1 items-center justify-center px-4 text-sm font-bold text-slate-500">Loading...</div>
+				<div class="flex flex-1 items-center justify-center px-4 text-sm font-bold text-slate-500">
+					Loading...
+				</div>
 			{:else if !currentUser}
-				<div class="flex-1 p-4">
-					<form
-						class="space-y-3"
-						onsubmit={(event) => {
-							event.preventDefault();
-							login();
-						}}
-					>
-						<div class="grid grid-cols-2 rounded-lg border border-white/10 bg-slate-900 p-1">
-							<button
-								type="button"
-								class="rounded-lg px-3 py-2 text-xs font-black uppercase tracking-widest {authMode === 'login' ? 'bg-cyan-300 text-slate-950' : 'text-slate-500'}"
-								onclick={() => {
-									authMode = 'login';
-									loginError = '';
-									registerSent = false;
-								}}
-							>
-								Login
-							</button>
-							<button
-								type="button"
-								class="rounded-lg px-3 py-2 text-xs font-black uppercase tracking-widest {authMode === 'register' ? 'bg-cyan-300 text-slate-950' : 'text-slate-500'}"
-								onclick={() => {
-									authMode = 'register';
-									loginError = '';
-									registerSent = false;
-								}}
-							>
-								Register
-							</button>
-						</div>
-						{#if registerSent}
-							<div class="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200">
-								Check your email and click the verification link before logging in.
-							</div>
-						{/if}
-						<input
-							bind:value={loginEmail}
-							type="email"
-							autocomplete="email"
-							class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-							placeholder="Email"
-						/>
-						<input
-							bind:value={loginPassword}
-							type="password"
-							autocomplete="current-password"
-							class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-							placeholder="Password"
-						/>
-						{#if loginError}
-							<div class="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200">
-								{loginError}
-							</div>
-						{/if}
-						<button
-							type="submit"
-							class="h-11 w-full rounded-lg bg-cyan-300 text-sm font-black uppercase tracking-widest text-slate-950 transition active:scale-[0.98]"
-							disabled={authLoading}
-						>
-							{authMode === 'login' ? 'Login' : 'Create account'}
-						</button>
-					</form>
+				<div
+					class="flex flex-1 items-center justify-center px-4 text-center text-sm leading-relaxed font-bold text-slate-500"
+				>
+					Session ended. Use Login from the navigation to continue.
 				</div>
 			{:else}
 				<div class="flex-1 space-y-3 overflow-y-auto p-3">
-				{#each messages as message}
-					<div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-						<div class="max-w-[86%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm leading-relaxed {message.role === 'user' ? 'bg-cyan-300 text-slate-950' : 'border border-white/10 bg-white/7 text-slate-100'}">
-							{#if message.role === 'bot'}
-								{@html parseAnswerText(message.text)}
-							{:else}
-								{message.text}
-							{/if}
+					{#each messages as message}
+						<div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
+							<div
+								class="max-w-[86%] rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap {message.role ===
+								'user'
+									? 'bg-cyan-300 text-slate-950'
+									: 'border border-white/10 bg-white/7 text-slate-100'}"
+							>
+								{#if message.role === 'bot'}
+									{@html parseAnswerText(message.text)}
+								{:else}
+									{message.text}
+								{/if}
+							</div>
 						</div>
-					</div>
-				{/each}
-			</div>
+					{/each}
+				</div>
 
 				<div class="border-t border-white/10 p-3">
-				<form
-					class="flex gap-2"
-					onsubmit={(event) => {
-						event.preventDefault();
-						sendMessage();
-					}}
-				>
-					<input
-						bind:value={input}
-						class="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-						disabled={isSending}
-						placeholder="ถามการ์ด กฎ keyword phase..."
-					/>
-					<button
-						type="submit"
-						class="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950 transition active:scale-95"
-						aria-label="Send"
-						disabled={isSending}
+					<form
+						class="flex gap-2"
+						onsubmit={(event) => {
+							event.preventDefault();
+							sendMessage();
+						}}
 					>
-						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-							<path d="m22 2-7 20-4-9-9-4Z" />
-							<path d="M22 2 11 13" />
-						</svg>
-					</button>
-				</form>
+						<input
+							bind:value={input}
+							class="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+							disabled={isSending}
+							placeholder="ถามการ์ด กฎ keyword phase..."
+						/>
+						<button
+							type="submit"
+							class="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950 transition active:scale-95"
+							aria-label="Send"
+							disabled={isSending}
+						>
+							<svg
+								class="h-5 w-5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="3"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="m22 2-7 20-4-9-9-4Z" />
+								<path d="M22 2 11 13" />
+							</svg>
+						</button>
+					</form>
 				</div>
 			{/if}
 		</div>
 	{/if}
 
-	<button
-		type="button"
-		class="ml-auto grid h-14 w-14 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300 text-slate-950 shadow-2xl shadow-cyan-950/40 transition hover:scale-105 active:scale-95"
-		aria-label="Open rule helper"
-		aria-expanded={isOpen}
-		onclick={() => (isOpen = !isOpen)}
-	>
-		{#if isOpen}
-			<svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
-				<path d="M6 18 18 6" />
-				<path d="m6 6 12 12" />
-			</svg>
-		{:else}
-			<svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
-				<path d="M8 9h8" />
-				<path d="M8 13h5" />
-			</svg>
-		{/if}
-	</button>
+	{#if currentUser}
+		<button
+			type="button"
+			class="ml-auto grid h-14 w-14 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300 text-slate-950 shadow-2xl shadow-cyan-950/40 transition hover:scale-105 active:scale-95"
+			aria-label="Open rule helper"
+			aria-expanded={isOpen}
+			onclick={() => (isOpen = !isOpen)}
+		>
+			{#if isOpen}
+				<svg
+					class="h-6 w-6"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="3"
+					stroke-linecap="round"
+				>
+					<path d="M6 18 18 6" />
+					<path d="m6 6 12 12" />
+				</svg>
+			{:else}
+				<svg
+					class="h-6 w-6"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="3"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+					<path d="M8 9h8" />
+					<path d="M8 13h5" />
+				</svg>
+			{/if}
+		</button>
+	{/if}
 </div>
 
 <style>

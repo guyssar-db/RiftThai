@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { navigating } from '$app/stores';
+	import { onMount } from 'svelte';
 	import './layout.css';
 	import FakeAiChat from '$lib/components/FakeAiChat.svelte';
+	import PcSideNav from '$lib/components/PcSideNav.svelte';
 
 	let { children } = $props();
 
@@ -31,11 +33,13 @@
 		},
 		'/privacy': {
 			title: 'Privacy Policy - RiftThai',
-			description: 'นโยบายความเป็นส่วนตัวของ RiftThai สำหรับบัญชีผู้ใช้ แชต ระบบ AI และข้อมูลการใช้งาน'
+			description:
+				'นโยบายความเป็นส่วนตัวของ RiftThai สำหรับบัญชีผู้ใช้ แชต ระบบ AI และข้อมูลการใช้งาน'
 		},
 		'/terms': {
 			title: 'Terms of Use - RiftThai',
-			description: 'ข้อกำหนดการใช้งาน RiftThai ฐานข้อมูลการ์ดและแหล่งข้อมูลชุมชนสำหรับ Riftbound ภาษาไทย'
+			description:
+				'ข้อกำหนดการใช้งาน RiftThai ฐานข้อมูลการ์ดและแหล่งข้อมูลชุมชนสำหรับ Riftbound ภาษาไทย'
 		}
 	};
 
@@ -44,6 +48,19 @@
 	let canonicalPath = $derived(publicPages[pathname] ? pathname : '/');
 	let canonicalUrl = $derived(`${siteUrl}${canonicalPath === '/' ? '/' : canonicalPath}`);
 	let robots = $derived(publicPages[pathname] ? 'index, follow' : 'noindex, nofollow');
+	let sideNavActive: 'cards' | 'domains' | 'qa' | 'deck' | '' = $derived(
+		pathname === '/'
+			? 'cards'
+			: pathname.startsWith('/domains')
+				? 'domains'
+				: pathname.startsWith('/qa')
+					? 'qa'
+					: pathname.startsWith('/deck')
+						? 'deck'
+						: ''
+	);
+	let cookieChoice = $state<'accepted' | 'declined' | null>(null);
+	let showCookieNotice = $derived(cookieChoice === null);
 	let structuredData = $derived(
 		JSON.stringify({
 			'@context': 'https://schema.org',
@@ -81,6 +98,18 @@
 			]
 		})
 	);
+
+	onMount(() => {
+		const savedChoice = localStorage.getItem('riftthai_cookie_choice');
+		if (savedChoice === 'accepted' || savedChoice === 'declined') {
+			cookieChoice = savedChoice;
+		}
+	});
+
+	function setCookieChoice(choice: 'accepted' | 'declined') {
+		cookieChoice = choice;
+		localStorage.setItem('riftthai_cookie_choice', choice);
+	}
 </script>
 
 <svelte:head>
@@ -109,7 +138,10 @@
 	<meta name="twitter:title" content={seo.title} />
 	<meta name="twitter:description" content={seo.description} />
 	<meta name="twitter:image" content={shareImage} />
-	<script type="application/ld+json">{structuredData}</script>
+	<!-- prettier-ignore -->
+	<script type="application/ld+json">
+{structuredData}
+	</script>
 </svelte:head>
 {#if !!$navigating}
 	<div class="fixed inset-x-0 top-0 z-[1000] h-1 overflow-hidden bg-slate-950">
@@ -122,7 +154,48 @@
 		</div>
 	</div>
 {/if}
-{@render children()}
+<div
+	class="min-h-dvh lg:grid lg:grid-cols-[5.75rem_minmax(0,1fr)] xl:grid-cols-[12rem_minmax(0,1fr)]"
+>
+	<PcSideNav active={sideNavActive} />
+	<div class="min-w-0">
+		{@render children()}
+	</div>
+</div>
+{#if showCookieNotice}
+	<div
+		class="fixed bottom-3 left-1/2 z-[940] w-[calc(100vw-1.5rem)] max-w-2xl -translate-x-1/2 rounded-xl border border-cyan-300/20 bg-slate-950/95 p-3 text-slate-100 shadow-2xl shadow-black/50 backdrop-blur sm:bottom-4"
+	>
+		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<p class="text-xs leading-relaxed font-semibold text-slate-300">
+				เราใช้คุกกี้ที่จำเป็นเพื่อให้ระบบบัญชีและการใช้งานเว็บทำงานได้ดีขึ้น อ่าน
+				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy"
+					>นโยบายความเป็นส่วนตัว</a
+				>
+				และ
+				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms"
+					>ข้อกำหนดการใช้งาน</a
+				>
+			</p>
+			<div class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+				<button
+					type="button"
+					class="h-10 rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-200 uppercase transition hover:bg-white/10"
+					onclick={() => setCookieChoice('declined')}
+				>
+					ยกเลิก
+				</button>
+				<button
+					type="button"
+					class="h-10 rounded-lg bg-cyan-300 px-4 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-200"
+					onclick={() => setCookieChoice('accepted')}
+				>
+					ตกลง
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
 <FakeAiChat />
 
 <style>

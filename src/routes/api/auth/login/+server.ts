@@ -3,8 +3,9 @@ import { json } from '@sveltejs/kit';
 import { loginUser, setSessionCookie } from '$lib/server/auth';
 import { getChatUsage } from '$lib/server/rag/supabase';
 import { getRagConfig } from '$lib/server/rag/config';
+import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/security';
 
-export const POST = async ({ request, cookies }) => {
+export const POST = async ({ request, cookies, getClientAddress }) => {
 	try {
 		const body = (await request.json()) as { email?: unknown; password?: unknown };
 		const email = typeof body.email === 'string' ? body.email.trim() : '';
@@ -12,6 +13,20 @@ export const POST = async ({ request, cookies }) => {
 
 		if (!email || !password) {
 			return json({ error: 'email and password are required' }, { status: 400 });
+		}
+
+		const ip = clientKey(getClientAddress());
+		const ipLimit = checkRateLimit(`login:ip:${ip}`, { windowMs: 10 * 60_000, max: 30 });
+		const accountLimit = checkRateLimit(`login:account:${ip}:${clientKey(email)}`, {
+			windowMs: 10 * 60_000,
+			max: 8
+		});
+		const limited = ipLimit.limited ? ipLimit : accountLimit;
+		if (limited.limited) {
+			return json(
+				{ error: 'too many login attempts. please try again later' },
+				{ status: 429, headers: rateLimitHeaders(limited.retryAfter) }
+			);
 		}
 
 		const session = await loginUser(email, password);
@@ -33,6 +48,9 @@ export const POST = async ({ request, cookies }) => {
 			}
 		});
 	} catch (error) {
-		return json({ error: error instanceof Error ? error.message : 'Login failed' }, { status: 401 });
+		return json(
+			{ error: error instanceof Error ? error.message : 'Login failed' },
+			{ status: 401 }
+		);
 	}
 };

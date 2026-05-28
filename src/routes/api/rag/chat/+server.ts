@@ -4,12 +4,24 @@ import { getAuthenticatedUser } from '$lib/server/auth';
 import { answerRagQuestion } from '$lib/server/rag/chat';
 import { getRagConfig } from '$lib/server/rag/config';
 import { getChatUsage, incrementChatUsage } from '$lib/server/rag/supabase';
+import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/security';
 
-export const POST = async ({ request, cookies }) => {
+export const POST = async ({ request, cookies, getClientAddress }) => {
 	try {
 		const user = await getAuthenticatedUser(cookies);
 		if (!user) {
 			return json({ error: 'login required' }, { status: 401 });
+		}
+
+		const ip = clientKey(getClientAddress());
+		const ipLimit = checkRateLimit(`rag-chat:ip:${ip}`, { windowMs: 60_000, max: 30 });
+		const userLimit = checkRateLimit(`rag-chat:user:${user.id}`, { windowMs: 60_000, max: 12 });
+		const limited = ipLimit.limited ? ipLimit : userLimit;
+		if (limited.limited) {
+			return json(
+				{ error: 'too many chat requests. please try again later' },
+				{ status: 429, headers: rateLimitHeaders(limited.retryAfter) }
+			);
 		}
 
 		const config = getRagConfig();

@@ -1,20 +1,38 @@
 import { json } from '@sveltejs/kit';
 
 import { registerUser } from '$lib/server/auth';
+import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/security';
 
-export const POST = async ({ request }) => {
+const registerResponse = {
+	ok: true,
+	message: 'If the account can be created, a verification email will be sent'
+};
+
+export const POST = async ({ request, getClientAddress }) => {
 	try {
 		const body = (await request.json()) as { email?: unknown; password?: unknown };
 		const email = typeof body.email === 'string' ? body.email.trim() : '';
 		const password = typeof body.password === 'string' ? body.password : '';
 
-		await registerUser(email, password);
-		return json({
-			ok: true,
-			message: 'Verification email sent'
+		const ip = clientKey(getClientAddress());
+		const ipLimit = checkRateLimit(`register:ip:${ip}`, { windowMs: 60 * 60_000, max: 5 });
+		const emailLimit = checkRateLimit(`register:email:${clientKey(email)}`, {
+			windowMs: 60 * 60_000,
+			max: 3
 		});
+		const limited = ipLimit.limited ? ipLimit : emailLimit;
+		if (limited.limited) {
+			return json(
+				{ error: 'too many registration attempts. please try again later' },
+				{ status: 429, headers: rateLimitHeaders(limited.retryAfter) }
+			);
+		}
+
+		await registerUser(email, password);
+		return json(registerResponse);
 	} catch (error) {
-		return json({ error: error instanceof Error ? error.message : 'Register failed' }, { status: 400 });
+		const message = error instanceof Error ? error.message : '';
+		if (message === 'Email already exists') return json(registerResponse);
+		return json({ error: message || 'Register failed' }, { status: 400 });
 	}
 };
-

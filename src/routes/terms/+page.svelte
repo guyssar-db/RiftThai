@@ -1,80 +1,98 @@
 <script lang="ts">
-	const updated = 'May 25, 2026';
+	const updated = '28 พฤษภาคม 2026';
 </script>
 
 <div class="rt-page-shell px-4 py-10 text-slate-100">
 	<div class="mesh-gradient"></div>
-	<article class="rt-panel prose prose-invert prose-slate mx-auto max-w-4xl rounded-xl p-5 prose-headings:font-black prose-a:text-cyan-300 sm:p-8">
-		<a href="/" class="not-prose inline-flex rounded-lg border border-white/10 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300 hover:bg-white/5">Back</a>
-		<p class="mt-8 text-xs font-black uppercase tracking-[0.3em] text-cyan-300">RiftThai</p>
-		<h1>Terms of Use</h1>
-		<p><strong>Last updated:</strong> {updated}</p>
+	<article
+		class="rt-panel mx-auto prose max-w-4xl rounded-xl p-5 prose-slate prose-invert sm:p-8 prose-headings:font-black prose-a:text-cyan-300"
+	>
+		<a
+			href="/"
+			class="not-prose inline-flex rounded-lg border border-white/10 px-3 py-2 text-xs font-black tracking-widest text-slate-300 uppercase hover:bg-white/5"
+			>กลับหน้าแรก</a
+		>
+		<p class="mt-8 text-xs font-black tracking-[0.3em] text-cyan-300 uppercase">RiftThai</p>
+		<h1>ข้อกำหนดการใช้งาน</h1>
+		<p><strong>อัปเดตล่าสุด:</strong> {updated}</p>
 
 		<p>
-			These Terms govern use of RiftThai, including the card database, translations, RAG chat, account system, and support chat.
-			By using the site, you agree to these Terms.
+			ข้อกำหนดนี้ใช้กับการใช้งาน RiftThai รวมถึงฐานข้อมูลการ์ด คำแปล ระบบ AI chat ระบบบัญชี และ
+			support chat เมื่อใช้งานเว็บไซต์นี้ ถือว่าคุณยอมรับข้อกำหนดเหล่านี้
 		</p>
 
-		<h2>Unofficial Fan Resource</h2>
+		<h2>แหล่งข้อมูลแฟนคอมมูนิตี้ที่ไม่เป็นทางการ</h2>
 		<p>
-			RiftThai is an unofficial community fan project for Thai Riftbound players. It is not endorsed, sponsored, or approved by Riot Games.
-			Official rules, card text, tournament policy, and rulings from the rights holder or official publisher control over any information shown here.
+			RiftThai เป็นโปรเจกต์ชุมชนที่ไม่เป็นทางการสำหรับผู้เล่น Riftbound ภาษาไทย
+			และไม่ได้รับการรับรอง สนับสนุน หรืออนุมัติโดย Riot Games กฎอย่างเป็นทางการ ข้อความการ์ด
+			นโยบายการแข่งขัน และคำตัดสินจากเจ้าของสิทธิ์หรือผู้เผยแพร่อย่างเป็นทางการมีผลเหนือข้อมูลใดๆ
+			ที่แสดงบนเว็บไซต์นี้
 		</p>
 
-		<h2>Accounts</h2>
+		<h2>บัญชีผู้ใช้</h2>
 		<ul>
-			<li>You must provide a valid email address to register.</li>
-			<li>You must verify your email before logging in.</li>
-			<li>You are responsible for keeping your password and session secure.</li>
-			<li>Accounts may be limited, suspended, or removed for abuse, spam, or attempts to bypass limits.</li>
+			<li>คุณต้องใช้อีเมลที่ถูกต้องในการสมัครบัญชี</li>
+			<li>คุณต้องยืนยันอีเมลก่อนเข้าสู่ระบบ</li>
+			<li>คุณมีหน้าที่ดูแลรหัสผ่านและ session ของตนเองให้ปลอดภัย</li>
+			<li>
+				บัญชีอาจถูกจำกัด ระงับ หรือลบ หากมีการใช้งานผิดปกติ สแปม หรือพยายามหลีกเลี่ยงข้อจำกัดของระบบ
+			</li>
 		</ul>
 
-		<h2>RAG and AI Chat</h2>
+		<h2>ระบบ RAG และ AI chat</h2>
 		<ul>
-			<li>AI answers may be incomplete, inaccurate, outdated, or formatted poorly.</li>
-			<li>Use official sources for competitive rulings and final rule decisions.</li>
-			<li>Do not submit sensitive personal information or confidential information to the chat.</li>
-			<li>Daily usage limits may apply to non-admin users.</li>
+			<li>คำตอบจาก AI อาจไม่ครบถ้วน ไม่ถูกต้อง ล้าสมัย หรือจัดรูปแบบไม่ดี</li>
+			<li>สำหรับการแข่งขันหรือการอ้างอิงกฎขั้นสุดท้าย ควรตรวจสอบจากแหล่งข้อมูลทางการเสมอ</li>
+			<li>ห้ามส่งข้อมูลส่วนตัว ข้อมูลอ่อนไหว หรือข้อมูลลับลงในแชต</li>
+			<li>ผู้ใช้ทั่วไปอาจมีขีดจำกัดการใช้งานรายวัน</li>
 		</ul>
 
-		<h2>Support Chat</h2>
+		<h2>Support chat</h2>
 		<p>
-			The support chat is for site-related questions, account issues, feedback, and bug reports. Admins may read and respond to support messages.
-			Do not use support chat for harassment, spam, illegal content, or private information that is not necessary to resolve the issue.
+			Support chat ใช้สำหรับคำถามเกี่ยวกับเว็บไซต์ ปัญหาบัญชี ข้อเสนอแนะ และรายงานบั๊ก
+			แอดมินสามารถอ่านข้อความและตอบกลับข้อความสนับสนุนได้ ห้ามใช้ support chat เพื่อคุกคาม สแปม
+			ส่งเนื้อหาผิดกฎหมาย หรือส่งข้อมูลส่วนตัวที่ไม่จำเป็นต่อการแก้ปัญหา
 		</p>
 
-		<h2>Acceptable Use</h2>
+		<h2>การใช้งานที่ยอมรับได้</h2>
 		<ul>
-			<li>Do not attack, scrape, overload, or bypass rate limits.</li>
-			<li>Do not attempt to access admin-only pages or another user's account.</li>
-			<li>Do not upload or submit malicious code, spam, threats, or unlawful content.</li>
-			<li>Do not misrepresent AI answers as official rulings.</li>
+			<li>ห้ามโจมตี scrape หนักเกินสมควร ทำให้ระบบรับภาระเกิน หรือหลีกเลี่ยง rate limit</li>
+			<li>ห้ามพยายามเข้าถึงหน้าแอดมินหรือบัญชีของผู้อื่น</li>
+			<li>ห้ามส่งโค้ดอันตราย สแปม คำขู่ หรือเนื้อหาที่ผิดกฎหมาย</li>
+			<li>ห้ามนำคำตอบจาก AI ไปอ้างว่าเป็นคำตัดสินอย่างเป็นทางการ</li>
 		</ul>
 
-		<h2>Content and Translations</h2>
+		<h2>เนื้อหาและคำแปล</h2>
 		<p>
-			Thai translations, summaries, and helper text are provided for convenience and may contain mistakes. Card names, game text, images, marks, and related assets belong to their respective owners.
-			RiftThai may update, remove, or correct content at any time.
+			คำแปลภาษาไทย สรุปกฎ และข้อความช่วยอธิบายมีไว้เพื่อความสะดวก และอาจมีข้อผิดพลาดได้ ชื่อการ์ด
+			ข้อความเกม รูปภาพ เครื่องหมายการค้า และทรัพย์สินที่เกี่ยวข้องเป็นของเจ้าของสิทธิ์แต่ละราย
+			RiftThai อาจแก้ไข ลบ หรือปรับปรุงเนื้อหาได้ทุกเมื่อ
 		</p>
 
-		<h2>No Warranty</h2>
+		<h2>ไม่มีการรับประกัน</h2>
 		<p>
-			The site is provided as-is and as-available. RiftThai does not guarantee uninterrupted service, complete accuracy, or suitability for tournament use.
+			เว็บไซต์นี้ให้บริการตามสภาพที่เป็นอยู่และตามความพร้อมให้บริการ RiftThai
+			ไม่รับประกันว่าเว็บไซต์จะทำงานได้ตลอดเวลา ข้อมูลจะถูกต้องสมบูรณ์
+			หรือเหมาะสำหรับใช้ในการแข่งขัน
 		</p>
 
-		<h2>Limitation of Liability</h2>
+		<h2>ข้อจำกัดความรับผิด</h2>
 		<p>
-			To the maximum extent permitted by applicable law, RiftThai and its maintainers are not liable for indirect, incidental, special, consequential, or punitive damages arising from use of the site.
+			ภายใต้ขอบเขตสูงสุดที่กฎหมายอนุญาต RiftThai
+			และผู้ดูแลเว็บไซต์จะไม่รับผิดชอบต่อความเสียหายทางอ้อม ความเสียหายโดยบังเอิญ ความเสียหายพิเศษ
+			ความเสียหายต่อเนื่อง หรือค่าเสียหายเชิงลงโทษที่เกิดจากการใช้งานเว็บไซต์
 		</p>
 
-		<h2>Changes</h2>
+		<h2>การเปลี่ยนแปลงข้อกำหนด</h2>
 		<p>
-			These Terms may be updated as the site changes. Continued use of the site after changes means you accept the updated Terms.
+			ข้อกำหนดนี้อาจถูกปรับปรุงเมื่อเว็บไซต์มีการเปลี่ยนแปลง
+			การใช้งานเว็บไซต์ต่อหลังจากมีการแก้ไขถือว่าคุณยอมรับข้อกำหนดฉบับล่าสุด
 		</p>
 
-		<h2>Contact</h2>
+		<h2>การติดต่อ</h2>
 		<p>
-			Use the support chat after logging in, or contact the site administrator through the channel where this site is published.
+			ติดต่อผ่าน support chat หลังเข้าสู่ระบบ
+			หรือติดต่อผู้ดูแลเว็บไซต์ผ่านช่องทางที่เผยแพร่เว็บไซต์นี้
 		</p>
 	</article>
 </div>
