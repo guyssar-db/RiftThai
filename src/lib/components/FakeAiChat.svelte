@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import cardsData from '$lib/data/riftbound_cards_all.json';
 	import { domainAnswers, type DomainAnswer } from '$lib/data/domainAnswers';
 	import { iconMappings, keywords } from '$lib/data/keywords';
 	import { ruleAnswers, type RuleAnswer } from '$lib/data/ruleAnswers';
@@ -86,7 +85,6 @@
 		score: number;
 	};
 
-	const cards = cardsData as Card[];
 	const qaAnswers: QAAnswer[] = [
 		...spiritforgedFaq,
 		{
@@ -262,6 +260,7 @@
 	const aiDisclaimer =
 		'หมายเหตุ: คำตอบจาก AI และข้อมูลใน RiftThai อาจไม่ถูกต้อง 100% สำหรับการตัดสินกฎ การแข่งขัน หรือเคสที่มีผลต่อเกมจริง ควรตรวจสอบ Official Rules และเว็บไซต์ทางการ https://riftbound.com/ ประกอบเสมอ';
 
+	let cachedLocalCards: Card[] | null = null;
 	let isOpen = $state(false);
 	let input = $state('');
 	let isSending = $state(false);
@@ -608,6 +607,13 @@
 		return hasKeyword && (isShortQuestion || normalizedQuery.includes('คือ') || normalizedQuery.includes('keyword'));
 	}
 
+	async function getLocalCards() {
+		if (cachedLocalCards) return cachedLocalCards;
+		const module = await import('$lib/data/riftbound_cards_all.json');
+		cachedLocalCards = module.default as Card[];
+		return cachedLocalCards;
+	}
+
 	function searchableCardText(card: Card) {
 		return normalize(
 			[
@@ -639,9 +645,10 @@
 		}, 0);
 	}
 
-	function findCards(query: string): ScoredCard[] {
+	async function findCards(query: string): Promise<ScoredCard[]> {
 		const tokens = getTokens(query);
 		if (tokens.length === 0) return [];
+		const cards = await getLocalCards();
 
 		return cards
 			.map((card) => ({ card, score: scoreCard(card, tokens) }))
@@ -762,11 +769,11 @@
 		return '';
 	}
 
-	function buildAnswer(query: string) {
+	async function buildAnswer(query: string) {
 		const quickAnswer = getCanonicalQuickAnswer(query);
 		if (quickAnswer) return quickAnswer;
 
-		const matches = findCards(query);
+		const matches = await findCards(query);
 		if (matches.length > 0 && matches[0].score >= 60) {
 			return `ผมเจอการ์ดที่น่าจะเกี่ยวข้องกับคำถามนี้:\n${formatCards(matches)}`;
 		}
@@ -845,7 +852,7 @@
 		}
 
 		if (response.status === 429) {
-			return buildAnswer(query);
+			return await buildAnswer(query);
 		}
 
 		if (!response.ok || data.mode === 'setup_required' || !data.answer) {
@@ -877,7 +884,8 @@
 			messages = [...messages.slice(0, -1), { role: 'bot', text: withAiDisclaimer(answer) }];
 		} catch (error) {
 			const message = error instanceof Error ? error.message : '';
-			messages = [...messages.slice(0, -1), { role: 'bot', text: withAiDisclaimer(message || buildAnswer(query)) }];
+			const fallbackAnswer = message || (await buildAnswer(query));
+			messages = [...messages.slice(0, -1), { role: 'bot', text: withAiDisclaimer(fallbackAnswer) }];
 		} finally {
 			isSending = false;
 		}

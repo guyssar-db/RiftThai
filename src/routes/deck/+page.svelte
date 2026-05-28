@@ -591,21 +591,17 @@
 		return buildDeckCards(cards, deck.entries);
 	}
 
-	function getStoredDeckStats(deck: StoredDeck) {
-		return calculateDeckStats(getStoredDeckCards(deck));
-	}
-
-	function getStoredDeckDomains(deck: StoredDeck) {
-		return getStoredDeckStats(deck).domains.filter(({ label }) => label !== 'Colorless');
-	}
-
-	function getDeckCoverCards(deck: StoredDeck) {
+	function getStoredDeckSummary(deck: StoredDeck) {
+		const deckItems = getStoredDeckCards(deck);
+		const stats = calculateDeckStats(deckItems);
 		const champion = getChampionCard(cards, deck.championCode);
-		const legend = getDeckZones(getStoredDeckCards(deck)).legends[0];
-		return [
+		const legend = getDeckZones(deckItems).legends[0];
+		const cover = [
 			...(legend ? [legend] : []),
 			...(champion ? [{ card: champion, quantity: 1 }] : [])
 		];
+		const domains = stats.domains.filter(({ label }) => label !== 'Colorless');
+		return { cover, domains, stats };
 	}
 
 	function getLegendChampionCards() {
@@ -663,12 +659,10 @@
 		{:else}
 			<section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
 				{#each collection.decks as deck}
-					{@const deckPreview = getDeckCoverCards(deck)}
-					{@const deckStats = getStoredDeckStats(deck)}
-					{@const deckDomains = getStoredDeckDomains(deck)}
+					{@const deckSummary = getStoredDeckSummary(deck)}
 					<article class="rt-panel group overflow-hidden rounded-xl transition hover:border-cyan-300/30">
 						<div class="grid h-64 grid-cols-2 gap-2 bg-slate-950/80 p-2">
-							{#each deckPreview as item}
+							{#each deckSummary.cover as item}
 								<div class="relative overflow-hidden rounded-md border border-white/10 bg-black/20">
 									<img
 										src={getCardImageUrl(item.card.image_url, 280, 'webp')}
@@ -688,7 +682,7 @@
 									Empty Deck
 								</div>
 							{/each}
-							{#if deckPreview.length === 1}
+							{#if deckSummary.cover.length === 1}
 								<div class="grid h-full place-items-center rounded-md border border-dashed border-white/10 bg-black/20 p-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-600">
 									No Champion
 								</div>
@@ -699,11 +693,11 @@
 								<div class="min-w-0">
 									<h2 class="truncate text-xl font-black uppercase italic text-white">{deck.name}</h2>
 									<p class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-										{deckStats.total} cards
+										{deckSummary.stats.total} cards
 									</p>
 								</div>
 								<div class="flex max-w-[9.5rem] flex-wrap justify-end gap-2">
-									{#each deckDomains as domain}
+									{#each deckSummary.domains as domain}
 										<div
 											class="grid h-10 w-7 shrink-0 place-items-center"
 											title={`${domain.label}: ${domain.count}`}
@@ -720,19 +714,19 @@
 							</div>
 							<div class="mt-4 grid grid-cols-4 gap-2 text-center">
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
-									<div class="text-sm font-black text-white">{deckStats.mainTotal}</div>
+									<div class="text-sm font-black text-white">{deckSummary.stats.mainTotal}</div>
 									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Main/{maxMainDeckCards}</div>
 								</div>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
-									<div class="text-sm font-black text-white">{deckStats.runeTotal}</div>
+									<div class="text-sm font-black text-white">{deckSummary.stats.runeTotal}</div>
 									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Rune</div>
 								</div>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
-									<div class="text-sm font-black text-white">{deckStats.battlefieldTotal}</div>
+									<div class="text-sm font-black text-white">{deckSummary.stats.battlefieldTotal}</div>
 									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Field</div>
 								</div>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
-									<div class="text-sm font-black text-white">{deckStats.tokenTotal}</div>
+									<div class="text-sm font-black text-white">{deckSummary.stats.tokenTotal}</div>
 									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Token</div>
 								</div>
 							</div>
