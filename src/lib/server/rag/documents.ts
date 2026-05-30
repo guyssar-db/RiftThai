@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 
 import cardsData from '$lib/data/riftbound_cards_all.json';
 import { domainAnswers } from '$lib/data/domainAnswers';
@@ -30,7 +30,9 @@ const cards = cardsData as Card[];
 
 export function buildRagDocuments(): RagDocument[] {
 	return [
+		riftboundOverviewDocument(),
 		...coreRuleDocuments(),
+		...localKnowledgeDocuments(),
 		...keywords.map((keyword) => ({
 			source: `keyword:${keyword.id}`,
 			source_type: 'keyword',
@@ -106,6 +108,33 @@ export function buildRagDocuments(): RagDocument[] {
 	];
 }
 
+function riftboundOverviewDocument(): RagDocument {
+	return {
+		source: 'riftbound:overview',
+		source_type: 'overview',
+		title: 'Riftbound Overview and Domains',
+		content: repairThaiMojibake(
+			[
+				'Riftbound คือเกมการ์ดสะสมแบบ Trading Card Game (TCG) ในจักรวาล League of Legends',
+				'ผู้เล่นสร้างเด็คจาก Legend, Champion, Unit, Spell, Gear, Battlefield และ Rune แล้วแข่งเพื่อยึดครอง battlefield ทำแต้ม และใช้พลังจาก rune/domain เพื่อเล่นการ์ด',
+				'Domain คือกลุ่มพลังหรือสีหลักของ Riftbound คล้าย color/faction ใน TCG อื่น ใช้บอกตัวตนของการ์ด แนวทางการเล่น และทรัพยากรที่เกี่ยวข้อง',
+				'Domain หลักที่ใช้ใน Riftbound ได้แก่ Fury, Calm, Mind, Body, Chaos และ Order',
+				'คำถามภาษาไทยที่เกี่ยวกับ domain อาจใช้คำว่า โดเมน, สี, rune, รูน, สายเด็ค, faction, red, green, blue, orange, purple หรือ yellow',
+				'Fury คือสายบุกเร็วและ tempo',
+				'Calm คือสายรับ reaction และยืน battlefield',
+				'Mind คือสายวางแผน Hidden trick และ card advantage',
+				'Body คือสาย ramp buff และยูนิตใหญ่',
+				'Chaos คือสาย discard trash disruption และแผนพลิกแพลง',
+				'Order คือสาย token sacrifice Deathknell และ value จากการตาย'
+			].join('\n')
+		),
+		metadata: {
+			topic: 'riftbound basics',
+			domains: ['Fury', 'Calm', 'Mind', 'Body', 'Chaos', 'Order']
+		}
+	};
+}
+
 function coreRuleDocuments(): RagDocument[] {
 	const filePath = join(process.cwd(), 'core_rules.md');
 	if (!existsSync(filePath)) return [];
@@ -126,6 +155,62 @@ function coreRuleDocuments(): RagDocument[] {
 			}
 		}
 	];
+}
+
+function localKnowledgeDocuments(): RagDocument[] {
+	const knowledgeFiles = [
+		{
+			file: 'docs/domains.md',
+			source: 'doc:domains',
+			source_type: 'domain_guide',
+			title: 'Riftbound Domain Guide'
+		},
+		{
+			file: 'docs/spiritforged-faq-qa.md',
+			source: 'doc:spiritforged-faq-qa',
+			source_type: 'faq',
+			title: 'Spiritforged FAQ Notes'
+		},
+		{
+			file: 'qa.md',
+			source: 'doc:qa',
+			source_type: 'qa',
+			title: 'Riftbound Rules and Mechanics QA'
+		},
+		{
+			file: 'keyword.md',
+			source: 'doc:keyword-notes',
+			source_type: 'keyword',
+			title: 'Riftbound Keyword Notes'
+		},
+		{
+			file: 'Turn Phases Flowchart.md',
+			source: 'doc:turn-phases-flowchart',
+			source_type: 'rule',
+			title: 'Riftbound Turn Phases Flowchart'
+		}
+	];
+
+	return knowledgeFiles.flatMap(({ file, source, source_type, title }) => {
+		const filePath = join(process.cwd(), file);
+		if (!existsSync(filePath)) return [];
+
+		const content = readFileSync(filePath, 'utf-8').trim();
+		if (!content) return [];
+
+		return [
+			{
+				source,
+				source_type,
+				title,
+				content: repairThaiMojibake(content),
+				metadata: {
+					file,
+					filename: basename(file)
+				}
+			}
+		];
+	});
 }
 
 export function buildRagChunks() {

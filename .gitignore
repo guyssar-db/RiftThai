@@ -1,12 +1,23 @@
 node_modules
 /.svelte-kit
 /build
+/.vite
+/.vercel
+/.netlify
+.turbo
+coverage/
+playwright-report/
+test-results/
 .env
 .env.*
 !.env.example
 .DS_Store
 Thumbs.db
 .vscode/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Ignore all scripts and config files except the essential ones
 *.js
@@ -42,6 +53,8 @@ src/lib/components/TurnPhasesModal.svelte
 !GEMINI.md
 !docs/
 !docs/*.md
+docs/rag-ingest-*.md
+docs/site-structure.html
 !skills/
 !skills/**/*.md
 !skills/**/*.yaml
