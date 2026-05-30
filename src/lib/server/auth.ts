@@ -2,6 +2,7 @@ import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } fr
 import { promisify } from 'node:util';
 
 import { env } from '$env/dynamic/private';
+import { env as publicEnv } from '$env/dynamic/public';
 import type { Cookies } from '@sveltejs/kit';
 
 import { getRagConfig } from '$lib/server/rag/config';
@@ -203,7 +204,7 @@ async function sendVerificationEmail(email: string, token: string) {
 	const apiKey = env.RESEND_API_KEY;
 	if (!apiKey) throw new Error('RESEND_API_KEY is missing');
 
-	const appUrl = (env.PUBLIC_APP_URL || 'http://127.0.0.1:5174').replace(/\/$/, '');
+	const appUrl = (publicEnv.PUBLIC_APP_URL || 'https://riftthai.guyssar.com').replace(/\/$/, '');
 	const verifyUrl = `${appUrl}/api/auth/verify-email?token=${encodeURIComponent(token)}`;
 	const from = env.RESEND_FROM_EMAIL || 'RiftThai <onboarding@resend.dev>';
 
