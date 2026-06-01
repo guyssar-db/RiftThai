@@ -30,9 +30,22 @@
 
 	<nav class="sticky top-0 z-50 border-b border-cyan-300/10 bg-[#070a12]/82 shadow-[0_14px_42px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
 		<div class="rt-container flex items-center justify-between gap-4 py-3">
-			<a href="/" class="shrink-0 border-l-2 border-cyan-300/60 pl-3 text-xl font-black uppercase italic text-white">
-				Rift<span class="text-cyan-300">Thai</span>
-			</a>
+			<div class="flex min-w-0 items-center gap-3">
+				<a
+					href="/"
+					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-cyan-300/15 bg-cyan-300/5 text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-cyan-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-300/25 sm:w-auto sm:px-4"
+					aria-label="Back to home"
+				>
+					<svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+						<path d="m15 18-6-6 6-6" />
+					</svg>
+					<span class="hidden text-xs font-black uppercase tracking-widest sm:ml-2 sm:block">Back</span>
+				</a>
+
+				<a href="/" class="shrink-0 text-xl font-black uppercase italic text-white sm:text-2xl">
+					Rift<span class="text-cyan-300">Thai</span>
+				</a>
+			</div>
 			<SiteMenu active="donate" />
 		</div>
 	</nav>

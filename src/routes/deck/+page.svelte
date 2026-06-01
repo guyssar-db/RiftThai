@@ -1100,9 +1100,22 @@
 
 	<nav class="sticky top-0 z-50 border-b border-amber-200/10 bg-[#0a0e15]/90 backdrop-blur-xl">
 		<div class="rt-container flex items-center justify-between gap-4 py-3">
-			<a href="/" class="shrink-0 border-l-2 border-amber-200/50 pl-3 text-xl font-black uppercase italic text-white">
-				Rift<span class="text-cyan-300">Thai</span>
-			</a>
+			<div class="flex min-w-0 items-center gap-3">
+				<a
+					href="/"
+					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-amber-200/15 bg-amber-200/5 text-slate-200 transition hover:border-amber-200/30 hover:bg-amber-200/10 hover:text-amber-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-200/25 sm:w-auto sm:px-4"
+					aria-label="Back to home"
+				>
+					<svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+						<path d="m15 18-6-6 6-6" />
+					</svg>
+					<span class="hidden text-xs font-black uppercase tracking-widest sm:ml-2 sm:block">Back</span>
+				</a>
+
+				<a href="/" class="shrink-0 text-xl font-black uppercase italic text-white sm:text-2xl">
+					Rift<span class="text-cyan-300">Thai</span>
+				</a>
+			</div>
 			<SiteMenu active="deck" />
 		</div>
 	</nav>
@@ -1197,8 +1210,13 @@
 									/>
 								</div>
 							{:else}
-								<div class="grid aspect-[744/1039] place-items-center rounded-lg border border-dashed border-white/10 bg-black/20 text-sm font-black uppercase tracking-widest text-slate-600">
-									Empty Deck
+								<div class="grid aspect-[744/1039] w-full place-items-center rounded-lg border border-dashed border-amber-200/20 bg-amber-500/5 text-center p-3 shadow-inner">
+									<div class="flex flex-col items-center gap-1.5">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-amber-200/35">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-3-12h5.25c.621 0 1.125.504 1.125 1.125v10.5c0 .621-.504 1.125-1.125 1.125h-5.25M3.75 6h9c.621 0 1.125.504 1.125 1.125v10.5c0 .621-.504 1.125-1.125 1.125h-9a1.125 1.125 0 01-1.125-1.125v-10.5C2.625 6.504 3.129 6 3.75 6z" />
+										</svg>
+										<div class="text-[9px] font-black uppercase tracking-[0.25em] text-amber-200/40">Empty</div>
+									</div>
 								</div>
 							{/if}
 
@@ -1262,23 +1280,23 @@
 									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Token</div>
 								</div>
 							</div>
-							<div class="relative mt-auto flex items-center justify-end gap-2 pt-4">
+							<div class="relative mt-auto grid grid-cols-[1fr_1fr_auto] gap-1.5 pt-4">
 								<a
 									href="/deck/{deck.id}"
-									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-3 text-[11px] font-black uppercase tracking-widest text-cyan-100 transition hover:bg-cyan-300/14 hover:text-white"
+									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-cyan-100 transition hover:bg-cyan-300/14 hover:text-white"
 								>
 									List
 								</a>
 								<button
 									type="button"
-									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 text-[11px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-white/10 hover:text-white"
+									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/10 bg-white/5 px-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-white/10 hover:text-white"
 									onclick={() => editDeck(deck.id)}
 								>
 									Edit
 								</button>
 								<button
 									type="button"
-									class="grid h-10 w-30 place-items-center rounded-lg border border-white/10 bg-slate-950/70 text-xl font-black text-slate-300 transition hover:bg-white/10 hover:text-white"
+									class="grid h-10 w-10 place-items-center rounded-lg border border-white/10 bg-slate-950/70 text-xl font-black text-slate-300 transition hover:bg-white/10 hover:text-white"
 									aria-label={`Open export actions for ${deck.name}`}
 									aria-expanded={openDeckMenuId === deck.id}
 									onclick={() => toggleDeckMenu(deck.id)}

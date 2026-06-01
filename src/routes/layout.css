@@ -93,12 +93,67 @@ body::after {
     width: 100%;
     height: 100%;
     z-index: -1;
-    background:
-        linear-gradient(180deg, rgba(7, 10, 18, 0.9), rgba(7, 10, 18, 0.96)),
-        radial-gradient(circle at 12% 18%, rgba(83, 234, 253, 0.18), transparent 24rem),
-        radial-gradient(circle at 88% 24%, rgba(255, 184, 107, 0.1), transparent 28rem),
-        linear-gradient(125deg, rgba(83, 234, 253, 0.08), transparent 38%, rgba(255, 184, 107, 0.07) 72%, transparent);
-    background-size: auto;
+    background: transparent;
+    pointer-events: none;
+}
+
+@keyframes blob-movement-1 {
+    0%, 100% {
+        transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+        transform: translate(60px, 40px) scale(1.1);
+    }
+    66% {
+        transform: translate(-40px, 80px) scale(0.95);
+    }
+}
+
+@keyframes blob-movement-2 {
+    0%, 100% {
+        transform: translate(0px, 0px) scale(1);
+    }
+    50% {
+        transform: translate(-80px, -50px) scale(1.15);
+    }
+}
+
+.animated-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    background: #070a12;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.animated-bg .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(85px);
+    opacity: 0.12;
+    will-change: transform;
+}
+
+.animated-bg .blob-1 {
+    top: -10%;
+    left: -10%;
+    width: 55vw;
+    height: 55vw;
+    background: radial-gradient(circle, rgba(83, 234, 253, 0.7) 0%, transparent 80%);
+    animation: blob-movement-1 25s infinite alternate ease-in-out;
+}
+
+.animated-bg .blob-2 {
+    bottom: -10%;
+    right: -10%;
+    width: 65vw;
+    height: 65vw;
+    background: radial-gradient(circle, rgba(255, 184, 107, 0.45) 0%, transparent 80%);
+    animation: blob-movement-2 30s infinite alternate ease-in-out;
 }
 
 .glass-panel {
@@ -137,6 +192,76 @@ body::after {
     box-shadow: 0 22px 58px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
+}
+
+.rt-panel-neon {
+    position: relative;
+    border: 1px solid var(--line-soft);
+    background:
+        linear-gradient(145deg, rgba(83, 234, 253, 0.075), transparent 36%),
+        linear-gradient(315deg, rgba(255, 184, 107, 0.055), transparent 34%),
+        linear-gradient(180deg, rgba(18, 27, 42, 0.92), rgba(8, 13, 22, 0.88));
+    box-shadow: 0 22px 58px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    overflow: hidden;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* Background glowing outline layer */
+.rt-panel-neon::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+        transparent, 
+        rgba(83, 234, 253, 0.25) 12%, 
+        rgba(83, 234, 253, 0.8) 25%, 
+        transparent 38%, 
+        transparent 100%
+    );
+    animation: border-rotate 6s linear infinite;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Mask inner content area to reveal just the border line */
+.rt-panel-neon::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: linear-gradient(180deg, rgba(18, 27, 42, 0.96), rgba(8, 13, 22, 0.93));
+    border-radius: inherit;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+/* Ensure child content sits above the pseudo-element masks */
+.rt-panel-neon > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* Reveal glow and laser border flow on hover */
+.rt-panel-neon:hover::before {
+    opacity: 1;
+}
+
+.rt-panel-neon:hover {
+    border-color: rgba(83, 234, 253, 0.4);
+    box-shadow: 0 0 32px rgba(83, 234, 253, 0.16), 0 22px 58px rgba(0, 0, 0, 0.48);
+}
+
+@keyframes border-rotate {
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .rt-panel-quiet {

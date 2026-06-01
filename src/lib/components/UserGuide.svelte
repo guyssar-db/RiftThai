@@ -40,6 +40,13 @@
 			desc: 'เปลี่ยนเด็คของคุณให้เป็นงานศิลปะส่งออก PNG ความละเอียดสูงได้ทั้งรูปแบบแนวตั้ง (Portrait) และแนวนอน (Landscape) พร้อมระบบหมุนรูป Baron Pit แนวตั้งอัตโนมัติ และลายน้ำพรีเมียม riftthai.guyssar.com',
 			badge: 'การส่งออก',
 			graphic: 'export'
+		},
+		{
+			title: 'Support RiftThai Developer',
+			titleTh: 'ร่วมสนับสนุนผู้พัฒนา RiftThai',
+			desc: 'หากคุณชื่นชอบเว็บบิลเดอร์จัดเด็คและระบบฐานข้อมูลนี้ คุณสามารถแวะไปร่วมสนับสนุนค่าโดเมน ค่าเซิร์ฟเวอร์ และเปย์กาแฟเป็นกำลังใจให้ผู้พัฒนาได้ผ่านเมนู "Donate / สนับสนุน" ในแถบเมนูหลักได้เลยครับ! ❤️',
+			badge: 'สนับสนุน',
+			graphic: 'support'
 		}
 	];
 
@@ -187,6 +194,20 @@
 								<div class="h-2 bg-cyan-300/20 rounded-sm"></div>
 								<div class="h-2 bg-cyan-300/15 rounded-sm"></div>
 							</div>
+						</div>
+					</div>
+				{:else if steps[currentStep].graphic === 'support'}
+					<div class="flex flex-col items-center gap-3">
+						<div class="relative flex items-center justify-center">
+							<div class="absolute inset-0 animate-ping rounded-full bg-rose-500/20 blur-sm"></div>
+							<div class="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-400/30 bg-rose-500/10 shadow-lg shadow-rose-950/20 text-rose-300">
+								<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="h-8 w-8 animate-pulse text-rose-400">
+									<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+								</svg>
+							</div>
+						</div>
+						<div class="flex items-center gap-2 rounded-full border border-rose-300/15 bg-rose-300/6 px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-rose-200">
+							Donate / สนับสนุนผู้พัฒนา
 						</div>
 					</div>
 				{/if}

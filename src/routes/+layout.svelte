@@ -63,7 +63,8 @@
 							: ''
 	);
 	let cookieChoice = $state<'accepted' | 'declined' | null>(null);
-	let showCookieNotice = $derived(cookieChoice === null);
+	let isHydrated = $state(false);
+	let showCookieNotice = $derived(isHydrated && cookieChoice === null);
 	let structuredData = $derived(
 		JSON.stringify({
 			'@context': 'https://schema.org',
@@ -107,6 +108,7 @@
 		if (savedChoice === 'accepted' || savedChoice === 'declined') {
 			cookieChoice = savedChoice;
 		}
+		isHydrated = true;
 	});
 
 	function setCookieChoice(choice: 'accepted' | 'declined') {
@@ -146,6 +148,12 @@
 {structuredData}
 	</script>
 </svelte:head>
+
+<div class="animated-bg">
+	<div class="blob blob-1"></div>
+	<div class="blob blob-2"></div>
+</div>
+
 {#if !!$navigating}
 	<div class="fixed inset-x-0 top-0 z-[1000] h-1 overflow-hidden bg-slate-950">
 		<div class="h-full bg-cyan-300 animate-global-loading-bar"></div>

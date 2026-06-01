@@ -203,28 +203,28 @@
 					</div>
 					<div class="grid h-full grid-cols-3 gap-2 text-center lg:h-auto lg:grid-cols-1">
 						<div
-							class="flex items-center justify-between rounded-lg border border-cyan-300/15 bg-black/20 p-3 shadow-inner shadow-cyan-300/5"
+							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-cyan-300/15 bg-black/20 p-2.5 shadow-inner shadow-cyan-300/5 sm:p-3 lg:flex-row lg:justify-between"
 						>
-							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+							<div class="text-[9px] font-black tracking-widest text-slate-500 uppercase sm:text-[10px]">
 								Cards
 							</div>
-							<div class="text-xl font-black text-white">{cards.length}</div>
+							<div class="text-base font-black text-white sm:text-xl">{cards.length}</div>
 						</div>
 						<div
-							class="flex items-center justify-between rounded-lg border border-cyan-300/15 bg-black/20 p-3 shadow-inner shadow-cyan-300/5"
+							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-cyan-300/15 bg-black/20 p-2.5 shadow-inner shadow-cyan-300/5 sm:p-3 lg:flex-row lg:justify-between"
 						>
-							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+							<div class="text-[9px] font-black tracking-widest text-slate-500 uppercase sm:text-[10px]">
 								Sets
 							</div>
-							<div class="text-xl font-black text-white">{sets.length - 1}</div>
+							<div class="text-base font-black text-white sm:text-xl">{sets.length - 1}</div>
 						</div>
 						<div
-							class="flex items-center justify-between rounded-lg border border-cyan-300/15 bg-black/20 p-3 shadow-inner shadow-cyan-300/5"
+							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-cyan-300/15 bg-black/20 p-2.5 shadow-inner shadow-cyan-300/5 sm:p-3 lg:flex-row lg:justify-between"
 						>
-							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+							<div class="text-[9px] font-black tracking-widest text-slate-500 uppercase sm:text-[10px]">
 								Domains
 							</div>
-							<div class="text-xl font-black text-white">{domains.length - 2}</div>
+							<div class="text-base font-black text-white sm:text-xl">{domains.length - 2}</div>
 						</div>
 					</div>
 				</div>

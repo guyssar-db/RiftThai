@@ -23,22 +23,75 @@
 	let isLoading = $state(true);
 	let errorMessage = $state('');
 	let query = $state('');
+	let selectedCoverCode = $state('');
+	let selectedColor = $state('');
 	let isOnline = $state(true);
 	let copyingDeckId = $state('');
 	let previewDeck = $state<StoredDeck | null>(null);
 	let previewCanvas = $state<HTMLCanvasElement | null>(null);
 	let isPreviewRendering = $state(false);
 	let actionNotice = $state<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+	let activeCopyMenuDeckId = $state('');
 	const imageCache = new Map<string, Promise<HTMLImageElement | null>>();
+
+	let availableLegends = $derived(
+		(() => {
+			const list = new Map<string, Card>();
+			for (const deck of decks) {
+				const deckCards = buildDeckCards(cards, deck.entries);
+				const legend = getDeckZones(deckCards).legends[0]?.card;
+				if (legend) {
+					list.set(legend.code, legend);
+				}
+			}
+			return Array.from(list.values()).sort((a, b) => a.name_en.localeCompare(b.name_en));
+		})()
+	);
+
+	let availableChampions = $derived(
+		(() => {
+			const list = new Map<string, Card>();
+			for (const deck of decks) {
+				const champion = getChampionCard(cards, deck.championCode);
+				if (champion) {
+					list.set(champion.code, champion);
+				}
+			}
+			return Array.from(list.values()).sort((a, b) => a.name_en.localeCompare(b.name_en));
+		})()
+	);
 
 	let filteredDecks = $derived(
 		decks.filter((deck) => {
+			// 1. Text search
 			const search = query.trim().toLowerCase();
-			if (!search) return true;
-			const champion = getChampionCard(cards, deck.championCode);
-			return [deck.name, champion?.name_en, champion?.name_th]
-				.filter(Boolean)
-				.some((value) => String(value).toLowerCase().includes(search));
+			if (search) {
+				const champion = getChampionCard(cards, deck.championCode);
+				const deckCards = buildDeckCards(cards, deck.entries);
+				const legend = getDeckZones(deckCards).legends[0]?.card;
+				const matchesText = [deck.name, champion?.name_en, champion?.name_th, legend?.name_en, legend?.name_th]
+					.filter(Boolean)
+					.some((value) => String(value).toLowerCase().includes(search));
+				if (!matchesText) return false;
+			}
+
+			// 2. Legend / Champion cover code filter
+			if (selectedCoverCode) {
+				const champion = getChampionCard(cards, deck.championCode);
+				const deckCards = buildDeckCards(cards, deck.entries);
+				const legend = getDeckZones(deckCards).legends[0]?.card;
+				const matchesCover = (champion && champion.code === selectedCoverCode) || (legend && legend.code === selectedCoverCode);
+				if (!matchesCover) return false;
+			}
+
+			// 3. Color / Domain filter
+			if (selectedColor) {
+				const summary = getDeckSummary(deck);
+				const matchesColor = summary.domains.some((d) => d.label === selectedColor);
+				if (!matchesColor) return false;
+			}
+
+			return true;
 		})
 	);
 
@@ -53,9 +106,15 @@
 		window.addEventListener('online', updateOnlineStatus);
 		window.addEventListener('offline', updateOnlineStatus);
 
+		const handleGlobalClick = () => {
+			activeCopyMenuDeckId = '';
+		};
+		window.addEventListener('click', handleGlobalClick);
+
 		return () => {
 			window.removeEventListener('online', updateOnlineStatus);
 			window.removeEventListener('offline', updateOnlineStatus);
+			window.removeEventListener('click', handleGlobalClick);
 		};
 	});
 
@@ -173,9 +232,19 @@
 			...zones.legends,
 			...(champion ? [{ card: champion, quantity: 1 }] : [])
 		];
-		const sections = [
-			{ title: 'Legend + Champion', items: legendChampion },
-			{ title: 'Battlefield', items: zones.battlefields },
+
+		const width = 1200;
+		const cardWidth = 104;
+		const cardHeight = 145;
+		const columns = 8;
+		const sectionGap = 70;
+		const rowGap = 180;
+
+		const leftRows = legendChampion.length > 0 ? Math.ceil(legendChampion.length / 2) : 0;
+		const rightRows = zones.battlefields.length > 0 ? Math.ceil(zones.battlefields.length / 4) : 0;
+		const topRowHeight = Math.max(leftRows, rightRows) > 0 ? Math.max(leftRows, rightRows) * rowGap + sectionGap : 0;
+
+		const remainingSections = [
 			{ title: 'Main Deck', items: zones.main },
 			{ title: 'Rune Deck', items: zones.runes },
 			{ title: 'Sideboard', items: sideboardCards },
@@ -185,17 +254,14 @@
 			.map((section) => ({ ...section, items: section.items.slice(0, 24) }))
 			.filter((section) => section.items.length > 0);
 
-		const width = 1200;
-		const cardWidth = 104;
-		const cardHeight = 145;
-		const columns = 8;
-		const sectionGap = 70;
-		const rowGap = 180;
+		const remainingHeight = remainingSections.reduce(
+			(total, section) => total + sectionGap + Math.ceil(section.items.length / columns) * rowGap,
+			0
+		);
+
 		const height = Math.max(
 			760,
-			230 +
-				sections.reduce((total, section) => total + sectionGap + Math.ceil(section.items.length / columns) * rowGap, 0) +
-				60
+			230 + topRowHeight + remainingHeight + 60
 		);
 
 		canvas.width = width;
@@ -206,14 +272,29 @@
 			return;
 		}
 
-		const imageUrls = [...new Set(sections.flatMap((section) => section.items.map((item) => item.card.image_url).filter(Boolean)))];
+		// Gather all unique image URLs
+		const allItems = [...legendChampion, ...zones.battlefields, ...remainingSections.flatMap(s => s.items)];
+		const imageUrls = [...new Set(allItems.map((item) => item.card.image_url).filter(Boolean))];
 		await Promise.all(imageUrls.map((url) => loadImage(getPreviewImageUrl(url))));
 
 		drawPreviewBackground(context, width, height);
 		drawPreviewHeader(context, deck, stats.total, width);
 
 		let y = 230;
-		for (const section of sections) {
+
+		// Draw Legend + Champion and Battlefield side-by-side
+		if (legendChampion.length > 0 && zones.battlefields.length > 0) {
+			const leftEndY = await drawPreviewSection(context, 'Legend + Champion', legendChampion, 40, y, cardWidth, cardHeight, 2);
+			const rightEndY = await drawPreviewSection(context, 'Battlefield', zones.battlefields, 460, y, cardWidth, cardHeight, 4);
+			y = Math.max(leftEndY, rightEndY);
+		} else if (legendChampion.length > 0) {
+			y = await drawPreviewSection(context, 'Legend + Champion', legendChampion, 40, y, cardWidth, cardHeight, columns);
+		} else if (zones.battlefields.length > 0) {
+			y = await drawPreviewSection(context, 'Battlefield', zones.battlefields, 40, y, cardWidth, cardHeight, columns);
+		}
+
+		// Draw remaining sections
+		for (const section of remainingSections) {
 			y = await drawPreviewSection(context, section.title, section.items, 40, y, cardWidth, cardHeight, columns);
 		}
 
@@ -408,12 +489,80 @@
 						</a>
 					</div>
 				</div>
-				<div class="mt-5 max-w-xl">
-					<input
-						bind:value={query}
-						class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
-						placeholder="Search deck or champion..."
-					/>
+				<div class="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center">
+					<div class="relative flex-1">
+						<input
+							bind:value={query}
+							class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 pl-3 pr-10 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
+							placeholder="Search deck, champion, or legend..."
+						/>
+						{#if query}
+							<button
+								type="button"
+								class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+								onclick={() => (query = '')}
+								aria-label="Clear search"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5">
+									<path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+								</svg>
+							</button>
+						{/if}
+					</div>
+
+					<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+						<select
+							bind:value={selectedCoverCode}
+							class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-xs font-bold text-white focus:border-cyan-300/50 focus:outline-none w-full sm:w-60"
+						>
+							<option value="">All Legends & Champions</option>
+							{#if availableLegends.length > 0}
+								<optgroup label="Legends">
+									{#each availableLegends as legend}
+										<option value={legend.code}>{legend.name_en} ({legend.name_th || 'EN Only'})</option>
+									{/each}
+								</optgroup>
+							{/if}
+							{#if availableChampions.length > 0}
+								<optgroup label="Champions">
+									{#each availableChampions as champion}
+										<option value={champion.code}>{champion.name_en} ({champion.name_th || 'EN Only'})</option>
+									{/each}
+								</optgroup>
+							{/if}
+						</select>
+
+						<div class="flex flex-wrap items-center gap-1.5" title="Filter by Color / Domain">
+							{#each ['Body', 'Calm', 'Chaos', 'Fury', 'Mind', 'Order'] as domain}
+								{@const icon = getDomainIcon(domain)}
+								<button
+									type="button"
+									class="relative h-11 w-11 rounded-lg border p-2 transition {selectedColor === domain ? 'border-cyan-300 bg-cyan-300/18 shadow-[0_0_12px_rgba(83,234,253,0.38)]' : 'border-white/10 bg-slate-950/70 hover:border-cyan-300/30'}"
+									onclick={() => selectedColor = selectedColor === domain ? '' : domain}
+									aria-label="Filter by {domain}"
+									title={domain}
+								>
+									{#if icon}
+										<img src={icon} class="h-full w-full object-contain" alt={domain} />
+									{/if}
+								</button>
+							{/each}
+						</div>
+					</div>
+
+					{#if query || selectedCoverCode || selectedColor}
+						<button
+							type="button"
+							class="inline-flex min-h-11 items-center justify-center rounded-lg border border-rose-300/20 bg-rose-300/8 px-4 text-xs font-black uppercase tracking-widest text-rose-100 transition hover:bg-rose-300/14 w-full lg:w-auto"
+							onclick={() => {
+								query = '';
+								selectedCoverCode = '';
+								selectedColor = '';
+							}}
+						>
+							Clear Filters
+						</button>
+					{/if}
 				</div>
 			</div>
 		</header>
@@ -434,7 +583,7 @@
 			<section class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
 				{#each filteredDecks as deck}
 					{@const summary = getDeckSummary(deck)}
-					<article class="rt-panel group relative grid grid-cols-[8.5rem_minmax(0,1fr)] overflow-hidden rounded-xl transition hover:border-cyan-300/30 sm:grid-cols-[9.5rem_minmax(0,1fr)] lg:grid-cols-[10rem_minmax(0,1fr)]">
+					<article class="rt-panel group relative grid grid-cols-[8.5rem_minmax(0,1fr)] overflow-visible rounded-xl transition hover:border-cyan-300/30 sm:grid-cols-[9.5rem_minmax(0,1fr)] lg:grid-cols-[10rem_minmax(0,1fr)]">
 						<div class="pointer-events-none absolute left-2 top-2 z-20 rounded-full border border-emerald-300/25 bg-slate-950/92 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.18em] text-emerald-100 shadow-lg shadow-black/40 backdrop-blur">
 							Online
 						</div>
@@ -482,9 +631,9 @@
 								{/each}
 							</div>
 							<div class="mt-3 grid grid-cols-2 gap-1.5 text-center sm:mt-4 sm:grid-cols-4 sm:gap-2">
-								<div class="rounded-md border border-white/10 bg-black/20 p-2">
+								<div class="rounded-md border border-white/10 bg-black/20 p-2" title="Main Deck: {summary.stats.mainTotal} / {maxMainDeckCards} cards">
 									<div class="text-xs font-black text-white sm:text-sm">{summary.stats.mainTotal}</div>
-									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Main/{maxMainDeckCards}</div>
+									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Main</div>
 								</div>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
 									<div class="text-xs font-black text-white sm:text-sm">{summary.stats.runeTotal}</div>
@@ -499,7 +648,7 @@
 									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Total</div>
 								</div>
 							</div>
-							<div class="mt-auto grid grid-cols-3 gap-2 pt-4">
+							<div class="mt-auto grid grid-cols-1 gap-1.5 pt-4 min-[380px]:grid-cols-2 sm:gap-2">
 								<button
 									type="button"
 									class="inline-flex h-10 items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-3 text-[11px] font-black uppercase tracking-widest text-cyan-100 transition hover:bg-cyan-300/14 hover:text-white"
@@ -507,22 +656,54 @@
 								>
 									Preview
 								</button>
-								<button
-									type="button"
-									class="inline-flex h-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 px-3 text-[11px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-white/10 hover:text-white"
-									onclick={() => copyDeckLocal(deck)}
-								>
-									Copy Local
-								</button>
-								<button
-									type="button"
-									class="inline-flex h-10 items-center justify-center rounded-lg border border-emerald-300/25 bg-emerald-300/10 px-3 text-[11px] font-black uppercase tracking-widest text-emerald-100 transition hover:bg-emerald-300/15 disabled:cursor-not-allowed disabled:opacity-45"
-									disabled={!isOnline || copyingDeckId === deck.id}
-									title={isOnline ? 'Copy to your online decks' : 'Offline mode supports local copy only'}
-									onclick={() => copyDeckOnline(deck)}
-								>
-									{copyingDeckId === deck.id ? 'Copying...' : 'Copy Online'}
-								</button>
+								<div class="relative">
+									<button
+										type="button"
+										class="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-300/20 bg-emerald-300/8 px-3 text-[11px] font-black uppercase tracking-widest text-emerald-100 transition hover:bg-emerald-300/14 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+										disabled={copyingDeckId === deck.id}
+										onclick={(e) => {
+											e.stopPropagation();
+											activeCopyMenuDeckId = activeCopyMenuDeckId === deck.id ? '' : deck.id;
+										}}
+									>
+										<span>{copyingDeckId === deck.id ? 'Copying...' : 'Copy'}</span>
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5 transition-transform duration-200 {activeCopyMenuDeckId === deck.id ? 'rotate-180' : ''}">
+											<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+										</svg>
+									</button>
+
+									{#if activeCopyMenuDeckId === deck.id}
+										<div
+											class="absolute bottom-full left-0 right-0 z-50 mb-2 rounded-lg border border-white/10 bg-slate-950 p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-2 duration-150"
+											onclick={(e) => e.stopPropagation()}
+										>
+											<button
+												type="button"
+												class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-[10px] font-black uppercase tracking-wider text-slate-300 transition hover:bg-white/5 hover:text-white"
+												onclick={() => {
+													copyDeckLocal(deck);
+													activeCopyMenuDeckId = '';
+												}}
+											>
+												<span>Local Copy</span>
+												<span class="rounded bg-white/5 px-1 py-0.5 text-[8px] text-slate-400">Offline</span>
+											</button>
+											<button
+												type="button"
+												class="mt-1 flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-[10px] font-black uppercase tracking-wider text-slate-300 transition hover:bg-white/5 hover:text-white disabled:pointer-events-none disabled:opacity-40"
+												disabled={!isOnline || copyingDeckId === deck.id}
+												title={isOnline ? 'Copy to your online decks' : 'Offline mode supports local copy only'}
+												onclick={() => {
+													void copyDeckOnline(deck);
+													activeCopyMenuDeckId = '';
+												}}
+											>
+												<span>Online Copy</span>
+												<span class="rounded bg-emerald-400/10 px-1 py-0.5 text-[8px] text-emerald-400">Cloud</span>
+											</button>
+										</div>
+									{/if}
+								</div>
 							</div>
 						</div>
 					</article>

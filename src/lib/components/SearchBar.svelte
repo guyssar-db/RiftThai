@@ -75,6 +75,12 @@
 	function clearDomains() {
 		selectedDomains = [];
 	}
+
+	function resetFilters() {
+		selectedSet = 'All';
+		selectedType = 'All';
+		selectedDomains = [];
+	}
 </script>
 
 <div
@@ -111,9 +117,29 @@
 					<input
 						type="text"
 						placeholder="ค้นหาชื่อการ์ด, รหัส, ความสามารถ หรือแท็ก..."
-						class="w-full rounded-md border border-white/10 bg-[#070a12]/86 py-4 pr-4 pl-14 text-sm font-medium text-white shadow-inner shadow-black/20 transition-all placeholder:text-slate-600 focus:border-cyan-300/55 focus:ring-4 focus:ring-cyan-300/10 focus:outline-none sm:py-5 sm:pl-16"
+						class="w-full rounded-md border border-white/10 bg-[#070a12]/86 py-4 pr-12 pl-14 text-sm font-medium text-white shadow-inner shadow-black/20 transition-all placeholder:text-slate-600 focus:border-cyan-300/55 focus:ring-4 focus:ring-cyan-300/10 focus:outline-none sm:py-5 sm:pl-16 sm:pr-14"
 						bind:value={searchTerm}
 					/>
+					{#if searchTerm}
+						<button
+							type="button"
+							class="absolute inset-y-0 right-4 flex items-center text-slate-500 hover:text-white transition-colors"
+							onclick={() => (searchTerm = '')}
+							aria-label="Clear search"
+						>
+							<svg
+								class="h-5 w-5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M18 6 6 18M6 6l12 12" />
+							</svg>
+						</button>
+					{/if}
 				</div>
 
 				<button
@@ -260,6 +286,19 @@
 						</div>
 					{/if}
 				</div>
+
+				{#if activeFilterCount > 0}
+					<button
+						type="button"
+						class="inline-flex h-auto items-center justify-center gap-1.5 rounded-2xl border border-rose-500/25 bg-rose-500/10 px-4 text-xs font-black uppercase tracking-widest text-rose-300 transition-all hover:bg-rose-500/20 active:scale-95"
+						onclick={resetFilters}
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+							<path fill-rule="evenodd" d="M8.75 1a7.75 7.75 0 0 0-7.75 7.75 7.75 7.75 0 0 0 13.897 4.705l3.966 3.965a.75.75 0 1 0 1.06-1.06l-3.965-3.966A7.75 7.75 0 0 0 8.75 1Zm-6.25 7.75a6.25 6.25 0 1 1 10.89 4.079.75.75 0 0 1-.14.453 6.25 6.25 0 0 1-10.75-4.532Zm9.124-2.828a.75.75 0 0 0-1.06 0L8.75 7.69 6.936 5.876a.75.75 0 0 0-1.06 1.06L7.69 8.75l-1.814 1.814a.75.75 0 0 0 1.06 1.06L8.75 9.81l1.814 1.814a.75.75 0 0 0 1.06-1.06L9.81 8.75l1.814-1.814a.75.75 0 0 0 0-1.06Z" clip-rule="evenodd" />
+						</svg>
+						Clear
+					</button>
+				{/if}
 			</div>
 		</div>
 
@@ -378,6 +417,19 @@
 						</div>
 					{/if}
 				</div>
+
+				{#if activeFilterCount > 0}
+					<button
+						type="button"
+						class="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-xs font-black uppercase tracking-widest text-rose-300 transition-all hover:bg-rose-500/20 active:scale-95 sm:py-5"
+						onclick={resetFilters}
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+							<path fill-rule="evenodd" d="M8.75 1a7.75 7.75 0 0 0-7.75 7.75 7.75 7.75 0 0 0 13.897 4.705l3.966 3.965a.75.75 0 1 0 1.06-1.06l-3.965-3.966A7.75 7.75 0 0 0 8.75 1Zm-6.25 7.75a6.25 6.25 0 1 1 10.89 4.079.75.75 0 0 1-.14.453 6.25 6.25 0 0 1-10.75-4.532Zm9.124-2.828a.75.75 0 0 0-1.06 0L8.75 7.69 6.936 5.876a.75.75 0 0 0-1.06 1.06L7.69 8.75l-1.814 1.814a.75.75 0 0 0 1.06 1.06L8.75 9.81l1.814 1.814a.75.75 0 0 0 1.06-1.06L9.81 8.75l1.814-1.814a.75.75 0 0 0 0-1.06Z" clip-rule="evenodd" />
+						</svg>
+						Clear Filters / ล้างตัวกรอง
+					</button>
+				{/if}
 			</div>
 		{/if}
 	</div>
