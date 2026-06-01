@@ -1,4 +1,4 @@
-﻿<script lang="ts">
+<script lang="ts">
 	import { browser } from '$app/environment';
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
 	import { getDomainIcon } from '$lib/data/domainIcons';
@@ -82,7 +82,8 @@
 
 	function getDeckSummary(deck: StoredDeck) {
 		const deckCards = buildDeckCards(cards, deck.entries);
-		const stats = calculateDeckStats(deckCards);
+		const sideboardCards = buildDeckCards(cards, deck.sideboardEntries ?? []);
+		const stats = calculateDeckStats(deckCards, sideboardCards);
 		const champion = getChampionCard(cards, deck.championCode);
 		const legend = getDeckZones(deckCards).legends[0];
 		const domains = stats.domains.filter(({ label }) => label !== 'Colorless');
@@ -98,6 +99,7 @@
 		const copiedDeck = createEmptyDeck(`${deck.name} Copy`);
 		copiedDeck.championCode = deck.championCode;
 		copiedDeck.entries = deck.entries;
+		copiedDeck.sideboardEntries = deck.sideboardEntries ?? [];
 		copiedDeck.source = source;
 		copiedDeck.visibility = 'private';
 		return copiedDeck;
@@ -163,6 +165,8 @@
 	async function renderPreviewCanvas(deck: StoredDeck, canvas: HTMLCanvasElement) {
 		isPreviewRendering = true;
 		const deckCards = buildDeckCards(cards, deck.entries);
+		const sideboardCards = buildDeckCards(cards, deck.sideboardEntries ?? []);
+		const stats = calculateDeckStats(deckCards, sideboardCards);
 		const zones = getDeckZones(deckCards);
 		const champion = getChampionCard(cards, deck.championCode);
 		const legendChampion = [
@@ -174,6 +178,7 @@
 			{ title: 'Battlefield', items: zones.battlefields },
 			{ title: 'Main Deck', items: zones.main },
 			{ title: 'Rune Deck', items: zones.runes },
+			{ title: 'Sideboard', items: sideboardCards },
 			{ title: 'Tokens', items: zones.tokens },
 			{ title: 'Other', items: zones.other }
 		]
@@ -205,7 +210,7 @@
 		await Promise.all(imageUrls.map((url) => loadImage(getPreviewImageUrl(url))));
 
 		drawPreviewBackground(context, width, height);
-		drawPreviewHeader(context, deck, deckCards.length, width);
+		drawPreviewHeader(context, deck, stats.total, width);
 
 		let y = 230;
 		for (const section of sections) {
@@ -286,7 +291,7 @@
 
 			if (item.card.image_url) {
 				const image = await loadImage(getPreviewImageUrl(item.card.image_url));
-				if (image) drawContainedImage(context, image, x, y, cardWidth, cardHeight);
+				if (image) drawContainedImage(context, image, x, y, cardWidth, cardHeight, title !== 'Battlefield');
 			}
 
 			context.fillStyle = '#53EAFD';
@@ -310,8 +315,27 @@
 		x: number,
 		y: number,
 		width: number,
-		height: number
+		height: number,
+		rotateLandscape = false
 	) {
+		if (rotateLandscape && image.naturalWidth > image.naturalHeight) {
+			const rotatedBoxWidth = height;
+			const rotatedBoxHeight = width;
+			const imageRatio = image.naturalWidth / image.naturalHeight;
+			const boxRatio = rotatedBoxWidth / rotatedBoxHeight;
+			const drawWidth = imageRatio > boxRatio ? rotatedBoxWidth : rotatedBoxHeight * imageRatio;
+			const drawHeight = imageRatio > boxRatio ? rotatedBoxWidth / imageRatio : rotatedBoxHeight;
+			const drawX = -drawWidth / 2;
+			const drawY = -drawHeight / 2;
+
+			context.save();
+			context.translate(x + width / 2, y + height / 2);
+			context.rotate(Math.PI / 2);
+			context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+			context.restore();
+			return;
+		}
+
 		const imageRatio = image.naturalWidth / image.naturalHeight;
 		const boxRatio = width / height;
 		const drawWidth = imageRatio > boxRatio ? width : height * imageRatio;
