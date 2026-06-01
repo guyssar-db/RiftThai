@@ -19,16 +19,16 @@
 	}
 </script>
 
-<nav class="sticky top-0 z-[180] border-b border-amber-200/10 bg-[#0a0e15]/90 backdrop-blur-xl">
+<nav class="sticky top-0 z-[180] border-b border-cyan-300/10 bg-[#070a12]/82 shadow-[0_14px_42px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
 	<div class="rt-container flex items-center justify-between gap-4 py-3">
-		<a href="/" class="shrink-0 border-l-2 border-amber-200/50 pl-3 text-xl font-black uppercase italic tracking-tight text-white sm:text-2xl">
+		<a href="/" class="shrink-0 border-l-2 border-cyan-300/60 pl-3 text-xl font-black uppercase italic tracking-tight text-white sm:text-2xl">
 			Rift<span class="text-cyan-300">Thai</span>
 		</a>
 
-		<div class="hidden rounded-lg border border-amber-200/10 bg-black/20 p-1 md:flex">
+		<div class="hidden rounded-lg border border-cyan-300/10 bg-black/25 p-1 shadow-inner shadow-cyan-300/5 md:flex">
 			{#each navItems as item}
 				<button
-					class="min-w-28 rounded-md px-5 py-2.5 text-xs font-black uppercase tracking-widest transition {viewMode === item.id ? 'bg-amber-200 text-slate-950 shadow-[0_0_18px_rgba(83,234,253,0.2)]' : 'text-slate-400 hover:bg-white/5 hover:text-white'}"
+					class="min-w-28 rounded-md px-5 py-2.5 text-xs font-black uppercase tracking-widest transition {viewMode === item.id ? 'bg-cyan-300 text-slate-950 shadow-[0_0_20px_rgba(83,234,253,0.22)]' : 'text-slate-400 hover:bg-white/5 hover:text-white'}"
 					onclick={() => selectView(item.id)}
 				>
 					{item.label}

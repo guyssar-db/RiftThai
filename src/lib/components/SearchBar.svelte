@@ -78,11 +78,11 @@
 </script>
 
 <div
-	class="rt-panel rt-topline sticky top-[4.75rem] z-[60] mb-7 space-y-3 rounded-xl p-3 sm:mb-9 sm:p-4"
+	class="rt-panel rt-topline sticky top-[4.75rem] z-[60] mb-7 space-y-3 rounded-xl p-3 shadow-[0_18px_54px_rgba(0,0,0,0.34)] sm:mb-9 sm:p-4"
 >
 	<div class="flex flex-wrap items-center justify-between gap-3 px-1 sm:px-2">
 		<div class="flex items-center gap-3">
-			<div class="h-7 w-1 rounded-sm bg-amber-200"></div>
+			<div class="h-7 w-1 rounded-sm bg-cyan-300 shadow-[0_0_18px_rgba(83,234,253,0.38)]"></div>
 			<h2 class="text-sm font-black tracking-[0.22em] text-white uppercase">Card Index</h2>
 		</div>
 		<div class="rt-chip">
@@ -90,12 +90,12 @@
 		</div>
 	</div>
 
-	<div class="relative z-[60] rounded-lg border border-white/10 bg-black/20 p-2">
+	<div class="relative z-[60] rounded-lg border border-cyan-300/10 bg-black/25 p-2 shadow-inner shadow-cyan-300/5">
 		<div class="flex flex-col gap-3 lg:flex-row">
 			<div class="flex min-w-0 flex-grow gap-2">
 				<div class="group relative min-w-0 flex-grow">
 					<div
-						class="pointer-events-none absolute inset-y-0 left-5 flex items-center text-slate-500 transition-colors group-focus-within:text-amber-200 sm:left-6"
+						class="pointer-events-none absolute inset-y-0 left-5 flex items-center text-slate-500 transition-colors group-focus-within:text-cyan-300 sm:left-6"
 					>
 						<svg
 							class="h-5 w-5"
@@ -111,14 +111,14 @@
 					<input
 						type="text"
 						placeholder="ค้นหาชื่อการ์ด, รหัส, ความสามารถ หรือแท็ก..."
-						class="w-full rounded-md border border-white/10 bg-[#080b12]/80 py-4 pr-4 pl-14 text-sm font-medium text-white transition-all placeholder:text-slate-600 focus:border-amber-200/50 focus:ring-4 focus:ring-amber-200/10 focus:outline-none sm:py-5 sm:pl-16"
+						class="w-full rounded-md border border-white/10 bg-[#070a12]/86 py-4 pr-4 pl-14 text-sm font-medium text-white shadow-inner shadow-black/20 transition-all placeholder:text-slate-600 focus:border-cyan-300/55 focus:ring-4 focus:ring-cyan-300/10 focus:outline-none sm:py-5 sm:pl-16"
 						bind:value={searchTerm}
 					/>
 				</div>
 
 				<button
 					type="button"
-					class="relative flex h-auto min-w-14 shrink-0 items-center justify-center rounded-md border border-white/10 bg-[#080b12]/80 px-4 text-white transition-all focus:border-amber-200/50 focus:ring-4 focus:ring-amber-200/10 focus:outline-none active:scale-95 lg:hidden"
+					class="relative flex h-auto min-w-14 shrink-0 items-center justify-center rounded-md border border-white/10 bg-[#070a12]/86 px-4 text-white transition-all focus:border-cyan-300/55 focus:ring-4 focus:ring-cyan-300/10 focus:outline-none active:scale-95 lg:hidden"
 					aria-label="Toggle filters"
 					aria-expanded={filtersOpen}
 					onclick={() => (filtersOpen = !filtersOpen)}
@@ -138,7 +138,7 @@
 					</svg>
 					{#if activeFilterCount > 0}
 						<span
-							class="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-md bg-amber-200 px-1 text-[10px] font-black text-slate-950"
+							class="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-md bg-cyan-300 px-1 text-[10px] font-black text-slate-950"
 						>
 							{activeFilterCount}
 						</span>
@@ -154,7 +154,7 @@
 				<div class="relative min-w-0 {domainsOpen ? 'z-[1000]' : 'z-[130]'} lg:min-w-[210px]">
 					<button
 						type="button"
-						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-white/5 bg-slate-950/60 px-5 py-4 text-left text-xs font-black tracking-widest text-white uppercase transition-all hover:border-white/10 focus:border-cyan-400/50 focus:ring-4 focus:ring-cyan-400/10 focus:outline-none disabled:cursor-not-allowed disabled:opacity-45 sm:py-5"
+						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-cyan-300/10 bg-slate-950/68 px-5 py-4 text-left text-xs font-black tracking-widest text-white uppercase shadow-inner shadow-black/20 transition-all hover:border-cyan-300/25 hover:bg-slate-950/82 focus:border-cyan-400/50 focus:ring-4 focus:ring-cyan-400/10 focus:outline-none disabled:cursor-not-allowed disabled:opacity-45 sm:py-5"
 						aria-haspopup="listbox"
 						aria-expanded={domainsOpen}
 						disabled={isBattlefieldType}
@@ -199,7 +199,7 @@
 
 					{#if domainsOpen && !isBattlefieldType}
 						<div
-							class="absolute inset-x-0 top-full z-[1000] mt-2 max-h-72 w-full min-w-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl lg:right-0 lg:left-auto lg:max-h-80 lg:min-w-60"
+							class="absolute inset-x-0 top-full z-[1000] mt-2 max-h-72 w-full min-w-0 overflow-y-auto rounded-2xl border border-cyan-300/15 bg-slate-950/96 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl lg:right-0 lg:left-auto lg:max-h-80 lg:min-w-60"
 							role="listbox"
 							tabindex="-1"
 						>
@@ -272,7 +272,7 @@
 				<div class="relative min-w-0 {domainsOpen ? 'z-[1000]' : 'z-[130]'}">
 					<button
 						type="button"
-						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-white/5 bg-slate-950/60 px-5 py-4 text-left text-xs font-black tracking-widest text-white uppercase transition-all hover:border-white/10 focus:border-cyan-400/50 focus:ring-4 focus:ring-cyan-400/10 focus:outline-none disabled:cursor-not-allowed disabled:opacity-45 sm:py-5"
+						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-cyan-300/10 bg-slate-950/68 px-5 py-4 text-left text-xs font-black tracking-widest text-white uppercase shadow-inner shadow-black/20 transition-all hover:border-cyan-300/25 hover:bg-slate-950/82 focus:border-cyan-400/50 focus:ring-4 focus:ring-cyan-400/10 focus:outline-none disabled:cursor-not-allowed disabled:opacity-45 sm:py-5"
 						aria-haspopup="listbox"
 						aria-expanded={domainsOpen}
 						disabled={isBattlefieldType}
@@ -317,7 +317,7 @@
 
 					{#if domainsOpen && !isBattlefieldType}
 						<div
-							class="absolute inset-x-0 top-full z-[1000] mt-2 max-h-72 w-full min-w-0 overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/95 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl"
+							class="absolute inset-x-0 top-full z-[1000] mt-2 max-h-72 w-full min-w-0 overflow-y-auto rounded-2xl border border-cyan-300/15 bg-slate-950/96 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl"
 							role="listbox"
 							tabindex="-1"
 						>

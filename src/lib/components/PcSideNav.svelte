@@ -6,7 +6,7 @@
 		href: string;
 		external?: boolean;
 		active?: boolean;
-		icon: 'cards' | 'domains' | 'qa' | 'deck' | 'official';
+		icon: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'official';
 	};
 
 	type AuthSession = {
@@ -16,7 +16,7 @@
 		} | null;
 	};
 
-	let { active = '' } = $props<{ active?: 'cards' | 'domains' | 'qa' | 'deck' | '' }>();
+	let { active = '' } = $props<{ active?: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | '' }>();
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
 
@@ -25,6 +25,7 @@
 		{ label: 'Domains', href: '/domains', active: active === 'domains', icon: 'domains' },
 		{ label: 'Q&A', href: '/qa', active: active === 'qa', icon: 'qa' },
 		{ label: 'Deck', href: '/deck', active: active === 'deck', icon: 'deck' },
+		{ label: 'Donate', href: '/donate', active: active === 'donate', icon: 'donate' },
 		{ label: 'Official', href: 'https://riftbound.com', external: true, icon: 'official' }
 	]);
 
@@ -142,6 +143,18 @@
 							<path d="M9 7h6" />
 							<path d="M9 11h6" />
 							<path d="M9 15h4" />
+						</svg>
+					{:else if item.icon === 'donate'}
+						<svg
+							class="h-5 w-5"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.6"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M12 21s-7-4.4-9.2-8.6C1 8.9 3.2 5 7 5c2 0 3.4 1 5 2.8C13.6 6 15 5 17 5c3.8 0 6 3.9 4.2 7.4C19 16.6 12 21 12 21Z" />
 						</svg>
 					{:else}
 						<svg

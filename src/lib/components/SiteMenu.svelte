@@ -6,7 +6,7 @@
 		href: string;
 		external?: boolean;
 		active?: boolean;
-		icon: 'domains' | 'qa' | 'deck' | 'official';
+		icon: 'domains' | 'qa' | 'deck' | 'donate' | 'official';
 	};
 
 	type AuthSession = {
@@ -16,7 +16,7 @@
 		} | null;
 	};
 
-	let { active = '' } = $props<{ active?: 'domains' | 'qa' | 'deck' | '' }>();
+	let { active = '' } = $props<{ active?: 'domains' | 'qa' | 'deck' | 'donate' | '' }>();
 	let isOpen = $state(false);
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
@@ -25,6 +25,7 @@
 		{ label: 'Domains', href: '/domains', active: active === 'domains', icon: 'domains' },
 		{ label: 'Q&A', href: '/qa', active: active === 'qa', icon: 'qa' },
 		{ label: 'Deck', href: '/deck', active: active === 'deck', icon: 'deck' },
+		{ label: 'Donate', href: '/donate', active: active === 'donate', icon: 'donate' },
 		// { label: 'Chat', href: '/chat' },
 		{ label: 'Official', href: 'https://riftbound.com', external: true, icon: 'official' }
 	]);
@@ -131,6 +132,20 @@
 				</a>
 			{/each}
 			<div class="mt-2 border-t border-white/10 pt-2">
+				<button
+					type="button"
+					class="flex min-h-12 w-full items-center justify-between rounded-lg px-4 text-xs font-black tracking-widest text-cyan-200 uppercase transition hover:bg-white/5 hover:text-cyan-100"
+					onclick={() => {
+						isOpen = false;
+						window.dispatchEvent(new CustomEvent('riftthai-open-guide'));
+					}}
+				>
+					Guide / คู่มือ
+					<span class="relative flex h-2 w-2">
+						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-300 opacity-75"></span>
+						<span class="relative inline-flex h-2 w-2 rounded-full bg-cyan-400"></span>
+					</span>
+				</button>
 				{#if authLoading}
 					<div class="px-4 py-3 text-xs font-black tracking-widest text-slate-500 uppercase">
 						Loading

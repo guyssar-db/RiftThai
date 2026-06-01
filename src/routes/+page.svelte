@@ -164,23 +164,46 @@
 	<main class="rt-container py-5 sm:py-8 lg:py-10">
 		{#if viewMode === 'gallery'}
 			<header
-				class="rt-panel rt-topline mb-5 grid overflow-hidden rounded-xl lg:mb-7 lg:grid-cols-[minmax(0,1fr)_360px]"
+				class="rt-panel rt-topline rt-scanline relative mb-5 grid overflow-hidden rounded-xl lg:mb-7 lg:grid-cols-[minmax(0,1fr)_360px]"
 			>
-				<div class="rt-rule-line min-w-0 p-5 pl-7 sm:p-7 sm:pl-9 lg:p-8 lg:pl-10">
-					<p class="rt-kicker mb-3">Riftbound Thai Card Database</p>
-					<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl lg:text-7xl">
+				<div
+					class="pointer-events-none absolute -top-28 right-10 h-64 w-64 rounded-full bg-cyan-300/15 blur-3xl"
+				></div>
+				<div
+					class="pointer-events-none absolute -right-20 -bottom-32 h-72 w-72 rounded-full bg-[#ffb86b]/10 blur-3xl"
+				></div>
+
+				<div class="rt-rule-line relative min-w-0 p-5 pl-7 sm:p-7 sm:pl-9 lg:p-8 lg:pl-10">
+					<div class="mb-4 flex flex-wrap items-center gap-2">
+						<p class="rt-kicker">Riftbound Thai Card Database</p>
+						<span
+							class="rounded-md border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black tracking-widest text-cyan-100 uppercase"
+							>Live Index</span
+						>
+					</div>
+					<h1 class="rt-heading text-5xl uppercase italic sm:text-7xl lg:text-8xl">
 						Rift<span class="text-cyan-300">Thai</span>
 					</h1>
 					<p class="rt-copy mt-4 max-w-2xl text-sm sm:text-base">
 						ค้นการ์ด, อ่านคำแปลไทย, กรองตาม set, type และ domain ได้จากหน้าเดียว พร้อมข้อมูล keyword
 						และลำดับ phase สำหรับใช้เตรียมเล่น
 					</p>
+					<div class="mt-6 flex flex-wrap gap-2">
+						<span class="rt-chip">Thai Translation</span>
+						<span class="rt-chip">Rules Notes</span>
+						<span class="rt-chip">Deck Prep</span>
+					</div>
 				</div>
 
-				<div class="border-t border-white/10 bg-slate-950/32 p-4 lg:border-t-0 lg:border-l">
-					<div class="grid h-full grid-cols-3 gap-2 text-center lg:grid-cols-1">
+				<div class="relative border-t border-white/10 bg-slate-950/32 p-4 lg:border-t-0 lg:border-l">
+					<div
+						class="mb-3 hidden rounded-lg border border-white/10 bg-black/20 p-3 text-[10px] font-black tracking-widest text-slate-400 uppercase lg:block"
+					>
+						Index Telemetry
+					</div>
+					<div class="grid h-full grid-cols-3 gap-2 text-center lg:h-auto lg:grid-cols-1">
 						<div
-							class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3"
+							class="flex items-center justify-between rounded-lg border border-cyan-300/15 bg-black/20 p-3 shadow-inner shadow-cyan-300/5"
 						>
 							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
 								Cards
@@ -188,7 +211,7 @@
 							<div class="text-xl font-black text-white">{cards.length}</div>
 						</div>
 						<div
-							class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3"
+							class="flex items-center justify-between rounded-lg border border-cyan-300/15 bg-black/20 p-3 shadow-inner shadow-cyan-300/5"
 						>
 							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
 								Sets
@@ -196,7 +219,7 @@
 							<div class="text-xl font-black text-white">{sets.length - 1}</div>
 						</div>
 						<div
-							class="flex items-center justify-between rounded-lg border border-white/10 bg-black/15 p-3"
+							class="flex items-center justify-between rounded-lg border border-cyan-300/15 bg-black/20 p-3 shadow-inner shadow-cyan-300/5"
 						>
 							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
 								Domains
@@ -256,95 +279,4 @@
 		animation: loading-bar 1.5s infinite linear;
 	}
 
-	:global(.kw-inline-badge) {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		height: 1.8em;
-		margin: 2px 4px;
-		padding: 0 12px;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		color: white;
-		font-size: 0.75em;
-		font-weight: 900;
-		line-height: 1;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		vertical-align: middle;
-		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
-		transform: skewX(-13deg);
-	}
-
-	:global(.kw-inline-badge > *) {
-		transform: skewX(13deg);
-	}
-
-	:global(.kw-inline-badge.kw-arrow) {
-		padding: 0 18px 0 14px;
-		clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
-		transform: none;
-	}
-
-	:global(.kw-inline-badge.kw-arrow > *) {
-		transform: none;
-	}
-
-	:global(.kw-inline-badge.kw-cost-badge) {
-		height: auto;
-		min-height: 1.8em;
-		gap: 0.25em;
-		padding: 0.18em 0.75em;
-		transform: skewX(-13deg);
-	}
-
-	:global(.kw-inline-badge.kw-cost-badge > *) {
-		transform: skewX(13deg);
-	}
-
-	:global(.kw-inline-badge.kw-cost-badge .inline-icon),
-	:global(.kw-inline-badge.kw-cost-badge .icon-energy-circle) {
-		margin: 0;
-		top: 0;
-	}
-
-	:global(.inline-icon) {
-		position: relative;
-		top: -1px;
-		display: inline-block;
-		width: auto;
-		height: 1.3em;
-		margin: 0 2px;
-		vertical-align: middle;
-		filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.5));
-	}
-
-	:global(.icon-energy-circle) {
-		position: relative;
-		top: -2px;
-		display: inline-flex;
-		width: 1.3em;
-		height: 1.3em;
-		align-items: center;
-		justify-content: center;
-		margin: 0 2px;
-		border-radius: 50%;
-		background: white;
-		color: black;
-		font-size: 0.7em;
-		font-weight: 900;
-		vertical-align: middle;
-		box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3);
-	}
-
-	:global(.battlefield-rotated) {
-		object-fit: contain;
-		transform: rotate(90deg) scale(1.4);
-	}
-
-	@media (max-width: 640px) {
-		:global(.kw-inline-badge) {
-			padding: 0 8px;
-			font-size: 0.65em;
-		}
-	}
 </style>

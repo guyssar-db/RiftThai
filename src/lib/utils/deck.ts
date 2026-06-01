@@ -10,7 +10,11 @@ export type StoredDeck = {
 	name: string;
 	championCode: string;
 	entries: DeckEntry[];
+	sideboardEntries?: DeckEntry[];
 	updatedAt: string;
+	source?: 'local' | 'online';
+	onlineId?: string;
+	visibility?: 'private' | 'unlisted' | 'public';
 };
 
 export type DeckCollection = {
@@ -31,6 +35,7 @@ export type DeckStats = {
 	battlefieldTotal: number;
 	tokenTotal: number;
 	otherTotal: number;
+	sideboardTotal: number;
 	costs: { label: string; count: number }[];
 	types: { label: string; count: number }[];
 	domains: { label: string; count: number }[];
@@ -45,6 +50,7 @@ export const maxBattlefieldCopiesPerName = 1;
 export const maxLegendCards = 1;
 export const maxChampionCards = 1;
 export const maxRuneCards = 12;
+export const maxSideboardCards = 8;
 
 const mainExclusions = new Set(['Rune', 'Battlefield', 'Legend']);
 const tokenCardNames = new Set([
@@ -54,7 +60,9 @@ const tokenCardNames = new Set([
 	'Recruit (ZN)',
 	'Reflection',
 	'Sand Soldier',
-	'Sprite'
+	'Sprite',
+	'Gold',
+	'Baron Pit'
 ]);
 
 export function normalizeDeck(entries: DeckEntry[]) {
@@ -204,10 +212,25 @@ export function duplicateActiveDeck(collection: DeckCollection) {
 	const activeDeck = getActiveStoredDeck(collection);
 	const deck = createEmptyDeck(`${activeDeck.name} Copy`);
 	deck.entries = normalizeDeck(activeDeck.entries);
+	deck.sideboardEntries = normalizeDeck(activeDeck.sideboardEntries || []);
 	deck.championCode = activeDeck.championCode;
 	return normalizeDeckCollection({
 		activeDeckId: deck.id,
 		decks: [...collection.decks, deck]
+	});
+}
+
+export function updateActiveDeckSideboardEntries(collection: DeckCollection, sideboardEntries: DeckEntry[]) {
+	const now = new Date().toISOString();
+	const normalizedSideboard = normalizeDeck(sideboardEntries);
+
+	return normalizeDeckCollection({
+		activeDeckId: collection.activeDeckId,
+		decks: collection.decks.map((deck) =>
+			deck.id === collection.activeDeckId
+				? { ...deck, sideboardEntries: normalizedSideboard, updatedAt: now }
+				: deck
+		)
 	});
 }
 
@@ -276,7 +299,7 @@ export function getDeckZones(deckCards: DeckCard[]) {
 	};
 }
 
-export function calculateDeckStats(deckCards: DeckCard[]): DeckStats {
+export function calculateDeckStats(deckCards: DeckCard[], sideboardCards: DeckCard[] = []): DeckStats {
 	const zones = getDeckZones(deckCards);
 	const costs = new Map<string, number>();
 	const types = new Map<string, number>();
@@ -300,13 +323,14 @@ export function calculateDeckStats(deckCards: DeckCard[]): DeckStats {
 	}
 
 	return {
-		total: sumQuantities(deckCards),
+		total: sumQuantities(deckCards) + sumQuantities(sideboardCards),
 		mainTotal: sumQuantities(zones.main),
 		runeTotal: sumQuantities(zones.runes),
 		legendTotal: sumQuantities(zones.legends),
 		battlefieldTotal: sumQuantities(zones.battlefields),
 		tokenTotal: sumQuantities(zones.tokens),
 		otherTotal: sumQuantities(zones.other),
+		sideboardTotal: sumQuantities(sideboardCards),
 		costs: sortNumberLabels(costs),
 		types: sortAlphaLabels(types),
 		domains: sortAlphaLabels(domains),
@@ -323,11 +347,11 @@ export function isLegendCard(card: Card) {
 }
 
 export function isBattlefieldCard(card: Card) {
-	return card.type === 'Battlefield';
+	return card.type === 'Battlefield' && !isTokenCard(card);
 }
 
 export function isTokenCard(card: Card) {
-	return tokenCardNames.has(card.name_en);
+	return tokenCardNames.has(card.name_en) || Boolean(card.code && card.code.includes('-T'));
 }
 
 export function isMainDeckCard(card: Card) {
@@ -410,19 +434,33 @@ function sortNumberLabels(values: Map<string, number>) {
 		});
 }
 
-function normalizeStoredDeck(value: unknown) {
+function normalizeStoredDeck(value: unknown): StoredDeck | null {
 	if (!isObject(value)) return null;
 	const championCode = typeof value.championCode === 'string' ? value.championCode.trim() : '';
+
+	const source: 'local' | 'online' =
+		value.source === 'online' || value.source === 'local'
+			? value.source
+			: typeof value.onlineId === 'string' && value.onlineId.trim()
+				? 'online'
+				: 'local';
 
 	return {
 		id: typeof value.id === 'string' && value.id.trim() ? value.id : createDeckId(),
 		name: normalizeDeckName(value.name),
 		championCode,
 		entries: normalizeDeck(Array.isArray(value.entries) ? value.entries : []),
+		sideboardEntries: normalizeDeck(Array.isArray((value as any).sideboardEntries) ? (value as any).sideboardEntries : []),
 		updatedAt:
 			typeof value.updatedAt === 'string' && value.updatedAt.trim()
 				? value.updatedAt
-				: new Date().toISOString()
+				: new Date().toISOString(),
+		source,
+		onlineId: typeof value.onlineId === 'string' && value.onlineId.trim() ? value.onlineId : undefined,
+		visibility:
+			value.visibility === 'public' || value.visibility === 'unlisted' || value.visibility === 'private'
+				? value.visibility
+				: undefined
 	};
 }
 

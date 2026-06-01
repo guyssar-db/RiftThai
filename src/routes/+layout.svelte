@@ -5,6 +5,7 @@
 	import './layout.css';
 	import FakeAiChat from '$lib/components/FakeAiChat.svelte';
 	import PcSideNav from '$lib/components/PcSideNav.svelte';
+	import UserGuide from '$lib/components/UserGuide.svelte';
 
 	let { children } = $props();
 
@@ -48,7 +49,7 @@
 	let canonicalPath = $derived(publicPages[pathname] ? pathname : '/');
 	let canonicalUrl = $derived(`${siteUrl}${canonicalPath === '/' ? '/' : canonicalPath}`);
 	let robots = $derived(publicPages[pathname] ? 'index, follow' : 'noindex, nofollow');
-	let sideNavActive: 'cards' | 'domains' | 'qa' | 'deck' | '' = $derived(
+	let sideNavActive: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | '' = $derived(
 		pathname === '/'
 			? 'cards'
 			: pathname.startsWith('/domains')
@@ -57,7 +58,9 @@
 					? 'qa'
 					: pathname.startsWith('/deck')
 						? 'deck'
-						: ''
+						: pathname.startsWith('/donate')
+							? 'donate'
+							: ''
 	);
 	let cookieChoice = $state<'accepted' | 'declined' | null>(null);
 	let showCookieNotice = $derived(cookieChoice === null);
@@ -197,6 +200,7 @@
 	</div>
 {/if}
 <FakeAiChat />
+<UserGuide />
 
 <style>
 	@keyframes global-loading-bar {

@@ -6,11 +6,19 @@
     import { getCardImageSources } from '$lib/utils/cardImages';
     let { card, closePopup, canEdit } = $props<{ card: Card, closePopup: () => void, canEdit: boolean }>();
 
+
+
     let isEditing = $state(false);
     let tempAbilityEn = $state('');
     let tempAbilityTh = $state('');
     let isSaving = $state(false);
     let modalImageSources = $derived(getCardImageSources(card.image_url, [360, 480, 640, 744]));
+
+    let activeTooltip = $state("");
+    let verticalTransform = $state("");
+    let tooltipX = $state(0);
+    let tooltipY = $state(0);
+
 
     $effect(() => {
         tempAbilityEn = card.ability_en;
@@ -40,6 +48,41 @@
         }
         isSaving = false;
     }
+
+
+
+function showTooltip(e: Event) {
+    const target = e.target as HTMLElement;
+    const trigger = target.closest('[data-tooltip]') as HTMLElement;
+    if (trigger) {
+        activeTooltip = trigger.getAttribute('data-tooltip') || "";
+        const rect = trigger.getBoundingClientRect();
+        // Calculate initial horizontal position (center of trigger)
+        let calculatedX = rect.left + rect.width / 2;
+
+        // Estimate tooltip width (using the largest max-w for general calculation)
+        const tooltipMaxWidth = window.innerWidth < 640 ? 280 : 320; // Rough estimate from Tailwind classes
+        const tooltipHalfWidth = tooltipMaxWidth / 2;
+
+        // Adjust calculatedX to keep tooltip within viewport
+        if (calculatedX - tooltipHalfWidth < 0) { // If it goes off left
+            calculatedX = tooltipHalfWidth + 10; // Add some padding
+        } else if (calculatedX + tooltipHalfWidth > window.innerWidth) { // If it goes off right
+            calculatedX = window.innerWidth - tooltipHalfWidth - 10; // Add some padding
+        }
+
+        tooltipX = calculatedX; // Assign to state
+
+        // Calculate vertical position (existing logic)
+        if (rect.top < 100) {
+            tooltipY = rect.bottom + 8;
+            verticalTransform = "";
+        } else {
+            tooltipY = rect.top - 8;
+            verticalTransform = "translateY(-100%)";
+        }
+    }
+}
 
 
 
@@ -179,7 +222,7 @@
             processed = processed.replace(id, html);
         }
 
-        return processed.replace(/\\n/g, '<br />').replace(/\n/g, '<br />');
+        return processed.replace(/\r\n/g, '<br />').replace(/\n/g, '<br />');
     }
 
     function formatTranslatedAbility(text: string, sourceText: string) {
@@ -198,28 +241,6 @@
         return formatted.replace(/\n{3,}/g, '\n\n').trim();
     }
 
-    let activeTooltip = $state("");
-    let tooltipX = $state(0);
-    let tooltipY = $state(0);
-    let tooltipTransform = $state("translate(-50%, -100%)");
-
-    function showTooltip(e: Event) {
-        const target = e.target as HTMLElement;
-        const trigger = target.closest('[data-tooltip]') as HTMLElement;
-        if (trigger) {
-            activeTooltip = trigger.getAttribute('data-tooltip') || "";
-            const rect = trigger.getBoundingClientRect();
-            tooltipX = rect.left + rect.width / 2;
-            
-            if (rect.top < 100) {
-                tooltipY = rect.bottom + 8;
-                tooltipTransform = "translate(-50%, 0)";
-            } else {
-                tooltipY = rect.top - 8;
-                tooltipTransform = "translate(-50%, -100%)";
-            }
-        }
-    }
 
     function handleMouseOut(e: MouseEvent) {
         const target = e.target as HTMLElement;
@@ -253,9 +274,11 @@
 </script>
 
 {#if activeTooltip}
-    <div 
-        class="fixed z-[9999] bg-slate-900/95 backdrop-blur-xl text-white text-xs sm:text-sm p-4 sm:p-5 rounded-2xl border border-white/10 shadow-2xl whitespace-normal leading-relaxed text-center font-medium font-sans max-w-[280px] sm:max-w-[320px] pointer-events-none animate-in fade-in zoom-in duration-200"
-        style="left: {tooltipX}px; top: {tooltipY}px; transform: {tooltipTransform};"
+    <div
+        class="fixed z-[9999] bg-slate-900/95 backdrop-blur-xl text-white text-xs sm:text-sm p-4 sm:p-5 rounded-2xl border border-white/10 shadow-2xl whitespace-normal leading-relaxed text-center font-medium font-sans
+               max-w-[280px] sm:max-w-[320px] max-w-[calc(100vw-2rem)]
+               pointer-events-none animate-in fade-in zoom-in duration-200"
+        style="left: {tooltipX}px; top: {tooltipY}px; transform: translateX(-50%) {verticalTransform};"
     >
         {activeTooltip}
     </div>
@@ -345,46 +368,43 @@
                             {/if}
                         </div>
 
-                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div class="min-h-[82px] rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                                <div class="mb-2 text-[9px] font-black uppercase tracking-[0.22em] text-slate-500">Type</div>
-                                <div class="flex min-w-0 items-center gap-3 text-sm font-black uppercase tracking-wide text-white">
-                                    <div class="flex shrink-0 items-center gap-1.5">
+                        <div class="rounded-2xl border border-white/10 bg-slate-950/45 p-2 shadow-inner shadow-black/20">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-cyan-300/10 bg-cyan-300/8 px-3 py-2">
+                                    <div class="flex shrink-0 items-center gap-1">
                                         {#each getTypeIcons(card.type) as typeIcon}
-                                            <img src="/images/icons/{typeIcon.src}" class="h-7 w-7 object-contain" alt="{typeIcon.label} type" />
+                                            <img src="/images/icons/{typeIcon.src}" class="h-5 w-5 object-contain" alt="{typeIcon.label} type" />
                                         {/each}
                                     </div>
-                                    <span class="min-w-0 break-words leading-snug">{card.type || '-'}</span>
+                                    <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-500">Type</span>
+                                    <span class="min-w-0 truncate text-xs font-black uppercase tracking-widest text-white">{card.type || '-'}</span>
                                 </div>
-                            </div>
-                            <div class="min-h-[82px] rounded-2xl border p-4 {card.rarity ? rarityClass(card.rarity) : 'border-white/10 bg-slate-950/50 text-white'}">
-                                <div class="mb-2 text-[9px] font-black uppercase tracking-[0.22em] opacity-60">Rarity</div>
-                                <div class="flex min-w-0 items-center gap-3 text-sm font-black uppercase tracking-wide">
+
+                                <div class="flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-widest {card.rarity ? rarityClass(card.rarity) : 'border-white/10 bg-white/5 text-slate-300'}">
                                     {#if getRarityIcon(card.rarity)}
-                                        <img src={getRarityIcon(card.rarity) ?? ''} class="h-7 w-7 shrink-0 object-contain" alt="{card.rarity} rarity" />
+                                        <img src={getRarityIcon(card.rarity) ?? ''} class="h-5 w-5 shrink-0 object-contain" alt="{card.rarity} rarity" />
                                     {/if}
-                                    <span class="min-w-0 break-words leading-snug">{card.rarity || '-'}</span>
+                                    <span class="text-[9px] opacity-70">Rarity</span>
+                                    <span>{card.rarity || 'No Rarity'}</span>
                                 </div>
-                            </div>
-                            <div class="min-h-[82px] rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                                <div class="mb-2 text-[9px] font-black uppercase tracking-[0.22em] text-slate-500">Energy</div>
-                                <div class="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-white">
+
+                                <div class="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black uppercase tracking-widest text-white">
+                                    <span class="text-[9px] text-slate-500">Energy</span>
                                     {#if card.energy !== null}
-                                        <span class="grid h-7 w-7 place-items-center rounded-full bg-white text-sm text-slate-950">{card.energy}</span>
+                                        <span class="grid h-6 min-w-6 place-items-center rounded-full bg-white px-1 text-xs text-slate-950">{card.energy}</span>
                                     {:else}
-                                        <span>-</span>
+                                        <span class="text-slate-500">-</span>
                                     {/if}
                                 </div>
-                            </div>
-                            {#if card.power !== null}
-                                <div class="min-h-[82px] rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                                    <div class="mb-2 text-[9px] font-black uppercase tracking-[0.22em] text-slate-500">Might</div>
-                                    <div class="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-white">
-                                        <img src="/images/icons/might.svg" class="h-6 w-auto" alt="Might" />
+
+                                {#if card.power !== null}
+                                    <div class="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black uppercase tracking-widest text-white">
+                                        <span class="text-[9px] text-slate-500">Might</span>
+                                        <img src="/images/icons/might.svg" class="h-5 w-auto" alt="Might" />
                                         <span>{card.power?.value?.label}</span>
                                     </div>
-                                </div>
-                            {/if}
+                                {/if}
+                            </div>
                         </div>
 
                         {#if card.domains?.length > 0 || card.tags?.length > 0}
@@ -434,7 +454,7 @@
                             <h4 class="mb-4 text-[10px] font-black uppercase italic tracking-[0.32em] text-cyan-500 opacity-70">Localized Intel (TH)</h4>
                             {#if isEditing && canEdit}
                                 <textarea bind:value={tempAbilityTh} class="h-40 w-full rounded-lg border border-white/10 bg-slate-950 p-5 text-sm font-medium leading-relaxed text-white transition-all focus:border-cyan-500/50 focus:outline-none"></textarea>
-{:else}
+                            {:else}
                                 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_mouse_events_have_key_events -->
                                 <div class="break-words text-lg font-black leading-relaxed tracking-tight text-white sm:text-xl"
                                      onmouseover={showTooltip} onmouseout={handleMouseOut} onfocusin={showTooltip} onfocusout={hideTooltip}
