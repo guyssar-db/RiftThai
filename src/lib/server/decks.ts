@@ -8,6 +8,7 @@ type UserDeckRow = {
 	name: string;
 	champion_code: string;
 	entries: DeckEntry[];
+	sideboard_entries?: DeckEntry[];
 	visibility: 'private' | 'unlisted' | 'public';
 	created_at: string;
 	updated_at: string;
@@ -33,6 +34,7 @@ export async function listPublicDecks() {
 
 export async function upsertUserDeck(userId: string, deck: StoredDeck) {
 	const entries = normalizeDeck(deck.entries);
+	const sideboardEntries = normalizeDeck(deck.sideboardEntries || []);
 	const now = new Date().toISOString();
 	const existingDeck = await findUserDeckByLocalId(userId, deck.id);
 
@@ -40,6 +42,7 @@ export async function upsertUserDeck(userId: string, deck: StoredDeck) {
 		name: normalizeDeckName(deck.name),
 		champion_code: deck.championCode || '',
 		entries,
+		sideboard_entries: sideboardEntries,
 		updated_at: now
 	};
 
@@ -118,6 +121,7 @@ function rowToStoredDeck(row: UserDeckRow): StoredDeck {
 		name: row.name,
 		championCode: row.champion_code,
 		entries: normalizeDeck(Array.isArray(row.entries) ? row.entries : []),
+		sideboardEntries: normalizeDeck(Array.isArray(row.sideboard_entries) ? row.sideboard_entries : []),
 		updatedAt: row.updated_at,
 		source: 'online',
 		onlineId: row.id,

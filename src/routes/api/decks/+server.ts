@@ -64,6 +64,7 @@ function normalizeDeckInput(value: unknown): StoredDeck | null {
 		name: String(deck.name ?? 'Untitled Deck').trim().slice(0, 48) || 'Untitled Deck',
 		championCode: String(deck.championCode ?? '').trim(),
 		entries: normalizeDeck(Array.isArray(deck.entries) ? deck.entries : []),
+		sideboardEntries: normalizeDeck(Array.isArray(deck.sideboardEntries) ? deck.sideboardEntries : []),
 		updatedAt:
 			typeof deck.updatedAt === 'string' && deck.updatedAt.trim()
 				? deck.updatedAt
