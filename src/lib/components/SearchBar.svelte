@@ -28,6 +28,7 @@
 		if (lower === 'origins') return '/images/Set/origins.webp';
 		if (lower === 'spiritforged') return '/images/Set/spiritforged.webp';
 		if (lower === 'unleashed') return '/images/Set/unleashed.webp';
+		if (lower === 'proving grounds') return '/images/Set/proving-grounds.webp';
 		return null;
 	}
 

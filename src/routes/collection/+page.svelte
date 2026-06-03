@@ -564,10 +564,8 @@
 						onclick={() => selectedSet = 'Proving Grounds'}
 						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-emerald-500/10 hover:border-emerald-500/30 cursor-pointer"
 					>
-						<div class="flex flex-col items-center py-4">
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-12 w-12 text-emerald-400 group-hover:scale-105 transition">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
-							</svg>
+						<div class="flex flex-col items-center py-6">
+							<img src="/images/Set/proving-grounds.webp" class="h-14 object-contain group-hover:scale-105 transition" alt="Proving Grounds Set" />
 						</div>
 						<div class="mt-4 border-t border-white/5 pt-4">
 							<h3 class="text-sm font-black text-white italic uppercase">Proving Grounds</h3>
