@@ -10,9 +10,14 @@ const registerResponse = {
 
 export const POST = async ({ request, getClientAddress }) => {
 	try {
-		const body = (await request.json()) as { email?: unknown; password?: unknown };
+		const body = (await request.json()) as {
+			email?: unknown;
+			password?: unknown;
+			displayName?: unknown;
+		};
 		const email = typeof body.email === 'string' ? body.email.trim() : '';
 		const password = typeof body.password === 'string' ? body.password : '';
+		const displayName = typeof body.displayName === 'string' ? body.displayName : '';
 
 		const ip = clientKey(getClientAddress());
 		const ipLimit = checkRateLimit(`register:ip:${ip}`, { windowMs: 60 * 60_000, max: 5 });
@@ -28,7 +33,7 @@ export const POST = async ({ request, getClientAddress }) => {
 			);
 		}
 
-		await registerUser(email, password);
+		await registerUser(email, password, displayName);
 		return json(registerResponse);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : '';

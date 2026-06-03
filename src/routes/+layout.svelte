@@ -32,6 +32,11 @@
 			description:
 				'สรุป Domain ใน Riftbound ทั้ง Fury, Calm, Mind, Body, Chaos และ Order พร้อมจุดเด่น จุดอ่อน และแนวทางเล่นภาษาไทย'
 		},
+		'/collection': {
+			title: 'My Collection - RiftThai',
+			description:
+				'จัดการการ์ดสะสมในระบบ RiftThai ติดตามจำนวนการ์ดที่คุณมีเพื่อใช้ในระบบสร้างเด็ค'
+		},
 		'/privacy': {
 			title: 'Privacy Policy - RiftThai',
 			description:
@@ -49,7 +54,7 @@
 	let canonicalPath = $derived(publicPages[pathname] ? pathname : '/');
 	let canonicalUrl = $derived(`${siteUrl}${canonicalPath === '/' ? '/' : canonicalPath}`);
 	let robots = $derived(publicPages[pathname] ? 'index, follow' : 'noindex, nofollow');
-	let sideNavActive: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | '' = $derived(
+	let sideNavActive: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | '' = $derived(
 		pathname === '/'
 			? 'cards'
 			: pathname.startsWith('/domains')
@@ -60,7 +65,9 @@
 						? 'deck'
 						: pathname.startsWith('/donate')
 							? 'donate'
-							: ''
+							: pathname.startsWith('/collection')
+								? 'collection'
+								: ''
 	);
 	let cookieChoice = $state<'accepted' | 'declined' | null>(null);
 	let isHydrated = $state(false);

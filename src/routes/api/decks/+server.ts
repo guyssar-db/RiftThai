@@ -1,19 +1,70 @@
 import { json } from '@sveltejs/kit';
 
 import { getAuthenticatedUser } from '$lib/server/auth';
-import { deleteUserDeck, listPublicDecks, listUserDecks, setUserDeckVisibility, upsertUserDeck } from '$lib/server/decks';
+import {
+	deleteUserDeck,
+	getDeckById,
+	listPublicDecks,
+	listUserDecks,
+	setUserDeckVisibility,
+	upsertUserDeck,
+	getUserLikedDeckIds
+} from '$lib/server/decks';
 import { normalizeDeck, type StoredDeck } from '$lib/utils/deck';
 
 export const GET = async ({ cookies, url }) => {
+	const deckId = url.searchParams.get('id');
+	const user = await getAuthenticatedUser(cookies);
+
+	if (deckId) {
+		const deck = await getDeckById(deckId);
+		if (!deck) return json({ error: 'deck not found' }, { status: 404 });
+
+		if (deck.visibility !== 'public' && deck.visibility !== 'unlisted') {
+			if (!user || user.id !== deck.owner?.id) {
+				return json({ error: 'access denied' }, { status: 403 });
+			}
+		}
+
+		if (user && deck.onlineId) {
+			const likedDeckIds = await getUserLikedDeckIds(user.id);
+			deck.isLiked = likedDeckIds.has(deck.onlineId);
+		}
+
+		return json({ deck });
+	}
+
 	if (url.searchParams.get('scope') === 'public') {
-		const decks = await listPublicDecks();
+		const sortParam = url.searchParams.get('sort') || 'newest';
+		const orderBy =
+			sortParam === 'popular' || sortParam === 'trending'
+				? ('likes_count.desc,updated_at.desc' as const)
+				: ('updated_at.desc' as const);
+
+		const decks = await listPublicDecks(orderBy);
+
+		if (user) {
+			const likedDeckIds = await getUserLikedDeckIds(user.id);
+			for (const deck of decks) {
+				if (deck.onlineId) {
+					deck.isLiked = likedDeckIds.has(deck.onlineId);
+				}
+			}
+		}
 		return json({ decks });
 	}
 
-	const user = await getAuthenticatedUser(cookies);
 	if (!user) return json({ error: 'login required' }, { status: 401 });
 
 	const decks = await listUserDecks(user.id);
+	if (user) {
+		const likedDeckIds = await getUserLikedDeckIds(user.id);
+		for (const deck of decks) {
+			if (deck.onlineId) {
+				deck.isLiked = likedDeckIds.has(deck.onlineId);
+			}
+		}
+	}
 	return json({ decks });
 };
 
@@ -24,6 +75,7 @@ export const POST = async ({ cookies, request }) => {
 	const body = await request.json().catch(() => null);
 	const deck = normalizeDeckInput(body?.deck);
 	if (!deck) return json({ error: 'invalid deck' }, { status: 400 });
+	deck.visibility = deck.visibility ?? user.settings.defaultDeckVisibility;
 
 	const savedDeck = await upsertUserDeck(user.id, deck);
 	return json({ deck: savedDeck });

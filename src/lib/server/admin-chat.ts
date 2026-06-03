@@ -11,6 +11,7 @@ export type AdminConversation = {
 	updated_at: string;
 	app_users?: {
 		email: string;
+		display_name: string | null;
 	} | null;
 };
 
@@ -47,13 +48,13 @@ export async function getOrCreateConversation(user: AuthUser) {
 
 export async function listAdminConversations() {
 	return dbRequest<AdminConversation[]>(
-		'/rest/v1/admin_conversations?select=*,app_users(email)&order=last_message_at.desc.nullslast'
+		'/rest/v1/admin_conversations?select=*,app_users(email,display_name)&order=last_message_at.desc.nullslast'
 	);
 }
 
 export async function getConversation(conversationId: string) {
 	const rows = await dbRequest<AdminConversation[]>(
-		`/rest/v1/admin_conversations?id=eq.${conversationId}&select=*,app_users(email)`
+		`/rest/v1/admin_conversations?id=eq.${conversationId}&select=*,app_users(email,display_name)`
 	);
 	return rows[0] ?? null;
 }
@@ -154,4 +155,3 @@ async function dbRequest<T = unknown>(path: string, init: RequestInit = {}) {
 	const text = await response.text();
 	return text ? (JSON.parse(text) as T) : (undefined as T);
 }
-

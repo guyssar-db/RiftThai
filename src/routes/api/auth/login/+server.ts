@@ -39,8 +39,16 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 
 		return json({
 			user: {
+				id: session.user.id,
 				email: userEmail,
+				displayName: session.user.displayName,
+				displayNameLocked: session.user.displayNameLocked,
+				profileHandle: session.user.profileHandle,
+				profileSlug: session.user.profileSlug,
 				isAdmin,
+				emailVerified: session.user.emailVerified,
+				createdAt: session.user.createdAt,
+				settings: session.user.settings,
 				usage: {
 					used,
 					limit: config.dailyChatLimit

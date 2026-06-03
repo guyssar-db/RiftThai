@@ -6,25 +6,31 @@
 		href: string;
 		external?: boolean;
 		active?: boolean;
-		icon: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'official';
+		icon: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'official' | 'collection';
 	};
 
 	type AuthSession = {
 		user: {
+			id: string;
 			email: string;
+			displayName: string;
+			profileHandle: string;
+			profileSlug: string;
 			isAdmin: boolean;
 		} | null;
 	};
 
-	let { active = '' } = $props<{ active?: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | '' }>();
+	let { active = '' } = $props<{ active?: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | '' }>();
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
+	let accountOpen = $state(false);
 
 	let menuItems = $derived<MenuItem[]>([
 		{ label: 'Cards', href: '/', active: active === 'cards', icon: 'cards' },
 		{ label: 'Domains', href: '/domains', active: active === 'domains', icon: 'domains' },
 		{ label: 'Q&A', href: '/qa', active: active === 'qa', icon: 'qa' },
 		{ label: 'Deck', href: '/deck', active: active === 'deck', icon: 'deck' },
+		{ label: 'Collection', href: '/collection', active: active === 'collection', icon: 'collection' },
 		{ label: 'Donate', href: '/donate', active: active === 'donate', icon: 'donate' },
 		{ label: 'Official', href: 'https://riftbound.com', external: true, icon: 'official' }
 	]);
@@ -56,6 +62,7 @@
 	async function logout() {
 		await fetch('/api/auth/logout', { method: 'POST' });
 		currentUser = null;
+		accountOpen = false;
 		window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 	}
 </script>
@@ -156,6 +163,21 @@
 						>
 							<path d="M12 21s-7-4.4-9.2-8.6C1 8.9 3.2 5 7 5c2 0 3.4 1 5 2.8C13.6 6 15 5 17 5c3.8 0 6 3.9 4.2 7.4C19 16.6 12 21 12 21Z" />
 						</svg>
+					{:else if item.icon === 'collection'}
+						<svg
+							class="h-5 w-5"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.6"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M16 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" />
+							<path d="M22 8h-2v8h2" />
+							<path d="M6 8h6" />
+							<path d="M6 12h6" />
+						</svg>
 					{:else}
 						<svg
 							class="h-5 w-5"
@@ -183,17 +205,15 @@
 				class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/15 border-t-cyan-300"
 			></div>
 		{:else if currentUser}
-			<div class="hidden truncate px-2 text-[10px] font-bold text-slate-500 xl:block">
-				{currentUser.email}
-			</div>
 			<button
 				type="button"
-				class="flex h-12 w-full items-center justify-center rounded-xl border border-white/10 text-[11px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white xl:justify-start xl:gap-3 xl:px-3"
-				onclick={logout}
-				aria-label="Logout"
-				title="Logout"
+				class="group flex h-12 w-full items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/8 text-[11px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white xl:justify-start xl:gap-3 xl:px-3"
+				aria-label="Profile"
+				title="Profile"
+				aria-expanded={accountOpen}
+				onclick={() => (accountOpen = !accountOpen)}
 			>
-				<span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/5 text-cyan-200">
+				<span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-300/10 text-cyan-200">
 					<svg
 						class="h-5 w-5"
 						viewBox="0 0 24 24"
@@ -203,13 +223,53 @@
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					>
-						<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-						<path d="m16 17 5-5-5-5" />
-						<path d="M21 12H9" />
+						<circle cx="12" cy="8" r="4" />
+						<path d="M4 21a8 8 0 0 1 16 0" />
 					</svg>
 				</span>
-				<span class="hidden xl:block">Logout</span>
+				<span class="hidden min-w-0 truncate xl:block">{currentUser.profileHandle}</span>
+				<svg
+					class="hidden h-4 w-4 shrink-0 transition xl:block {accountOpen ? 'rotate-180' : ''}"
+					viewBox="0 0 20 20"
+					fill="currentColor"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+						clip-rule="evenodd"
+					/>
+				</svg>
 			</button>
+			{#if accountOpen}
+				<div class="space-y-1 rounded-xl border border-white/10 bg-slate-950/70 p-1.5">
+					<a
+						href="/profile/{currentUser.profileSlug}"
+						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white xl:justify-start xl:px-3"
+						aria-label="Profile"
+						title="Profile"
+					>
+						<span class="hidden xl:block">Profile</span>
+						<span class="xl:hidden">Profile</span>
+					</a>
+					<a
+						href="/setting"
+						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white xl:justify-start xl:px-3"
+						aria-label="Setting"
+						title="Setting"
+					>
+						Setting
+					</a>
+					<button
+						type="button"
+						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white xl:justify-start xl:px-3"
+						onclick={logout}
+						aria-label="Logout"
+						title="Logout"
+					>
+						Logout
+					</button>
+				</div>
+			{/if}
 		{:else}
 			<button
 				type="button"

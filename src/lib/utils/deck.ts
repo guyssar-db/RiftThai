@@ -15,6 +15,14 @@ export type StoredDeck = {
 	source?: 'local' | 'online';
 	onlineId?: string;
 	visibility?: 'private' | 'unlisted' | 'public';
+	owner?: {
+		id: string;
+		displayName: string;
+		profileHandle: string;
+		profileSlug: string;
+	};
+	likesCount?: number;
+	isLiked?: boolean;
 };
 
 export type DeckCollection = {
@@ -40,6 +48,21 @@ export type DeckStats = {
 	types: { label: string; count: number }[];
 	domains: { label: string; count: number }[];
 	runes: { label: string; count: number }[];
+};
+
+export type DeckValidationIssue = {
+	id: string;
+	severity: 'error' | 'warning';
+	label: string;
+	message: string;
+};
+
+export type DeckValidation = {
+	isReady: boolean;
+	errorCount: number;
+	warningCount: number;
+	issues: DeckValidationIssue[];
+	checks: { label: string; status: 'pass' | 'fail' | 'warn'; value: string }[];
 };
 
 export const deckStorageKey = 'riftthai.deck.v1';
@@ -110,11 +133,14 @@ export function createEmptyDeck(name = 'New Deck'): StoredDeck {
 export function normalizeDeckCollection(value: unknown): DeckCollection {
 	const parsed = isObject(value) ? value : {};
 	const rawDecks = Array.isArray(parsed.decks) ? parsed.decks : [];
-	const decks = rawDecks.map(normalizeStoredDeck).filter((deck): deck is StoredDeck => Boolean(deck));
+	const decks = rawDecks
+		.map(normalizeStoredDeck)
+		.filter((deck): deck is StoredDeck => Boolean(deck));
 	const fallbackDeck = createEmptyDeck('My Deck');
 	const safeDecks = decks.length > 0 ? decks : [fallbackDeck];
 	const activeDeckId =
-		typeof parsed.activeDeckId === 'string' && safeDecks.some((deck) => deck.id === parsed.activeDeckId)
+		typeof parsed.activeDeckId === 'string' &&
+		safeDecks.some((deck) => deck.id === parsed.activeDeckId)
 			? parsed.activeDeckId
 			: safeDecks[0].id;
 
@@ -149,7 +175,9 @@ export function writeDeckCollectionToStorage(
 }
 
 export function getActiveStoredDeck(collection: DeckCollection) {
-	return collection.decks.find((deck) => deck.id === collection.activeDeckId) ?? collection.decks[0];
+	return (
+		collection.decks.find((deck) => deck.id === collection.activeDeckId) ?? collection.decks[0]
+	);
 }
 
 export function updateActiveDeckEntries(collection: DeckCollection, entries: DeckEntry[]) {
@@ -220,7 +248,10 @@ export function duplicateActiveDeck(collection: DeckCollection) {
 	});
 }
 
-export function updateActiveDeckSideboardEntries(collection: DeckCollection, sideboardEntries: DeckEntry[]) {
+export function updateActiveDeckSideboardEntries(
+	collection: DeckCollection,
+	sideboardEntries: DeckEntry[]
+) {
 	const now = new Date().toISOString();
 	const normalizedSideboard = normalizeDeck(sideboardEntries);
 
@@ -299,7 +330,10 @@ export function getDeckZones(deckCards: DeckCard[]) {
 	};
 }
 
-export function calculateDeckStats(deckCards: DeckCard[], sideboardCards: DeckCard[] = []): DeckStats {
+export function calculateDeckStats(
+	deckCards: DeckCard[],
+	sideboardCards: DeckCard[] = []
+): DeckStats {
 	const zones = getDeckZones(deckCards);
 	const costs = new Map<string, number>();
 	const types = new Map<string, number>();
@@ -307,7 +341,8 @@ export function calculateDeckStats(deckCards: DeckCard[], sideboardCards: DeckCa
 	const runes = new Map<string, number>();
 
 	for (const { card, quantity } of zones.main) {
-		const cost = card.energy === null || card.energy === undefined ? 'No Cost' : String(card.energy);
+		const cost =
+			card.energy === null || card.energy === undefined ? 'No Cost' : String(card.energy);
 		costs.set(cost, (costs.get(cost) ?? 0) + quantity);
 		types.set(card.type || 'Unknown', (types.get(card.type || 'Unknown') ?? 0) + quantity);
 
@@ -318,7 +353,8 @@ export function calculateDeckStats(deckCards: DeckCard[], sideboardCards: DeckCa
 	}
 
 	for (const { card, quantity } of zones.runes) {
-		const label = card.domains?.[0] ?? (card.name_en.replace(/\s*Rune\s*/i, '').trim() || card.name_en);
+		const label =
+			card.domains?.[0] ?? (card.name_en.replace(/\s*Rune\s*/i, '').trim() || card.name_en);
 		runes.set(label, (runes.get(label) ?? 0) + quantity);
 	}
 
@@ -335,6 +371,148 @@ export function calculateDeckStats(deckCards: DeckCard[], sideboardCards: DeckCa
 		types: sortAlphaLabels(types),
 		domains: sortAlphaLabels(domains),
 		runes: sortAlphaLabels(runes)
+	};
+}
+
+export function validateDeck(
+	cards: Card[],
+	deck: Pick<StoredDeck, 'championCode' | 'entries' | 'sideboardEntries'> | null | undefined
+): DeckValidation {
+	const deckCards = buildDeckCards(cards, deck?.entries ?? []);
+	const sideboardCards = buildDeckCards(cards, deck?.sideboardEntries ?? []);
+	const stats = calculateDeckStats(deckCards, sideboardCards);
+	const zones = getDeckZones(deckCards);
+	const legend = zones.legends[0]?.card ?? null;
+	const champion = getChampionCard(cards, deck?.championCode);
+	const issues: DeckValidationIssue[] = [];
+
+	const knownCodes = new Set(cards.map((card) => card.code));
+	for (const entry of [
+		...normalizeDeck(deck?.entries ?? []),
+		...normalizeDeck(deck?.sideboardEntries ?? [])
+	]) {
+		if (!knownCodes.has(entry.code)) {
+			issues.push({
+				id: `unknown-${entry.code}`,
+				severity: 'error',
+				label: 'Unknown card',
+				message: `${entry.code} is not in the card database.`
+			});
+		}
+	}
+
+	if (stats.legendTotal !== maxLegendCards) {
+		issues.push({
+			id: 'legend-count',
+			severity: 'error',
+			label: 'Legend',
+			message:
+				stats.legendTotal === 0
+					? 'Choose exactly 1 Legend.'
+					: `Use exactly 1 Legend. Current: ${stats.legendTotal}.`
+		});
+	}
+
+	if (!champion) {
+		issues.push({
+			id: 'champion-missing',
+			severity: 'error',
+			label: 'Champion',
+			message: 'Choose exactly 1 Champion that matches your Legend tag.'
+		});
+	} else if (!isChampionCandidate(champion, legend)) {
+		issues.push({
+			id: 'champion-invalid',
+			severity: 'error',
+			label: 'Champion',
+			message: `${champion.name_en} does not match the selected Legend.`
+		});
+	}
+
+	if (stats.mainTotal !== maxMainDeckCards) {
+		issues.push({
+			id: 'main-count',
+			severity: 'error',
+			label: 'Main deck',
+			message: `Main deck must be ${maxMainDeckCards} cards. Current: ${stats.mainTotal}.`
+		});
+	}
+
+	if (stats.runeTotal > maxRuneCards) {
+		issues.push({
+			id: 'rune-count',
+			severity: 'error',
+			label: 'Rune deck',
+			message: `Rune deck can have at most ${maxRuneCards} cards. Current: ${stats.runeTotal}.`
+		});
+	} else if (stats.runeTotal === 0) {
+		issues.push({
+			id: 'rune-empty',
+			severity: 'warning',
+			label: 'Rune deck',
+			message: 'No runes selected yet.'
+		});
+	}
+
+	if (stats.sideboardTotal > maxSideboardCards) {
+		issues.push({
+			id: 'sideboard-count',
+			severity: 'error',
+			label: 'Sideboard',
+			message: `Sideboard can have at most ${maxSideboardCards} cards. Current: ${stats.sideboardTotal}.`
+		});
+	}
+
+	for (const issue of getCopyLimitIssues(deckCards, sideboardCards)) issues.push(issue);
+
+	if (legend) {
+		for (const { card } of [...deckCards, ...sideboardCards]) {
+			if (!isCardAllowedForLegend(card, legend)) {
+				issues.push({
+					id: `domain-${card.code}`,
+					severity: 'error',
+					label: 'Domain',
+					message: `${card.name_en} is outside ${legend.name_en}'s domains.`
+				});
+			}
+		}
+	}
+
+	const errorCount = issues.filter((issue) => issue.severity === 'error').length;
+	const warningCount = issues.length - errorCount;
+
+	return {
+		isReady: errorCount === 0,
+		errorCount,
+		warningCount,
+		issues,
+		checks: [
+			{
+				label: 'Legend',
+				status: stats.legendTotal === maxLegendCards ? 'pass' : 'fail',
+				value: `${stats.legendTotal}/${maxLegendCards}`
+			},
+			{
+				label: 'Champion',
+				status: champion && isChampionCandidate(champion, legend) ? 'pass' : 'fail',
+				value: champion ? '1/1' : '0/1'
+			},
+			{
+				label: 'Main',
+				status: stats.mainTotal === maxMainDeckCards ? 'pass' : 'fail',
+				value: `${stats.mainTotal}/${maxMainDeckCards}`
+			},
+			{
+				label: 'Rune',
+				status: stats.runeTotal > maxRuneCards ? 'fail' : stats.runeTotal === 0 ? 'warn' : 'pass',
+				value: `${stats.runeTotal}/${maxRuneCards}`
+			},
+			{
+				label: 'Side',
+				status: stats.sideboardTotal > maxSideboardCards ? 'fail' : 'pass',
+				value: `${stats.sideboardTotal}/${maxSideboardCards}`
+			}
+		]
 	};
 }
 
@@ -434,6 +612,45 @@ function sortNumberLabels(values: Map<string, number>) {
 		});
 }
 
+function getCopyLimitIssues(deckCards: DeckCard[], sideboardCards: DeckCard[]) {
+	const issues: DeckValidationIssue[] = [];
+	const mainCopies = new Map<string, number>();
+	const battlefieldCopies = new Map<string, number>();
+
+	for (const { card, quantity } of [...deckCards, ...sideboardCards]) {
+		if (isMainDeckCard(card)) {
+			mainCopies.set(card.name_en, (mainCopies.get(card.name_en) ?? 0) + quantity);
+		}
+		if (isBattlefieldCard(card)) {
+			battlefieldCopies.set(card.name_en, (battlefieldCopies.get(card.name_en) ?? 0) + quantity);
+		}
+	}
+
+	for (const [name, quantity] of mainCopies) {
+		if (quantity > maxMainCopiesPerName) {
+			issues.push({
+				id: `copy-main-${name}`,
+				severity: 'error',
+				label: 'Copy limit',
+				message: `${name} has ${quantity} copies across main deck and sideboard. Max: ${maxMainCopiesPerName}.`
+			});
+		}
+	}
+
+	for (const [name, quantity] of battlefieldCopies) {
+		if (quantity > maxBattlefieldCopiesPerName) {
+			issues.push({
+				id: `copy-field-${name}`,
+				severity: 'error',
+				label: 'Battlefield',
+				message: `${name} has ${quantity} copies. Max: ${maxBattlefieldCopiesPerName}.`
+			});
+		}
+	}
+
+	return issues;
+}
+
 function normalizeStoredDeck(value: unknown): StoredDeck | null {
 	if (!isObject(value)) return null;
 	const championCode = typeof value.championCode === 'string' ? value.championCode.trim() : '';
@@ -450,17 +667,24 @@ function normalizeStoredDeck(value: unknown): StoredDeck | null {
 		name: normalizeDeckName(value.name),
 		championCode,
 		entries: normalizeDeck(Array.isArray(value.entries) ? value.entries : []),
-		sideboardEntries: normalizeDeck(Array.isArray((value as any).sideboardEntries) ? (value as any).sideboardEntries : []),
+		sideboardEntries: normalizeDeck(
+			Array.isArray((value as any).sideboardEntries) ? (value as any).sideboardEntries : []
+		),
 		updatedAt:
 			typeof value.updatedAt === 'string' && value.updatedAt.trim()
 				? value.updatedAt
 				: new Date().toISOString(),
 		source,
-		onlineId: typeof value.onlineId === 'string' && value.onlineId.trim() ? value.onlineId : undefined,
+		onlineId:
+			typeof value.onlineId === 'string' && value.onlineId.trim() ? value.onlineId : undefined,
 		visibility:
-			value.visibility === 'public' || value.visibility === 'unlisted' || value.visibility === 'private'
+			value.visibility === 'public' ||
+			value.visibility === 'unlisted' ||
+			value.visibility === 'private'
 				? value.visibility
-				: undefined
+				: undefined,
+		likesCount: typeof (value as any).likesCount === 'number' ? (value as any).likesCount : undefined,
+		isLiked: typeof (value as any).isLiked === 'boolean' ? (value as any).isLiked : undefined
 	};
 }
 
@@ -476,7 +700,10 @@ function decrementDeckEntry(entries: DeckEntry[], code: string) {
 }
 
 function normalizeComparable(value: unknown) {
-	return String(value ?? '').normalize('NFKC').toLowerCase().trim();
+	return String(value ?? '')
+		.normalize('NFKC')
+		.toLowerCase()
+		.trim();
 }
 
 function createDeckId() {

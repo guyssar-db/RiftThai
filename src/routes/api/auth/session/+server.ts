@@ -13,8 +13,16 @@ export const GET = async ({ cookies }) => {
 
 	return json({
 		user: {
+			id: user.id,
 			email: user.email,
+			displayName: user.displayName,
+			displayNameLocked: user.displayNameLocked,
+			profileHandle: user.profileHandle,
+			profileSlug: user.profileSlug,
 			isAdmin: user.isAdmin,
+			emailVerified: user.emailVerified,
+			createdAt: user.createdAt,
+			settings: user.settings,
 			usage: {
 				used,
 				limit: config.dailyChatLimit
@@ -22,4 +30,3 @@ export const GET = async ({ cookies }) => {
 		}
 	});
 };
-

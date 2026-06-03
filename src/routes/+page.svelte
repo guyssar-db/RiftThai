@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { navigating } from '$app/stores';
 	import AppFooter from '$lib/components/AppFooter.svelte';
 	import AppNav from '$lib/components/AppNav.svelte';
@@ -15,18 +16,40 @@
 	let { data } = $props();
 
 	let cards = $derived((data.cards as Card[]) || []);
-	let searchTerm = $state('');
-	let loadedSearchTerm = $state<string | null>(null);
-	let selectedSet = $state('All');
-	let selectedType = $state('All');
-	let selectedDomains = $state<string[]>([]);
-	let viewMode = $state<'gallery' | 'keywords' | 'phases'>('gallery');
+	let searchTerm = $state(data.searchTerm ?? '');
+	let loadedSearchTerm = $state<string | null>(data.searchTerm ?? null);
+	let selectedSet = $state(data.selectedSet ?? 'All');
+	let selectedType = $state(data.selectedType ?? 'All');
+	let selectedDomains = $state<string[]>(data.selectedDomains ?? []);
+	let viewMode = $state<'gallery' | 'keywords' | 'phases'>((data.viewMode as any) ?? 'gallery');
 	let currentPage = $state(1);
 	let selectedPopupCard = $state<Card | null>(null);
 	let isFiltering = $state(false);
+	let userCollection = $state<Record<string, number> | null>(null);
+
+	$effect(() => {
+		const currentUrl = new URL(window.location.href);
+		
+		const setParam = (key: string, val: string) => {
+			if (val) {
+				currentUrl.searchParams.set(key, val);
+			} else {
+				currentUrl.searchParams.delete(key);
+			}
+		};
+
+		setParam('q', searchTerm);
+		setParam('set', selectedSet === 'All' ? '' : selectedSet);
+		setParam('type', selectedType === 'All' ? '' : selectedType);
+		setParam('domains', selectedDomains.join(','));
+		setParam('mode', viewMode === 'gallery' ? '' : viewMode);
+
+		if (window.location.search !== currentUrl.search) {
+			window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search);
+		}
+	});
 
 	const cardsPerPage = 48;
-	const windows874ByteByChar = createWindows874ByteMap();
 
 	let sets = $derived(['All', ...new Set(cards.map((card) => card.set_name).filter(Boolean))]);
 	let types = $derived(['All', ...new Set(cards.map((card) => card.type).filter(Boolean))]);
@@ -77,6 +100,27 @@
 	});
 
 	$effect(() => {
+		if (!browser) return;
+		void loadUserCollection();
+	});
+
+	async function loadUserCollection() {
+		try {
+			const res = await fetch('/api/auth/session');
+			const session = await res.json().catch(() => ({}));
+			if (session.user) {
+				const colRes = await fetch('/api/collection');
+				const colData = await colRes.json().catch(() => ({}));
+				if (colRes.ok) {
+					userCollection = colData.collection || {};
+				}
+			}
+		} catch (err) {
+			console.error('Failed to load user collection:', err);
+		}
+	}
+
+	$effect(() => {
 		searchTerm;
 		selectedSet;
 		selectedType;
@@ -108,40 +152,9 @@
 		selectedPopupCard = null;
 	}
 
-	function createWindows874ByteMap() {
-		if (typeof TextDecoder === 'undefined') return new Map<string, number>();
-
-		const decoder = new TextDecoder('windows-874');
-		const byteByChar = new Map<string, number>();
-
-		for (let byte = 0; byte <= 255; byte += 1) {
-			byteByChar.set(decoder.decode(new Uint8Array([byte])), byte);
-		}
-
-		return byteByChar;
-	}
-
-	function repairThaiMojibake(value: string) {
-		if (!/[เธเนโ][\u0080-\u0E7F]/.test(value)) return value;
-		if (typeof TextDecoder === 'undefined' || windows874ByteByChar.size === 0) return value;
-
-		const bytes: number[] = [];
-
-		for (const char of value) {
-			const byte = windows874ByteByChar.get(char);
-			if (byte === undefined) return value;
-			bytes.push(byte);
-		}
-
-		const repaired = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(bytes));
-		return repaired.includes('\uFFFD') ? value : repaired;
-	}
-
 	function normalizeForSearch(value: unknown) {
 		const original = Array.isArray(value) ? value.filter(Boolean).join(' ') : String(value ?? '');
-		const repaired = repairThaiMojibake(original);
-
-		return `${original} ${repaired}`
+		return original
 			.normalize('NFKC')
 			.toLowerCase()
 			.replace(/[_\-/:()[\].,]+/g, ' ')
@@ -241,7 +254,7 @@
 				resultsCount={filteredCards.length}
 			/>
 
-			<CardGrid cards={paginatedCards} {isLoading} {openPopup} />
+			<CardGrid cards={paginatedCards} {isLoading} {openPopup} userCollection={userCollection} />
 
 			{#if filteredCards.length === 0 && !isLoading}
 				<EmptyState />

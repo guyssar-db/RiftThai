@@ -88,7 +88,7 @@
 				<div class="min-w-0">
 					<p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-300">Support</p>
 				<h1 class="mt-1 truncate text-xl font-black">Chat with admin</h1>
-					<p class="mt-1 truncate text-xs font-medium text-slate-500">{data.user.email}</p>
+					<p class="mt-1 truncate text-xs font-medium text-slate-500">{data.user.profileHandle}</p>
 				</div>
 			</div>
 			<a href="/" class="shrink-0 rounded-lg border border-white/10 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300 transition hover:bg-white/5">Back</a>

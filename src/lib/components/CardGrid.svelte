@@ -7,11 +7,13 @@
 	let {
 		cards,
 		isLoading = false,
-		openPopup
+		openPopup,
+		userCollection = null
 	} = $props<{
 		cards: Card[];
 		isLoading?: boolean;
 		openPopup: (card: Card) => void;
+		userCollection?: Record<string, number> | null;
 	}>();
 
 	const preloadedPopupImages = new Set<string>();
@@ -80,6 +82,19 @@
 					<div class="absolute right-3 top-3 rounded-lg border border-cyan-300/15 bg-slate-950/82 px-2.5 py-1 text-[9px] font-black tracking-widest text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
 						{card.code}
 					</div>
+
+					{#if userCollection && Object.keys(userCollection).length > 0}
+						{@const owned = userCollection[card.code] ?? 0}
+						<div
+							class="absolute left-3 bottom-3 rounded-md px-1.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase shadow-md backdrop-blur border z-10
+							{owned > 0
+								? 'bg-cyan-500/80 border-cyan-400 text-white shadow-[0_0_8px_rgba(34,211,238,0.4)]'
+								: 'bg-slate-950/90 border-white/5 text-slate-500'}"
+							title="Owned: {owned}"
+						>
+							Own: {owned}
+						</div>
+					{/if}
 
 					{#if getRarityIcon(card.rarity)}
 						<div class="absolute left-3 top-3 grid h-8 w-8 place-items-center rounded-full border border-cyan-300/15 bg-slate-950/82 opacity-0 shadow-lg backdrop-blur transition group-hover:opacity-100">
