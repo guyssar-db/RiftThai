@@ -564,8 +564,8 @@
 						onclick={() => selectedSet = 'Proving Grounds'}
 						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-emerald-500/10 hover:border-emerald-500/30 cursor-pointer"
 					>
-						<div class="flex flex-col items-center py-6">
-							<img src="/images/Set/proving-grounds.webp" class="h-14 object-contain group-hover:scale-105 transition" alt="Proving Grounds Set" />
+						<div class="flex flex-col items-center py-3">
+							<img src="/images/Set/proving-grounds.webp" class="h-20 object-contain group-hover:scale-105 transition" alt="Proving Grounds Set" />
 						</div>
 						<div class="mt-4 border-t border-white/5 pt-4">
 							<h3 class="text-sm font-black text-white italic uppercase">Proving Grounds</h3>
