@@ -9,6 +9,7 @@
 	import { getCardImageUrl } from '$lib/utils/cardImages';
 	import { isRuneCard, isLegendCard, isBattlefieldCard, isMainDeckCard } from '$lib/utils/deck';
 	import Toast from '$lib/components/ui/Toast.svelte';
+	import ConfirmModal from '$lib/components/ui/ConfirmModal.svelte';
 
 	let { data } = $props();
 	let cards = $derived((data.cards as Card[]) || []);
@@ -29,6 +30,8 @@
 	let actionNotice = $state<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 	let selectedPopupCard = $state<Card | null>(null);
 	let backupText = $state('');
+	let showPlaysetConfirm = $state(false);
+	let showClearConfirm = $state(false);
 
 	function openPopup(card: Card) {
 		selectedPopupCard = card;
@@ -316,16 +319,13 @@
 		}
 	}
 
-	async function setPlaysets() {
+	function triggerSetPlaysets() {
 		if (!currentUser) return;
-		
+		showPlaysetConfirm = true;
+	}
+
+	async function executeSetPlaysets() {
 		const isAll = selectedSet === 'All';
-		const confirmMsg = isAll 
-			? 'ต้องการตั้งค่าการ์ดทั้งหมดในทุกชุดให้เป็น Playset หรือไม่?' 
-			: `ต้องการตั้งค่าการ์ดทั้งหมดในชุด ${selectedSet} ให้เป็น Playset หรือไม่?`;
-			
-		if (!confirm(confirmMsg)) return;
-		
 		collectionLoading = true;
 		try {
 			if (isAll) {
@@ -370,16 +370,13 @@
 		}
 	}
 
-	async function clearCollection() {
+	function triggerClearCollection() {
 		if (!currentUser) return;
+		showClearConfirm = true;
+	}
 
+	async function executeClearCollection() {
 		const isAll = selectedSet === 'All';
-		const confirmMsg = isAll 
-			? 'ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดในทุกชุดหรือไม่?' 
-			: `ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดในชุด ${selectedSet} หรือไม่?`;
-
-		if (!confirm(confirmMsg)) return;
-
 		collectionLoading = true;
 		try {
 			if (isAll) {
@@ -920,7 +917,7 @@
 							<button
 								type="button"
 								class="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-cyan-300/20 bg-cyan-300/5 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-								onclick={setPlaysets}
+								onclick={triggerSetPlaysets}
 								disabled={collectionLoading}
 							>
 								{#if selectedSet === 'All'}
@@ -933,7 +930,7 @@
 							<button
 								type="button"
 								class="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-rose-300/20 bg-rose-300/5 px-4 text-xs font-black tracking-widest text-rose-300 uppercase transition hover:bg-rose-300/10 hover:text-rose-100 disabled:opacity-50 disabled:cursor-not-allowed"
-								onclick={clearCollection}
+								onclick={triggerClearCollection}
 								disabled={collectionLoading || Object.keys(collection).length === 0}
 							>
 								{#if selectedSet === 'All'}
@@ -985,3 +982,23 @@
 {#if selectedPopupCard}
 	<CardModal card={selectedPopupCard} {closePopup} canEdit={false} />
 {/if}
+
+<ConfirmModal
+	bind:open={showPlaysetConfirm}
+	title="ตั้งค่า Playset"
+	message={selectedSet === 'All' 
+		? 'ต้องการตั้งค่าการ์ดทั้งหมดในทุกชุดให้เป็น Playset หรือไม่?' 
+		: `ต้องการตั้งค่าการ์ดทั้งหมดในชุด ${selectedSet} ให้เป็น Playset หรือไม่?`}
+	confirmType="primary"
+	onconfirm={executeSetPlaysets}
+/>
+
+<ConfirmModal
+	bind:open={showClearConfirm}
+	title="ล้างข้อมูลคอลเล็กชัน"
+	message={selectedSet === 'All' 
+		? 'ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดในทุกชุดหรือไม่?' 
+		: `ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดในชุด ${selectedSet} หรือไม่?`}
+	confirmType="danger"
+	onconfirm={executeClearCollection}
+/>
