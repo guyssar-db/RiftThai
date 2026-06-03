@@ -14,9 +14,18 @@ const passwordKeyLength = 64;
 type AppUserRow = {
 	id: string;
 	email: string;
+	display_name: string | null;
+	display_name_locked: boolean | null;
+	profile_slug: string | null;
+	profile_number: string | null;
 	password_hash: string;
 	role: 'user' | 'admin';
 	email_verified_at: string | null;
+	profile_public: boolean | null;
+	public_decks_visible: boolean | null;
+	default_deck_visibility: 'private' | 'public' | null;
+	default_export_layout: 'portrait' | 'landscape' | null;
+	banned?: boolean;
 	created_at: string;
 	updated_at: string;
 };
@@ -31,12 +40,37 @@ type SessionRow = {
 export type AuthUser = {
 	id: string;
 	email: string;
+	displayName: string;
+	displayNameLocked: boolean;
+	profileHandle: string;
+	profileSlug: string;
 	isAdmin: boolean;
 	role: 'user' | 'admin';
 	emailVerified: boolean;
+	banned: boolean;
+	createdAt: string;
+	settings: UserSettings;
 };
 
-export async function registerUser(emailInput: string, password: string) {
+export type UserSettings = {
+	profilePublic: boolean;
+	publicDecksVisible: boolean;
+	defaultDeckVisibility: 'private' | 'public';
+	defaultExportLayout: 'portrait' | 'landscape';
+};
+
+export type PublicUserProfile = {
+	id: string;
+	displayName: string;
+	displayNameLocked: boolean;
+	profileHandle: string;
+	profileSlug: string;
+	profilePublic: boolean;
+	publicDecksVisible: boolean;
+	createdAt: string;
+};
+
+export async function registerUser(emailInput: string, password: string, displayNameInput = '') {
 	const email = normalizeEmail(emailInput);
 	if (!email || password.length < 8) {
 		throw new Error('Email is required and password must be at least 8 characters');
@@ -45,6 +79,8 @@ export async function registerUser(emailInput: string, password: string) {
 	const existing = await findUserByEmail(email);
 	if (existing) throw new Error('Email already exists');
 
+	const displayName = normalizeDisplayName(displayNameInput) || defaultDisplayName(email);
+	const profile = await createUniqueProfileSlug(displayName);
 	const password_hash = await hashPassword(password);
 	const [user] = await authRequest<AppUserRow[]>('/rest/v1/app_users?select=*', {
 		method: 'POST',
@@ -53,6 +89,14 @@ export async function registerUser(emailInput: string, password: string) {
 		},
 		body: JSON.stringify({
 			email,
+			display_name: displayName,
+			display_name_locked: false,
+			profile_number: profile.number,
+			profile_slug: profile.slug,
+			profile_public: true,
+			public_decks_visible: true,
+			default_deck_visibility: 'private',
+			default_export_layout: 'portrait',
 			password_hash,
 			role: isAdminEmail(email) ? 'admin' : 'user'
 		})
@@ -70,6 +114,7 @@ export async function loginUser(emailInput: string, password: string) {
 
 	const passwordOk = await verifyPassword(password, user.password_hash);
 	if (!passwordOk) throw new Error('Invalid email or password');
+	if (user.banned) throw new Error('บัญชีนี้ถูกระงับการใช้งาน');
 	if (!user.email_verified_at) throw new Error('Please verify your email before logging in');
 
 	const sessionToken = createToken();
@@ -145,7 +190,40 @@ export async function getAuthenticatedUser(cookies: Cookies): Promise<AuthUser |
 	}
 
 	const [user] = await authRequest<AppUserRow[]>(`/rest/v1/app_users?id=eq.${session.user_id}&select=*`);
-	if (!user || !user.email_verified_at) return null;
+	if (!user || !user.email_verified_at || user.banned) {
+		if (user?.banned) {
+			await deleteSession(sessionHash);
+			clearAuthCookies(cookies);
+			cookies.set('riftthai_banned_notice', '1', {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				secure: env.NODE_ENV === 'production',
+				maxAge: 10
+			});
+		}
+		return null;
+	}
+
+	// Rolling session & cookie renewal if less than 15 days remain
+	const remainingTime = new Date(session.expires_at).getTime() - Date.now();
+	const fifteenDays = 1000 * 60 * 60 * 24 * 15;
+	if (remainingTime < fifteenDays) {
+		const newExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
+		try {
+			await authRequest(`/rest/v1/user_sessions?id=eq.${session.id}`, {
+				method: 'PATCH',
+				headers: {
+					Prefer: 'return=minimal'
+				},
+				body: JSON.stringify({ expires_at: newExpiresAt })
+			});
+			setSessionCookie(cookies, token, newExpiresAt);
+		} catch (e) {
+			console.error('Failed to extend session token:', e);
+		}
+	}
+
 	return toAuthUser(user);
 }
 
@@ -153,6 +231,120 @@ export async function logoutUser(cookies: Cookies) {
 	const token = cookies.get(sessionCookie);
 	if (token) await deleteSession(hashToken(token));
 	clearAuthCookies(cookies);
+}
+
+export async function updateUserDisplayName(userId: string, displayNameInput: string) {
+	const displayName = normalizeDisplayName(displayNameInput);
+	if (!displayName) throw new Error('Display name is required');
+	const currentUser = await findUserById(userId);
+	if (!currentUser) throw new Error('User not found');
+	if (currentUser.display_name_locked) throw new Error('Display name cannot be changed after it is saved');
+
+	const profile = await createUniqueProfileSlug(displayName, userId, currentUser?.profile_number ?? '');
+
+	const [updated] = await authRequest<AppUserRow[]>(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}&select=*`, {
+		method: 'PATCH',
+		headers: {
+			Prefer: 'return=representation'
+		},
+		body: JSON.stringify({
+			display_name: displayName,
+			display_name_locked: true,
+			profile_number: profile.number,
+			profile_slug: profile.slug,
+			updated_at: new Date().toISOString()
+		})
+	});
+
+	if (!updated) throw new Error('User not found');
+	return toAuthUser(updated);
+}
+
+export async function updateUserSettings(userId: string, input: Partial<UserSettings>) {
+	const payload: Record<string, unknown> = {
+		updated_at: new Date().toISOString()
+	};
+
+	if (typeof input.profilePublic === 'boolean') payload.profile_public = input.profilePublic;
+	if (typeof input.publicDecksVisible === 'boolean') {
+		payload.public_decks_visible = input.publicDecksVisible;
+	}
+	if (input.defaultDeckVisibility === 'private' || input.defaultDeckVisibility === 'public') {
+		payload.default_deck_visibility = input.defaultDeckVisibility;
+	}
+	if (input.defaultExportLayout === 'portrait' || input.defaultExportLayout === 'landscape') {
+		payload.default_export_layout = input.defaultExportLayout;
+	}
+
+	const [updated] = await authRequest<AppUserRow[]>(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}&select=*`, {
+		method: 'PATCH',
+		headers: {
+			Prefer: 'return=representation'
+		},
+		body: JSON.stringify(payload)
+	});
+
+	if (!updated) throw new Error('User not found');
+	return toAuthUser(updated);
+}
+
+export async function changeUserPassword(userId: string, currentPassword: string, nextPassword: string) {
+	if (nextPassword.length < 8) throw new Error('New password must be at least 8 characters');
+	const user = await findUserById(userId);
+	if (!user) throw new Error('User not found');
+
+	const passwordOk = await verifyPassword(currentPassword, user.password_hash);
+	if (!passwordOk) throw new Error('Current password is incorrect');
+
+	const password_hash = await hashPassword(nextPassword);
+	await authRequest(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}`, {
+		method: 'PATCH',
+		headers: {
+			Prefer: 'return=minimal'
+		},
+		body: JSON.stringify({
+			password_hash,
+			updated_at: new Date().toISOString()
+		})
+	});
+}
+
+export async function getPublicUserProfile(userId: string): Promise<PublicUserProfile | null> {
+	const [user] = await authRequest<AppUserRow[]>(
+		`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}&select=id,email,display_name,profile_slug,profile_number,password_hash,role,email_verified_at,created_at,updated_at`
+	);
+	if (!user || !user.email_verified_at) return null;
+
+	return {
+		id: user.id,
+		displayName: getUserDisplayName(user),
+		displayNameLocked: Boolean(user.display_name_locked),
+		profileHandle: getUserProfileHandle(user),
+		profileSlug: getUserProfileSlug(user),
+		profilePublic: getUserSettings(user).profilePublic,
+		publicDecksVisible: getUserSettings(user).publicDecksVisible,
+		createdAt: user.created_at
+	};
+}
+
+export async function getPublicUserProfileBySlug(slugInput: string): Promise<PublicUserProfile | null> {
+	const slug = normalizeProfileSlug(slugInput);
+	if (!slug) return null;
+	const [user] = await authRequest<AppUserRow[]>(
+		`/rest/v1/app_users?profile_slug=eq.${encodeURIComponent(slug)}&select=id,email,display_name,profile_slug,profile_number,password_hash,role,email_verified_at,created_at,updated_at,profile_public,public_decks_visible`
+	);
+	if (!user || !user.email_verified_at) return null;
+
+	return {
+		id: user.id,
+		displayName: getUserDisplayName(user),
+		displayNameLocked: Boolean(user.display_name_locked),
+		profileHandle: getUserProfileHandle(user),
+		profileSlug: getUserProfileSlug(user),
+		profilePublic: getUserSettings(user).profilePublic,
+		publicDecksVisible: getUserSettings(user).publicDecksVisible,
+		createdAt: user.created_at
+	};
 }
 
 export function setSessionCookie(cookies: Cookies, sessionToken: string, expiresAt: string) {
@@ -174,10 +366,43 @@ function toAuthUser(user: AppUserRow): AuthUser {
 	return {
 		id: user.id,
 		email: user.email,
+		displayName: getUserDisplayName(user),
+		displayNameLocked: Boolean(user.display_name_locked),
+		profileHandle: getUserProfileHandle(user),
+		profileSlug: getUserProfileSlug(user),
 		isAdmin: admin,
 		role: admin ? 'admin' : 'user',
-		emailVerified: Boolean(user.email_verified_at)
+		emailVerified: Boolean(user.email_verified_at),
+		banned: Boolean(user.banned),
+		createdAt: user.created_at,
+		settings: getUserSettings(user)
 	};
+}
+
+export function getUserSettings(
+	user: Pick<
+		AppUserRow,
+		'profile_public' | 'public_decks_visible' | 'default_deck_visibility' | 'default_export_layout'
+	>
+): UserSettings {
+	return {
+		profilePublic: user.profile_public !== false,
+		publicDecksVisible: user.public_decks_visible !== false,
+		defaultDeckVisibility: user.default_deck_visibility === 'public' ? 'public' : 'private',
+		defaultExportLayout: user.default_export_layout === 'landscape' ? 'landscape' : 'portrait'
+	};
+}
+
+export function getUserDisplayName(user: Pick<AppUserRow, 'email' | 'display_name'>) {
+	return normalizeDisplayName(user.display_name ?? '') || defaultDisplayName(user.email);
+}
+
+export function getUserProfileHandle(user: Pick<AppUserRow, 'email' | 'display_name' | 'profile_number'>) {
+	return `${getUserDisplayName(user)}#${getUserProfileNumber(user)}`;
+}
+
+export function getUserProfileSlug(user: Pick<AppUserRow, 'email' | 'display_name' | 'profile_slug' | 'profile_number'>) {
+	return normalizeProfileSlug(user.profile_slug ?? '') || createProfileSlug(getUserDisplayName(user), getUserProfileNumber(user));
 }
 
 async function createAndSendVerification(user: AppUserRow) {
@@ -235,6 +460,13 @@ async function findUserByEmail(email: string) {
 	return rows[0] ?? null;
 }
 
+async function findUserById(userId: string) {
+	const rows = await authRequest<AppUserRow[]>(
+		`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}&select=*`
+	);
+	return rows[0] ?? null;
+}
+
 async function deleteSession(sessionHash: string) {
 	await authRequest(`/rest/v1/user_sessions?session_token_hash=eq.${encodeURIComponent(sessionHash)}`, {
 		method: 'DELETE'
@@ -267,6 +499,72 @@ function normalizeEmail(email: string) {
 	return email.trim().toLowerCase();
 }
 
+function normalizeDisplayName(value: unknown) {
+	return String(value ?? '')
+		.normalize('NFKC')
+		.trim()
+		.replace(/\s+/g, ' ')
+		.slice(0, 32);
+}
+
+function defaultDisplayName(email: string) {
+	const localPart = email.split('@')[0]?.trim();
+	return normalizeDisplayName(localPart) || 'RiftThai Player';
+}
+
+function createProfileBase(displayName: string) {
+	return (
+		displayName
+			.normalize('NFKC')
+			.toLowerCase()
+			.replace(/[^\p{L}\p{N}]+/gu, '-')
+			.replace(/^-+|-+$/g, '')
+			.slice(0, 48) || 'player'
+	);
+}
+
+function createProfileSlug(displayName: string, profileNumber: string) {
+	return `${createProfileBase(displayName)}-${profileNumber}`;
+}
+
+function normalizeProfileSlug(value: unknown) {
+	return String(value ?? '')
+		.normalize('NFKC')
+		.toLowerCase()
+		.replace(/[^\p{L}\p{N}-]+/gu, '-')
+		.replace(/-+/g, '-')
+		.replace(/^-+|-+$/g, '')
+		.slice(0, 64);
+}
+
+function getUserProfileNumber(user: Pick<AppUserRow, 'profile_number'>) {
+	const number = String(user.profile_number ?? '').replace(/\D/g, '').slice(0, 5);
+	return number.length === 5 ? number : '00001';
+}
+
+async function createUniqueProfileSlug(displayName: string, currentUserId = '', preferredNumber = '') {
+	const numbers = [
+		String(preferredNumber).replace(/\D/g, '').slice(0, 5),
+		...Array.from({ length: 24 }, () => randomProfileNumber())
+	].filter((number) => number.length === 5);
+
+	for (const number of numbers) {
+		const candidate = createProfileSlug(displayName, number);
+		const rows = await authRequest<Array<{ id: string }>>(
+			`/rest/v1/app_users?profile_slug=eq.${encodeURIComponent(candidate)}&select=id`
+		);
+		const existing = rows[0];
+		if (!existing || existing.id === currentUserId) return { slug: candidate, number };
+	}
+
+	const fallbackNumber = randomProfileNumber();
+	return { slug: `${createProfileBase(displayName)}-${fallbackNumber}-${randomBytes(2).toString('hex')}`, number: fallbackNumber };
+}
+
+function randomProfileNumber() {
+	return String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+}
+
 function isAdminEmail(email: string) {
 	const { adminEmails } = getRagConfig();
 	return adminEmails.includes(email.toLowerCase());
@@ -296,4 +594,29 @@ async function authRequest<T = unknown>(path: string, init: RequestInit = {}) {
 	if (response.status === 204) return undefined as T;
 	const text = await response.text();
 	return text ? (JSON.parse(text) as T) : (undefined as T);
+}
+
+export async function banUser(userId: string) {
+	await authRequest(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}`, {
+		method: 'PATCH',
+		headers: {
+			Prefer: 'return=minimal'
+		},
+		body: JSON.stringify({ banned: true })
+	});
+
+	// Evict sessions from database immediately
+	await authRequest(`/rest/v1/user_sessions?user_id=eq.${encodeURIComponent(userId)}`, {
+		method: 'DELETE'
+	});
+}
+
+export async function unbanUser(userId: string) {
+	await authRequest(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}`, {
+		method: 'PATCH',
+		headers: {
+			Prefer: 'return=minimal'
+		},
+		body: JSON.stringify({ banned: false })
+	});
 }

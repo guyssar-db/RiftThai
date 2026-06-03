@@ -23,23 +23,37 @@
 		{
 			title: 'Standard Deck Constraints',
 			titleTh: 'ข้อกำหนดการจัดเด็คมาตรฐาน',
-			desc: 'Main Deck จะต้องมี 39 ใบ (ยังไม่รวม Champion อีก 1 ใบ และใส่ซ้ำชื่อเดียวกันได้สูงสุด 3 ใบ) ส่วน Rune Deck สามารถใส่ได้สูงสุด 12 ใบ และ Battlefield จำกัด 1 ใบต่อชื่อ (การ์ดในตำนานอย่าง Baron Pit จะย้ายไปเป็น Token โดยอัติโนมัติ)',
+			desc: 'Main Deck จะต้องมี 39 ใบ (ยังไม่รวม Champion อีก 1 ใบ และใส่ซ้ำชื่อเดียวกันได้สูงสุด 3 ใบ) ส่วน Rune Deck สามารถใส่ได้สูงสุด 12 ใบ และ Battlefield จำกัด 1 ใบต่อชื่อ',
 			badge: 'กฎกติกา',
 			graphic: 'constraints'
 		},
 		{
 			title: 'New Sideboard Support!',
 			titleTh: 'ใหม่! ระบบเด็คสำรอง (Sideboard)',
-			desc: 'เพิ่มความยืดหยุ่นในการจัดเด็คด้วยระบบเด็คสำรอง (Sideboard) ใส่การ์ดได้สูงสุด 8 ใบ! โดยจำกัดให้ใส่ได้เฉพาะการ์ด Main Deck เท่านั้น และคิดลิมิตการ์ด 3 ใบต่อชื่อร่วมกับเด็คหลัก',
+			desc: 'เพิ่มความยืดหยุ่นในการจัดเด็คด้วยระบบเด็คสำรอง (Sideboard) ใส่การ์ดได้สูงสุด 8 ใบ!',
 			badge: 'ฟีเจอร์ใหม่',
 			graphic: 'sideboard'
 		},
 		{
+			title: 'Collection Tracker (Normal & Foil)',
+			titleTh: 'ใหม่! ระบบสะสมการ์ด (Normal & Foil)',
+			desc: 'จัดการจำนวนการ์ดสะสมส่วนตัว แยกบันทึกได้ทั้งแบบธรรมดาและแบบฟอยล์ (Foil) เพื่อระบุได้ทันทีว่าเด็คไหนมีการ์ดขาดบ้าง หรือส่งออกลิสต์การ์ดสะสมเพื่อขอรับการ์ดจากผู้อื่นได้ง่ายขึ้น',
+			badge: 'คอลเล็กชัน',
+			graphic: 'collection'
+		},
+		{
 			title: 'Premium PNG Exporter',
 			titleTh: 'เครื่องมือส่งออกภาพระดับโปร',
-			desc: 'เปลี่ยนเด็คของคุณให้เป็นงานศิลปะส่งออก PNG ความละเอียดสูงได้ทั้งรูปแบบแนวตั้ง (Portrait) และแนวนอน (Landscape) พร้อมระบบหมุนรูป Baron Pit แนวตั้งอัตโนมัติ และลายน้ำพรีเมียม riftthai.guyssar.com',
+			desc: 'เปลี่ยนเด็คของคุณให้เป็นงานศิลปะส่งออก PNG ความละเอียดสูงได้ทั้งรูปแบบแนวตั้ง (Portrait) และแนวนอน (Landscape)',
 			badge: 'การส่งออก',
 			graphic: 'export'
+		},
+		{
+			title: 'Install PWA & Play Offline',
+			titleTh: 'ใหม่! ติดตั้งแอปเปิดใช้งานออฟไลน์',
+			desc: 'เพิ่มทางลัดหน้าจอโฮมมือถือและคอมพิวเตอร์ด้วยระบบ PWA ช่วยให้คุณเปิดหาข้อมูลการ์ด ค้นหาคำตัดสินกติกา หรืออัปเดตข้อมูลคอลเล็กชันได้แม้สัญญาณอินเทอร์เน็ตจะขาดหายขณะนั่งเล่นอยู่ในร้านการ์ด',
+			badge: 'ออฟไลน์',
+			graphic: 'pwa'
 		},
 		{
 			title: 'Support RiftThai Developer',
@@ -50,8 +64,22 @@
 		}
 	];
 
+	let deferredPrompt = $state<any>(null);
+
 	onMount(() => {
 		if (!browser) return;
+
+		const handleBeforeInstall = (e: Event) => {
+			e.preventDefault();
+			deferredPrompt = e;
+		};
+
+		const handleAppInstalled = () => {
+			deferredPrompt = null;
+		};
+
+		window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+		window.addEventListener('appinstalled', handleAppInstalled);
 
 		const handleOpenGuide = () => {
 			currentStep = 0;
@@ -69,9 +97,20 @@
 		}
 
 		return () => {
+			window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+			window.removeEventListener('appinstalled', handleAppInstalled);
 			window.removeEventListener('riftthai-open-guide', handleOpenGuide);
 		};
 	});
+
+	async function installPwa() {
+		if (!deferredPrompt) return;
+		deferredPrompt.prompt();
+		const { outcome } = await deferredPrompt.userChoice;
+		if (outcome === 'accepted') {
+			deferredPrompt = null;
+		}
+	}
 
 	function closeGuide() {
 		isOpen = false;
@@ -113,6 +152,20 @@
 	</span>
 	Guide / คู่มือ
 </button>
+
+{#if deferredPrompt}
+	<button
+		type="button"
+		class="fixed bottom-4 left-4 z-[800] flex h-12 items-center gap-2 rounded-full border border-emerald-500/30 bg-slate-950/92 px-4 text-xs font-black uppercase tracking-widest text-emerald-300 shadow-2xl shadow-emerald-950/20 backdrop-blur-xl transition hover:scale-[1.05] hover:border-emerald-500/60 active:scale-[0.98] sm:bottom-6 sm:left-6 md:left-44 lg:left-48"
+		onclick={installPwa}
+		aria-label="Install App"
+	>
+		<svg class="h-4.5 w-4.5 animate-bounce text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+			<path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+		</svg>
+		Install / ติดตั้งแอป
+	</button>
+{/if}
 
 {#if isOpen}
 	<div
@@ -194,6 +247,31 @@
 								<div class="h-2 bg-cyan-300/20 rounded-sm"></div>
 								<div class="h-2 bg-cyan-300/15 rounded-sm"></div>
 							</div>
+						</div>
+					</div>
+				{:else if steps[currentStep].graphic === 'collection'}
+					<div class="flex items-center gap-4">
+						<div class="relative h-28 w-20 rounded-md border border-cyan-300/30 bg-slate-950/80 p-2 flex flex-col justify-between shadow-xl shadow-cyan-950/10">
+							<span class="text-[7px] font-black text-cyan-300 uppercase tracking-wider">Non-Foil</span>
+							<div class="flex h-6 w-6 items-center justify-center rounded-full bg-cyan-300/15 text-[10px] font-black text-cyan-300 self-center">3</div>
+							<div class="h-1 w-full bg-cyan-300/10 rounded-sm"></div>
+						</div>
+						<div class="relative h-28 w-20 rounded-md border border-pink-500/30 bg-slate-950/80 p-2 flex flex-col justify-between shadow-xl shadow-pink-950/10">
+							<span class="text-[7px] font-black text-pink-400 uppercase tracking-wider font-mono">Foil (F)</span>
+							<div class="flex h-6 w-6 items-center justify-center rounded-full bg-pink-500/15 text-[10px] font-black text-pink-400 self-center">1</div>
+							<div class="h-1 w-full bg-pink-500/10 rounded-sm"></div>
+						</div>
+					</div>
+				{:else if steps[currentStep].graphic === 'pwa'}
+					<div class="flex flex-col items-center gap-3">
+						<div class="relative h-24 w-14 rounded-xl border border-cyan-300/30 bg-slate-950/90 p-1 shadow-2xl flex flex-col justify-between">
+							<div class="h-0.5 w-6 bg-slate-800 rounded-full mx-auto mt-0.5"></div>
+							<div class="my-auto text-center font-black italic text-cyan-300 text-[10px]">Rift<span class="text-white">Th</span></div>
+							<div class="h-2 w-2 border border-slate-700 rounded-full mx-auto mb-0.5"></div>
+						</div>
+						<div class="text-[8px] font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+							<span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+							Offline Ready
 						</div>
 					</div>
 				{:else if steps[currentStep].graphic === 'support'}

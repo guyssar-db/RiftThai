@@ -1,11 +1,20 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import { domainAnswers, type DomainAnswer } from '$lib/data/domainAnswers';
-	import { iconMappings, keywords } from '$lib/data/keywords';
-	import { ruleAnswers, type RuleAnswer } from '$lib/data/ruleAnswers';
-	import { spiritforgedFaq } from '$lib/data/spiritforgedFaq';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import type { Card } from '$lib/types/card';
+	import {
+		parseAnswerText,
+		withAiDisclaimer,
+		getCanonicalQuickAnswer,
+		findCards,
+		formatFocusedCardAnswer,
+		formatCards,
+		buildAnswer
+	} from '$lib/utils/chatSearch';
 
 	type Message = {
 		role: 'bot' | 'user';
@@ -40,226 +49,8 @@
 		error?: string;
 	};
 
-	type ScoredRule = {
-		rule: RuleAnswer;
-		score: number;
-	};
-
 	let pathname = $derived(page.url.pathname.replace(/\/$/, '') || '/');
 	let isHomePage = $derived(pathname === '/');
-
-	type ScoredDomain = {
-		domain: DomainAnswer;
-		score: number;
-	};
-
-	type ScoredCard = {
-		card: Card;
-		score: number;
-	};
-
-	type ScoredKeyword = {
-		keyword: (typeof keywords)[number];
-		score: number;
-	};
-
-	type QAAnswer = {
-		category: string;
-		question: string;
-		answer: string;
-	};
-
-	type PhaseAnswer = {
-		title: string;
-		aliases: string[];
-		text: string;
-	};
-
-	type ScoredQA = {
-		item: QAAnswer;
-		score: number;
-	};
-
-	type ScoredPhase = {
-		phase: PhaseAnswer;
-		score: number;
-	};
-
-	const qaAnswers: QAAnswer[] = [
-		...spiritforgedFaq,
-		{
-			category: 'Keywords & Abilities',
-			question: 'สกิล Soaring Scout ที่เขียนว่า DEATHKNELL: Channel 1 rune exhausted ทำงานอย่างไร?',
-			answer:
-				'เมื่อ Soaring Scout ตาย Deathknell จะทำให้ Channel rune 1 ใบเข้ามาในสนามแบบ exhausted จึงยังใช้ Energy จากรูนนั้นในเทิร์นนั้นทันทีไม่ได้'
-		},
-		{
-			category: 'Card Mechanics',
-			question: 'Consult the Past ที่มี Hidden ต้องจ่ายและวางไว้ตรงไหน?',
-			answer:
-				'ตามข้อมูล Q&A ในเว็บ การ์ด Hidden สามารถจ่ายล่วงหน้าโดย recycle rune 1 ใบเพื่อวางคว่ำไว้ที่ battlefield ที่เลือก แล้วค่อยเปิดใช้จาก facedown ภายหลัง'
-		},
-		{
-			category: 'Keywords & Abilities',
-			question: 'Reaction ใช้ตอนไหนได้บ้าง?',
-			answer:
-				'Reaction ใช้เพื่อสวนกลับหรือขัดจังหวะได้เมื่อมี priority รวมถึงในเทิร์นคู่แข่งและช่วงต่อสู้ ตามข้อมูลในเว็บใช้ตอบสิ่งที่อยู่บน chain ได้'
-		},
-		{
-			category: 'Rules & Combat',
-			question: 'Spirit Token ที่เพิ่งเสกออกมาเปิด Showdown ในเทิร์นนั้นได้ไหม?',
-			answer:
-				'ไม่ได้ ถ้า token เข้ามาแบบ exhausted จะยังสั่ง exhaust เพื่อเปิด Showdown ไม่ได้ ต้องรอให้พร้อมก่อน แต่ยังนับ Might เพื่อร่วมตั้งรับได้'
-		},
-		{
-			category: 'Card Mechanics',
-			question: 'Cull the Weak ร่ายได้ไหมถ้าบอร์ดเราว่าง?',
-			answer:
-				'ร่ายได้ ตามข้อมูล Q&A ระบบจะทำตามเอฟเฟกต์ให้ได้มากที่สุด เราไม่มี unit ให้ทำลายก็ไม่ต้องทำลายอะไร ส่วนอีกฝ่ายยังต้องเลือกทำลาย unit ของตัวเองถ้ามี'
-		},
-		{
-			category: 'Rules & Scoring',
-			question: 'Hold และ Ahri, Alluring ได้แต้มตอนไหน?',
-			answer:
-				'ข้อมูลในเว็บระบุว่า Hold scoring และสกิลที่เกี่ยวข้องเกิดช่วงเริ่มเทิร์นของคุณ ถ้าคุม battlefield อยู่จะได้แต้มตามเงื่อนไขของกฎหรือการ์ด'
-		},
-		{
-			category: 'Keywords & Abilities',
-			question: 'Stun จำกัดอะไร และหายตอนไหน?',
-			answer:
-				'ยูนิตที่ติด Stun จะไม่สามารถโจมตี เคลื่อนที่ หรือใช้ activated ability ที่ต้อง exhaust ได้ตามปกติ และจะหายตาม timing ที่กฎหรือเอฟเฟกต์กำหนด'
-		},
-		{
-			category: 'Rules & Healing',
-			question: 'Heal ล้างดาเมจสะสมตอนไหน?',
-			answer:
-				'ข้อมูลในเว็บสรุปว่า damage ที่สะสมบน unit จะถูกล้างตามช่วง cleanup/จบ combat หรือ end of turn ตาม timing ที่กฎและเอฟเฟกต์ระบุ'
-		},
-		{
-			category: 'Rules & Movement',
-			question: 'Move unit ข้ามจาก battlefield หนึ่งไปอีก battlefield ได้ไหม?',
-			answer:
-				'การ move ปกติไม่ได้ข้าม battlefield เอง แต่ถ้าการ์ดหรือ ability สั่ง Move a unit ก็สามารถข้ามข้อจำกัดปกติได้ตามข้อความการ์ด'
-		},
-		{
-			category: 'Rules & Timing',
-			question: 'Action กับ Reaction ต่างกันยังไง?',
-			answer:
-				'Action ใช้ตอบ chain ไม่ได้และต้องเล่นตอนที่ timing เปิดให้ทำ action ส่วน Reaction ใช้ตอนมี priority และใช้ตอบสิ่งที่อยู่บน chain ได้'
-		},
-		{
-			category: 'Rules & Showdown',
-			question: 'Showdown เกิดขึ้นเมื่อไหร่?',
-			answer:
-				'ข้อมูลในเว็บสรุปว่า Showdown เกี่ยวกับการ contest battlefield และในกฎล่าสุด Showdown จะถูก staged ระหว่าง cleanup หลัง battlefield ได้รับสถานะ Contested'
-		},
-		{
-			category: 'Rules & Chain',
-			question: 'Chain เกิดจากอะไร?',
-			answer:
-				'Chain เกิดจากการเล่น spell, activated ability หรือ triggered ability ที่ต้องเข้าลำดับการ resolve ผู้เล่นจึงมีจังหวะใช้ Reaction ตาม priority'
-		},
-		{
-			category: 'Rules & Resources',
-			question: 'Recycle rune ที่ exhausted ได้ไหม?',
-			answer:
-				'ข้อมูล Q&A ในเว็บระบุว่าสามารถ recycle rune ที่ exhausted อยู่ได้ ไม่จำเป็นต้องเลือกรูนที่ ready เท่านั้น'
-		},
-		{
-			category: 'Rules & Targeting',
-			question: 'อะไรถือว่าเป็น target?',
-			answer:
-				'โดยสรุป target มักเป็น object หรือผู้เล่นใน public zone ที่ถูกผู้เล่นคนเดียวเลือกให้ spell หรือ ability กระทบโดยตรง การให้ผู้เล่นแต่ละคนเลือกของตัวเองมักไม่ถือว่า target'
-		},
-		{
-			category: 'Rules & Tokens',
-			question: 'Token ที่ไม่มี cost ถือว่า cost เท่าไหร่?',
-			answer:
-				'สำหรับเอฟเฟกต์ที่ต้องดู cost ของ token ข้อมูลในเว็บสรุปให้ถือว่า token มี cost เป็น 0'
-		},
-		{
-			category: 'Rules & Multiplayer',
-			question: 'ใน 2v2 friendly unit หมายถึงอะไร?',
-			answer:
-				'Friendly unit หมายถึง unit ของคุณและ unit ของเพื่อนร่วมทีม แต่คำว่า your units โดยทั่วไปหมายถึง unit ที่คุณควบคุมเอง'
-		}
-	];
-
-	const phaseAnswers: PhaseAnswer[] = [
-		{
-			title: 'Awaken Phase',
-			aliases: ['awaken', 'ready', 'เฟสเตรียมพร้อม', 'ตั้งตรง', 'stun หาย'],
-			text: 'Awaken Phase คือช่วงเตรียมพร้อม: ถอด Stun และทำให้การ์ดที่ exhausted อยู่ เช่น units, runes, champions และ gear กลับมา ready'
-		},
-		{
-			title: 'Beginning Phase',
-			aliases: ['beginning', 'start', 'start of turn', 'เฟสเริ่มต้น', 'hold'],
-			text: 'Beginning Phase คือช่วงเริ่มเทิร์น ใช้ตรวจ Hold scoring และให้ความสามารถประเภท start of turn ทำงาน'
-		},
-		{
-			title: 'Channel Phase',
-			aliases: ['channel', 'rune', 'เฟสรูน', 'รูน'],
-			text: 'Channel Phase คือช่วงนำ rune จาก Rune Deck เข้าสู่สนาม โดยข้อมูลในเว็บระบุว่าปกติ channel 2 ใบ และผู้เล่นคนที่สองในเทิร์นแรกได้เพิ่มเป็น 3 ใบ'
-		},
-		{
-			title: 'Draw Phase',
-			aliases: ['draw', 'เฟสจั่ว', 'จั่ว'],
-			text: 'Draw Phase คือช่วงจั่วการ์ด 1 ใบจาก Main Deck ขึ้นมือ'
-		},
-		{
-			title: 'Action Phase',
-			aliases: ['action phase', 'เฟสหลัก', 'play card', 'set hidden', 'use ability', 'move unit'],
-			text: 'Action Phase คือเฟสหลัก ผู้เล่นสามารถ play card, set hidden, use ability และ move unit ได้ตามทรัพยากรและ timing ที่อนุญาต'
-		},
-		{
-			title: 'End Of Turn',
-			aliases: ['end', 'end of turn', 'เฟสจบเทิร์น', 'จบเทิร์น', 'global heal'],
-			text: 'End of Turn คือช่วงจบเทิร์น ผลแบบ this turn หมดลง มีการล้าง damage ตามข้อมูล flow ในเว็บ และส่งเทิร์นให้ผู้เล่นถัดไป'
-		},
-		{
-			title: 'Combat Timeline',
-			aliases: ['combat', 'showdown', 'assign damage', 'deathknell', 'contested check', 'ต่อสู้'],
-			text: 'Combat timeline ในเว็บเรียงเป็น Pre-Combat Window, Assign Damage, Combat Cleanup & Deathknell, Contested Check และ Global Heal'
-		},
-		{
-			title: 'Card Speeds',
-			aliases: ['normal speed', 'action speed', 'reaction speed', 'speed', 'ความเร็ว'],
-			text: 'ข้อมูลหน้า phases แบ่งความเร็วเป็น Normal Speed, Action Speed และ Reaction Speed โดย Reaction ใช้ตอบ chain ได้ ส่วน Action ต้องรอ chain ว่าง'
-		}
-	];
-	const stopWords = new Set([
-		'คือ',
-		'อะไร',
-		'ยังไง',
-		'อย่างไร',
-		'ได้ไหม',
-		'มั้ย',
-		'ไหม',
-		'การ',
-		'ของ',
-		'ที่',
-		'ใน',
-		'และ',
-		'หรือ',
-		'ถ้า',
-		'can',
-		'what',
-		'when',
-		'how',
-		'does',
-		'the',
-		'a',
-		'an',
-		'is',
-		'to',
-		'of',
-		'domain'
-	]);
-
-	const noAnswerText =
-		'ข้อนี้ผมยังตอบให้มั่นใจไม่ได้จากข้อมูลที่มีในเว็บ เลยไม่อยากเดาให้ผิด ถ้าเป็นเคสเฉพาะการ์ด ให้ลองเช็กข้อความบนการ์ดหรือ official rules เพิ่มอีกชั้น';
-	const aiDisclaimer =
-		'หมายเหตุ: คำตอบจาก AI และข้อมูลใน RiftThai อาจไม่ถูกต้อง 100% สำหรับการตัดสินกฎ การแข่งขัน หรือเคสที่มีผลต่อเกมจริง ควรตรวจสอบ Official Rules และเว็บไซต์ทางการ https://riftbound.com/ ประกอบเสมอ';
 
 	let cachedLocalCards: Card[] | null = null;
 	let isOpen = $state(false);
@@ -270,6 +61,7 @@
 	let loginEmail = $state('');
 	let loginPassword = $state('');
 	let confirmPassword = $state('');
+	let loginDisplayName = $state('');
 	let loginError = $state('');
 	let authMode = $state<'login' | 'register'>('login');
 	let registerSent = $state(false);
@@ -339,7 +131,8 @@
 					},
 					body: JSON.stringify({
 						email: loginEmail,
-						password: loginPassword
+						password: loginPassword,
+						displayName: authMode === 'register' ? loginDisplayName : undefined
 					})
 				}
 			);
@@ -349,6 +142,7 @@
 				registerSent = true;
 				loginPassword = '';
 				confirmPassword = '';
+				loginDisplayName = '';
 				return;
 			}
 			if (!data.user) throw new Error(data.error || 'Login failed');
@@ -357,6 +151,7 @@
 			window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 			loginPassword = '';
 			confirmPassword = '';
+			loginDisplayName = '';
 		} catch (error) {
 			loginError = error instanceof Error ? error.message : 'Auth failed';
 		} finally {
@@ -372,342 +167,6 @@
 		window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 	}
 
-	function normalize(value: unknown) {
-		return String(value ?? '')
-			.normalize('NFKC')
-			.toLowerCase()
-			.replace(/[_\-/:()[\].,]+/g, ' ')
-			.replace(/\s+/g, ' ')
-			.trim();
-	}
-
-	function escapeHtml(value: string) {
-		return value
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#39;');
-	}
-
-	function parseAnswerText(text: string) {
-		let processed = escapeHtml(text);
-		const placeholders: Record<string, string> = {};
-		let placeholderIndex = 0;
-		const domainIconByName = new Map(
-			domainAnswers.map((domain) => [domain.name.toLowerCase(), domain.iconToken])
-		);
-
-		function addPlaceholder(html: string) {
-			const id = `___CHAT_PH_${placeholderIndex++}___`;
-			placeholders[id] = html;
-			return id;
-		}
-
-		processed = processed.replace(/\[c\]/gi, () =>
-			addPlaceholder(
-				'<img src="/images/icons/rune_rainbow.svg" class="chat-inline-icon" title="Any Rune" alt="Any Rune" />'
-			)
-		);
-
-		processed = processed.replace(/:rb_energy_(\d+):/g, (_match, value) =>
-			addPlaceholder(`<span class="chat-energy-circle" title="Energy: ${value}">${value}</span>`)
-		);
-
-		Object.entries(iconMappings).forEach(([token, value]) => {
-			processed = processed.replaceAll(
-				token,
-				addPlaceholder(
-					`<img src="/images/icons/${value.icon}" class="chat-inline-icon" title="${escapeHtml(value.hint)}" alt="${escapeHtml(token)}" />`
-				)
-			);
-		});
-
-		processed = processed.replace(/\b(Fury|Calm|Mind|Body|Chaos|Order)\b/g, (match) => {
-			const token = domainIconByName.get(String(match).toLowerCase());
-			const icon = token ? iconMappings[token] : null;
-			if (!icon) return match;
-
-			return addPlaceholder(
-				`<span class="chat-domain-name"><img src="/images/icons/${icon.icon}" class="chat-inline-icon" title="${escapeHtml(icon.hint)}" alt="${escapeHtml(match)} domain" /><span>${escapeHtml(match)}</span></span>`
-			);
-		});
-
-		processed = processed.replace(/\[([^\]]+)\]/g, (_match, keywordText) => {
-			const displayText = String(keywordText).trim();
-			const keywordName = displayText.split(' ')[0];
-			const keyword = keywords.find(
-				(item) =>
-					normalize(item.name_en) === normalize(keywordName) ||
-					normalize(item.name_th) === normalize(keywordName)
-			);
-			if (!keyword) return `[${displayText}]`;
-			const color = keyword?.color ?? '#107361';
-
-			return addPlaceholder(
-				`<span class="chat-keyword-badge" style="background-color: ${color};"><span>${escapeHtml(displayText)}</span></span>`
-			);
-		});
-
-		Object.entries(placeholders).forEach(([id, html]) => {
-			processed = processed.replaceAll(id, html);
-		});
-
-		return processed.replace(/\n/g, '<br />');
-	}
-
-	function getTokens(value: string) {
-		return normalize(value)
-			.split(' ')
-			.filter((token) => token.length >= 2 && !stopWords.has(token));
-	}
-
-	const cardSearchStopWords = new Set([
-		...stopWords,
-		'เป็น',
-		'อะไร',
-		'ไหม',
-		'มั้ย',
-		'ใบนี้',
-		'การ์ด',
-		'ประเภท',
-		'ชนิด',
-		'สี',
-		'ชุด',
-		'ค่าร่าย',
-		'ทำอะไร',
-		'สกิล',
-		'ความสามารถ',
-		'type',
-		'domain',
-		'cost',
-		'energy',
-		'set',
-		'rarity',
-		'tag',
-		'tags',
-		'ability',
-		'power',
-		'might',
-		'card'
-	]);
-
-	function getCardTokens(value: string) {
-		return normalize(value)
-			.split(' ')
-			.filter((token) => token.length >= 2 && !cardSearchStopWords.has(token));
-	}
-
-	function scoreText(text: string, tokens: string[]) {
-		const normalized = normalize(text);
-		return tokens.reduce((score, token) => {
-			if (normalized === token) return score + 80;
-			if (normalized.startsWith(token)) return score + 18;
-			if (normalized.includes(token)) return score + 8;
-			if (token.length >= 4 && normalized.includes(token.slice(0, -1))) return score + 3;
-			return score;
-		}, 0);
-	}
-
-	function scoreDomain(domain: DomainAnswer, query: string, tokens: string[]) {
-		const normalizedQuery = normalize(query);
-		const searchText = [
-			domain.name,
-			domain.colorName,
-			domain.summary,
-			domain.bestFor,
-			domain.strengths.join(' '),
-			domain.pros.join(' '),
-			domain.cons.join(' '),
-			domain.description.join(' '),
-			...domain.aliases
-		].join(' ');
-
-		let score = 0;
-
-		for (const alias of domain.aliases) {
-			const normalizedAlias = normalize(alias);
-			if (!normalizedAlias) continue;
-			if (normalizedQuery === normalizedAlias) score += 120;
-			if (normalizedQuery.includes(normalizedAlias)) score += 58;
-			score += scoreText(normalizedAlias, tokens) * 3;
-		}
-
-		score += scoreText(domain.name, tokens) * 4;
-		score += scoreText(domain.colorName, tokens) * 2;
-		score += scoreText(domain.summary, tokens);
-		score += scoreText(domain.bestFor, tokens);
-
-		if (normalizedQuery.includes('domain') || normalizedQuery.includes('โดเมน')) score += 18;
-		if (normalize(searchText).includes(normalizedQuery)) score += 25;
-
-		return score;
-	}
-
-	function findDomains(query: string) {
-		const tokens = getTokens(query);
-		const normalizedQuery = normalize(query);
-		if (
-			tokens.length === 0 &&
-			!normalizedQuery.includes('domain') &&
-			!normalizedQuery.includes('โดเมน')
-		)
-			return [];
-
-		return domainAnswers
-			.map((domain): ScoredDomain => ({ domain, score: scoreDomain(domain, query, tokens) }))
-			.filter((result) => result.score > 0)
-			.sort((a, b) => b.score - a.score);
-	}
-
-	function isDomainIntent(query: string) {
-		const normalizedQuery = normalize(query);
-		if (!normalizedQuery) return false;
-
-		if (normalizedQuery.includes('domain') || normalizedQuery.includes('โดเมน')) return true;
-
-		return domainAnswers.some((domain) =>
-			[domain.name, domain.colorName, ...domain.aliases].some((term) => {
-				const normalizedTerm = normalize(term);
-				return normalizedTerm ? normalizedQuery.includes(normalizedTerm) : false;
-			})
-		);
-	}
-
-	function isGenericDomainIntent(query: string) {
-		const normalizedQuery = normalize(query);
-		return normalizedQuery.includes('domain') || normalizedQuery.includes('โดเมน');
-	}
-
-	function scoreRule(rule: RuleAnswer, query: string, tokens: string[]) {
-		const normalizedQuery = normalize(query);
-		let score = 0;
-
-		for (const key of rule.keys) {
-			const normalizedKey = normalize(key);
-			if (normalizedQuery === normalizedKey) score += 120;
-			if (normalizedQuery.includes(normalizedKey)) score += 55;
-			score += scoreText(normalizedKey, tokens) * 3;
-		}
-
-		score += scoreText(rule.title, tokens) * 2;
-		score += scoreText(rule.text, tokens);
-
-		return score;
-	}
-
-	function scoreQA(item: QAAnswer, query: string, tokens: string[]) {
-		const normalizedQuery = normalize(query);
-		let score =
-			scoreText(item.question, tokens) * 3 +
-			scoreText(item.answer, tokens) +
-			scoreText(item.category, tokens);
-
-		if (normalize(item.question).includes(normalizedQuery)) score += 35;
-		if (normalize(item.answer).includes(normalizedQuery)) score += 18;
-
-		return score;
-	}
-
-	function findQA(query: string): ScoredQA[] {
-		const tokens = getTokens(query);
-		if (tokens.length === 0) return [];
-
-		return qaAnswers
-			.map((item): ScoredQA => ({ item, score: scoreQA(item, query, tokens) }))
-			.filter((result) => result.score > 0)
-			.sort((a, b) => b.score - a.score)
-			.slice(0, 3);
-	}
-
-	function scorePhase(phase: PhaseAnswer, query: string, tokens: string[]) {
-		const normalizedQuery = normalize(query);
-		let score = scoreText(phase.title, tokens) * 3 + scoreText(phase.text, tokens);
-
-		for (const alias of phase.aliases) {
-			const normalizedAlias = normalize(alias);
-			if (normalizedQuery === normalizedAlias) score += 120;
-			if (normalizedQuery.includes(normalizedAlias)) score += 58;
-			score += scoreText(alias, tokens) * 3;
-		}
-
-		if (normalizedQuery.includes('phase') || normalizedQuery.includes('เฟส')) score += 16;
-
-		return score;
-	}
-
-	function findPhases(query: string): ScoredPhase[] {
-		const tokens = getTokens(query);
-		const normalizedQuery = normalize(query);
-		if (
-			tokens.length === 0 &&
-			!normalizedQuery.includes('phase') &&
-			!normalizedQuery.includes('เฟส')
-		)
-			return [];
-
-		return phaseAnswers
-			.map((phase): ScoredPhase => ({ phase, score: scorePhase(phase, query, tokens) }))
-			.filter((result) => result.score > 0)
-			.sort((a, b) => b.score - a.score)
-			.slice(0, 3);
-	}
-
-	function findRules(query: string) {
-		const tokens = getTokens(query);
-		if (tokens.length === 0) return [];
-
-		return ruleAnswers
-			.map((rule): ScoredRule => ({ rule, score: scoreRule(rule, query, tokens) }))
-			.filter((result) => result.score > 0)
-			.sort((a, b) => b.score - a.score)
-			.slice(0, 3);
-	}
-
-	function findKeyword(query: string): ScoredKeyword | undefined {
-		const tokens = getTokens(query);
-		const normalizedQuery = normalize(query);
-
-		return keywords
-			.map((keyword) => {
-				const score =
-					scoreText(keyword.name_en, tokens) * 3 +
-					scoreText(keyword.name_th, tokens) * 2 +
-					scoreText(keyword.id, tokens) * 3 +
-					scoreText(keyword.description_th, tokens) +
-					(normalizedQuery.includes(normalize(keyword.name_en)) ? 40 : 0);
-
-				return { keyword, score };
-			})
-			.filter((result) => result.score > 0)
-			.sort((a, b) => b.score - a.score)[0];
-	}
-
-	function isDirectKeywordQuestion(query: string, result: ScoredKeyword | undefined) {
-		if (!result) return false;
-
-		const normalizedQuery = normalize(query);
-		const allKeywordMatches = keywords.filter((keyword) =>
-			[keyword.name_en, keyword.name_th, keyword.id].some((term) => {
-				const normalizedTerm = normalize(term);
-				return normalizedTerm ? normalizedQuery.includes(normalizedTerm) : false;
-			})
-		);
-
-		if (allKeywordMatches.length !== 1) return false;
-
-		const keywordTerms = [result.keyword.name_en, result.keyword.name_th, result.keyword.id].map(
-			normalize
-		);
-		const hasKeyword = keywordTerms.some((term) => term && normalizedQuery.includes(term));
-		const isShortQuestion = getTokens(query).length <= 3;
-
-		return (
-			hasKeyword &&
-			(isShortQuestion || normalizedQuery.includes('คือ') || normalizedQuery.includes('keyword'))
-		);
-	}
-
 	async function getLocalCards() {
 		if (cachedLocalCards) return cachedLocalCards;
 		const module = await import('$lib/data/riftbound_cards_all.json');
@@ -715,398 +174,12 @@
 		return cachedLocalCards;
 	}
 
-	function searchableCardText(card: Card) {
-		return normalize(
-			[
-				card.name_en,
-				card.name_th,
-				card.code,
-				card.type,
-				card.rarity,
-				card.set_name,
-				card.ability_en,
-				card.ability_th,
-				...(card.domains ?? []),
-				...(card.tags ?? [])
-			].join(' ')
-		);
-	}
-
-	function getCardNameTerms(card: Card) {
-		return [card.name_en, card.name_th]
-			.map((name) => normalize(name))
-			.filter((name, index, names) => name && names.indexOf(name) === index);
-	}
-
-	function scoreCard(card: Card, query: string, queryTokens: string[]) {
-		const normalizedQuery = normalize(query);
-		const names = getCardNameTerms(card);
-		const code = normalize(card.code);
-		const allText = searchableCardText(card);
-
-		let score = 0;
-
-		for (const name of names) {
-			if (normalizedQuery === name) score += 260;
-			else if (normalizedQuery.includes(name)) score += 220;
-			else if (name.includes(normalizedQuery) && normalizedQuery.length >= 5) score += 90;
-		}
-
-		if (code) {
-			if (normalizedQuery === code) score += 260;
-			else if (normalizedQuery.includes(code)) score += 220;
-		}
-
-		return queryTokens.reduce((currentScore, token) => {
-			if (names.some((name) => name === token) || code === token) return currentScore + 100;
-			if (names.some((name) => name.includes(token))) return currentScore + 38;
-			if (code.includes(token)) return currentScore + 30;
-			if (token.length >= 4 && allText.includes(token)) return currentScore + 4;
-			return currentScore;
-		}, score);
-	}
-
-	function findExactCard(cards: Card[], query: string) {
-		const normalizedQuery = normalize(query);
-		return cards.find((card) => {
-			const names = getCardNameTerms(card);
-			const code = normalize(card.code);
-			return (
-				names.some((name) => normalizedQuery === name || normalizedQuery.includes(name)) ||
-				(code && normalizedQuery.includes(code))
-			);
-		});
-	}
-
-	async function findCards(query: string): Promise<ScoredCard[]> {
-		const tokens = getCardTokens(query);
-		const cards = await getLocalCards();
-		const exactCard = findExactCard(cards, query);
-		if (exactCard) {
-			const related = cards
-				.filter((card) => card.code !== exactCard.code)
-				.map((card) => ({ card, score: scoreCard(card, query, tokens) }))
-				.filter((result) => result.score > 0)
-				.sort((a, b) => b.score - a.score)
-				.slice(0, 2);
-
-			return [{ card: exactCard, score: 300 }, ...related];
-		}
-
-		if (tokens.length === 0) return [];
-
-		return cards
-			.map((card) => ({ card, score: scoreCard(card, query, tokens) }))
-			.filter((result) => result.score > 0)
-			.sort((a, b) => b.score - a.score)
-			.slice(0, 3);
-	}
-
-	function formatRules(results: ScoredRule[]) {
-		if (results.length === 0) return '';
-
-		const [best, ...related] = results;
-		const relatedText = related.length
-			? `\n\nเรื่องที่อาจเกี่ยวข้อง:\n${related.map(({ rule }) => `- ${rule.title}: ${rule.text}`).join('\n')}`
-			: '';
-
-		return `ถ้าถามเรื่อง ${best.rule.title} คำตอบคือ: ${best.rule.text}${relatedText}`;
-	}
-
-	function formatQA(results: ScoredQA[]) {
-		const [best, ...related] = results;
-		const relatedText = related.length
-			? `\n\nคำถามใกล้เคียงใน Q&A:\n${related.map(({ item }) => `- ${item.question}`).join('\n')}`
-			: '';
-
-		return `เจอคำตอบจาก Q&A ในเว็บ:\n${best.item.question}\n\n${best.item.answer}${relatedText}`;
-	}
-
-	function formatPhases(results: ScoredPhase[]) {
-		const [best, ...related] = results;
-		const relatedText = related.length
-			? `\n\nหัวข้อ phase ที่เกี่ยวข้อง:\n${related.map(({ phase }) => `- ${phase.title}: ${phase.text}`).join('\n')}`
-			: '';
-
-		return `${best.phase.title}: ${best.phase.text}${relatedText}`;
-	}
-
-	function formatDomains(results: ScoredDomain[], query: string) {
-		if (results.length === 0) return '';
-
-		const normalizedQuery = normalize(query);
-		const isGenericDomainQuestion =
-			normalizedQuery.includes('domain') ||
-			normalizedQuery.includes('โดเมน') ||
-			normalizedQuery === 'domain' ||
-			normalizedQuery === 'โดเมน';
-
-		if (isGenericDomainQuestion && results[0].score < 90) {
-			return [
-				'ใน Riftbound มี domain หลัก 6 แบบ: Fury, Calm, Mind, Body, Chaos และ Order.',
-				'',
-				'สรุปแบบเร็ว ๆ คือ:',
-				...domainAnswers.map(
-					(domain) => `${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`
-				)
-			].join('\n');
-		}
-
-		const [best, ...related] = results;
-		const relatedText = related.length
-			? `\n\nคำตอบที่เกี่ยวข้อง:\n${related
-					.slice(0, 2)
-					.map(
-						({ domain }) =>
-							`- ${domain.iconToken} ${domain.name}: ${domain.summary} | เหมาะกับ: ${domain.bestFor}`
-					)
-					.join('\n')}`
-			: '';
-
-		return [
-			`${best.domain.iconToken} ${best.domain.name} เป็น domain สี ${best.domain.colorName}. ${best.domain.summary}`,
-			`โดยรวมเหมาะกับ ${best.domain.bestFor}`,
-			`จุดเด่นหลักคือ ${best.domain.strengths.join(', ')}`,
-			`ข้อดี: ${best.domain.pros.join(' | ')}`,
-			`จุดที่ต้องระวัง: ${best.domain.cons.join(' | ')}`,
-			'',
-			...best.domain.description,
-			relatedText,
-			'',
-			'หมายเหตุ: ผมตอบจากข้อมูลสรุปในเว็บ ถ้าเป็นเคสแข่งหรือ ruling ละเอียดควรเช็ก official rules อีกครั้ง'
-		]
-			.filter(Boolean)
-			.join('\n');
-	}
-
-	function formatCards(matches: ScoredCard[]) {
-		return matches
-			.map(({ card }, index) => {
-				const domains = card.domains?.length ? ` | ${card.domains.join(', ')}` : '';
-				const tags = card.tags?.length ? ` | #${card.tags.join(' #')}` : '';
-				const ability = card.ability_th || card.ability_en || 'ไม่มี ability text';
-				return `${index + 1}. ${card.name_en} (${card.code})\n${card.type} - ${card.rarity}${domains}${tags}\n${ability}`;
-			})
-			.join('\n\n');
-	}
-
-	function getCardFieldIntents(query: string) {
-		const normalizedQuery = normalize(query);
-		const hasAny = (terms: string[]) =>
-			terms.some((term) => normalizedQuery.includes(normalize(term)));
-
-		return {
-			type: hasAny(['type', 'ประเภท', 'ชนิด']),
-			domain: hasAny(['domain', 'โดเมน', 'สีอะไร', 'สีไหน']),
-			cost: hasAny(['cost', 'energy', 'ค่าร่าย']),
-			set: hasAny(['set', 'ชุด', 'อยู่ชุด']),
-			rarity: hasAny(['rarity', 'ระดับความหายาก', 'หายาก']),
-			tags: hasAny(['tag', 'tags', 'แท็ก', 'เผ่า']),
-			ability: hasAny(['ability', 'ทำอะไร', 'ความสามารถ', 'สกิล']),
-			power: hasAny(['power', 'might', 'พลัง', 'ไมท์']),
-			code: hasAny(['code', 'รหัส', 'เลขการ์ด']),
-			image: hasAny(['image', 'รูป', 'ภาพ'])
-		};
-	}
-
-	function isCardIdentityQuestion(query: string) {
-		const normalizedQuery = normalize(query);
-		return ['คืออะไร', 'เป็นการ์ดอะไร', 'ข้อมูล', 'รายละเอียด', 'what is'].some((term) =>
-			normalizedQuery.includes(normalize(term))
-		);
-	}
-
-	function cardValue(value: unknown, fallback = 'ไม่ระบุ') {
-		if (value === null || value === undefined || value === '') return fallback;
-		return String(value);
-	}
-
-	function cardPowerLabel(card: Card) {
-		return card.power?.label ?? card.power?.value?.label ?? null;
-	}
-
-	function formatCardSummary(card: Card) {
-		const domains = card.domains?.length ? card.domains.join(', ') : 'ไม่ระบุ';
-		const cost = card.energy ?? 0;
-		const tags = card.tags?.length ? ` | tags: ${card.tags.join(', ')}` : '';
-		return `${card.name_en} คือการ์ด ${cardValue(card.type)} | cost ${cost} | domain ${domains} | set ${cardValue(card.set_name)}${tags}`;
-	}
-
-	function formatCardFieldAnswer(query: string, card: Card) {
-		const intents = getCardFieldIntents(query);
-		const cardName = card.name_en || card.name_th || card.code;
-		const domains = card.domains?.length ? card.domains.join(', ') : 'ไม่ระบุ';
-		const tags = card.tags?.length ? card.tags.join(', ') : 'ไม่ระบุ';
-		const ability = card.ability_th || card.ability_en || 'ไม่มี ability text';
-		const image = card.image_url || 'ไม่ระบุ';
-		const power = cardPowerLabel(card) ?? 'ไม่ระบุ';
-		const answers: string[] = [];
-
-		if (intents.type) answers.push(`${cardName} เป็นประเภท ${cardValue(card.type)}`);
-		if (intents.domain) answers.push(`${cardName} มี domain ${domains}`);
-		if (intents.cost) answers.push(`${cardName} มี cost ${card.energy ?? 0}`);
-		if (intents.set) answers.push(`${cardName} อยู่ในชุด ${cardValue(card.set_name)}`);
-		if (intents.rarity) answers.push(`${cardName} มี rarity ${cardValue(card.rarity)}`);
-		if (intents.tags) answers.push(`${cardName} มี tag ${tags}`);
-		if (intents.power) answers.push(`${cardName} มี power/might ${power}`);
-		if (intents.code) answers.push(`${cardName} มีรหัสการ์ด ${cardValue(card.code)}`);
-		if (intents.image) answers.push(`${cardName} รูปการ์ด: ${image}`);
-		if (intents.ability) answers.push(`${cardName}: ${ability}`);
-
-		if (answers.length > 0) return answers.join('\n');
-		if (isCardIdentityQuestion(query)) return formatCardSummary(card);
-
-		return '';
-	}
-
-	function formatFocusedCardAnswer(query: string, matches: ScoredCard[]) {
-		const best = matches[0];
-		if (!best || best.score < 80) return '';
-
-		const preciseAnswer = formatCardFieldAnswer(query, best.card);
-		if (preciseAnswer) return preciseAnswer;
-
-		const card = best.card;
-		const normalizedQuery = normalize(query);
-		const cardName = card.name_en || card.name_th || card.code;
-		const asksType =
-			normalizedQuery.includes('type') ||
-			normalizedQuery.includes('ประเภท') ||
-			normalizedQuery.includes('ชนิด');
-		const asksDomain =
-			normalizedQuery.includes('domain') ||
-			normalizedQuery.includes('โดเมน') ||
-			normalizedQuery.includes('สีอะไร') ||
-			normalizedQuery.includes('สีไหน');
-		const asksCost =
-			normalizedQuery.includes('cost') ||
-			normalizedQuery.includes('energy') ||
-			normalizedQuery.includes('ค่าร่าย');
-		const asksSet =
-			normalizedQuery.includes('set') ||
-			normalizedQuery.includes('ชุด') ||
-			normalizedQuery.includes('อยู่ชุด');
-		const asksRarity =
-			normalizedQuery.includes('rarity') ||
-			normalizedQuery.includes('ระดับความหายาก') ||
-			normalizedQuery.includes('หายาก');
-		const asksTags =
-			normalizedQuery.includes('tag') ||
-			normalizedQuery.includes('แท็ก') ||
-			normalizedQuery.includes('เผ่า');
-		const asksAbility =
-			normalizedQuery.includes('ability') ||
-			normalizedQuery.includes('ทำอะไร') ||
-			normalizedQuery.includes('ความสามารถ') ||
-			normalizedQuery.includes('สกิล');
-
-		if (asksType) return `${cardName} เป็นประเภท ${card.type || 'ไม่ระบุ'}`;
-		if (asksDomain)
-			return `${cardName} มี domain ${card.domains?.length ? card.domains.join(', ') : 'ไม่ระบุ'}`;
-		if (asksCost) return `${cardName} มี cost ${card.energy ?? 0}`;
-		if (asksSet) return `${cardName} อยู่ในชุด ${card.set_name || 'ไม่ระบุ'}`;
-		if (asksRarity) return `${cardName} มี rarity ${card.rarity || 'ไม่ระบุ'}`;
-		if (asksTags)
-			return `${cardName} มี tag ${card.tags?.length ? card.tags.join(', ') : 'ไม่ระบุ'}`;
-		if (asksAbility)
-			return `${cardName}: ${card.ability_th || card.ability_en || 'ไม่มี ability text'}`;
-
-		return '';
-	}
-
-	function withAiDisclaimer(answer: string) {
-		if (answer.includes(aiDisclaimer)) return answer;
-		return `${answer}\n\n${aiDisclaimer}`;
-	}
-
-	function getCanonicalQuickAnswer(query: string) {
-		const normalizedQuery = normalize(query);
-		const asksRecycle = normalizedQuery.includes('recycle') || normalizedQuery.includes('รีไซเคิล');
-		const asksOfficial =
-			normalizedQuery.includes('official') ||
-			normalizedQuery.includes('เว็บทางการ') ||
-			normalizedQuery.includes('เว็บ official') ||
-			(normalizedQuery.includes('เว็บ') && normalizedQuery.includes('riftbound'));
-
-		if (asksOfficial) {
-			return 'เว็บ official ของ Riftbound คือ https://riftbound.com/';
-		}
-
-		if (asksRecycle) {
-			return 'Recycle คือ การนำการ์ดรูนหรือการ์ดจากมือ ตามที่มาของการ์ดนั้น ส่งกลับเข้าใต้กอง';
-		}
-
-		return '';
-	}
-
-	async function buildAnswer(query: string) {
-		const quickAnswer = getCanonicalQuickAnswer(query);
-		if (quickAnswer) return quickAnswer;
-
-		const matches = await findCards(query);
-		const focusedCardAnswer = formatFocusedCardAnswer(query, matches);
-		if (focusedCardAnswer) return focusedCardAnswer;
-
-		if (matches.length > 0 && matches[0].score >= 60) {
-			return `ผมเจอการ์ดที่น่าจะเกี่ยวข้องกับคำถามนี้:\n${formatCards(matches)}`;
-		}
-
-		const keyword = findKeyword(query);
-		if (isDirectKeywordQuestion(query, keyword) && keyword && keyword.score >= 45) {
-			return `${keyword.keyword.name_en} คือ ${keyword.keyword.description_th}\n\nถ้าเป็นเคสซับซ้อน ให้เทียบกับข้อความบนการ์ดและ official rules อีกครั้ง`;
-		}
-
-		const qa = findQA(query);
-		if (qa.length > 0 && qa[0].score >= 45) {
-			return formatQA(qa);
-		}
-
-		const phases = findPhases(query);
-		if (phases.length > 0 && phases[0].score >= 45) {
-			return formatPhases(phases);
-		}
-
-		const rules = findRules(query);
-		if (rules.length > 0 && rules[0].score >= 55) {
-			return `${formatRules(rules)}\n\nหมายเหตุ: ผมตอบจากข้อมูลสรุปในเว็บ ถ้าเป็นเคสแข่งหรือ ruling ละเอียดควรเช็ก official rules อีกครั้ง`;
-		}
-
-		if (keyword && keyword.score >= 55) {
-			return `${keyword.keyword.name_en} คือ ${keyword.keyword.description_th}\n\nถ้าเป็นเคสซับซ้อน ให้เทียบกับข้อความบนการ์ดและ official rules อีกครั้ง`;
-		}
-
-		const domainIntent = isDomainIntent(query);
-		const domains = findDomains(query);
-		if (domainIntent) {
-			if (domains.length > 0 && (isGenericDomainIntent(query) || domains[0].score >= 55)) {
-				return formatDomains(domains, query);
-			}
-
-			if (isGenericDomainIntent(query)) {
-				return [
-					'ใน Riftbound มี domain หลัก 6 แบบ: Fury, Calm, Mind, Body, Chaos และ Order.',
-					'',
-					'สรุปแบบเร็ว ๆ คือ:',
-					...domainAnswers.map(
-						(domain) =>
-							`${domain.iconToken} ${domain.name} (${domain.colorName}) - ${domain.summary}`
-					)
-				].join('\n');
-			}
-		}
-
-		if (matches.length > 0 && matches[0].score >= 30) {
-			return `ผมเจอการ์ดที่อาจเกี่ยวข้องกับคำถามนี้:\n${formatCards(matches)}`;
-		}
-
-		return noAnswerText;
-	}
-
 	async function askRagApi(query: string) {
 		const quickAnswer = getCanonicalQuickAnswer(query);
 		if (quickAnswer) return quickAnswer;
 
-		const localCardMatches = await findCards(query);
+		const cards = await getLocalCards();
+		const localCardMatches = findCards(query, cards);
 		const focusedCardAnswer = formatFocusedCardAnswer(query, localCardMatches);
 		if (focusedCardAnswer) return focusedCardAnswer;
 
@@ -1136,7 +209,7 @@
 		}
 
 		if (response.status === 429) {
-			return await buildAnswer(query);
+			return await buildAnswer(query, cards);
 		}
 
 		if (!response.ok || data.mode === 'setup_required' || !data.answer) {
@@ -1174,7 +247,8 @@
 			messages = [...messages.slice(0, -1), { role: 'bot', text: withAiDisclaimer(answer) }];
 		} catch (error) {
 			const message = error instanceof Error ? error.message : '';
-			const fallbackAnswer = message || (await buildAnswer(query));
+			const cards = await getLocalCards();
+			const fallbackAnswer = message || (await buildAnswer(query, cards));
 			messages = [
 				...messages.slice(0, -1),
 				{ role: 'bot', text: withAiDisclaimer(fallbackAnswer) }
@@ -1185,224 +259,193 @@
 	}
 </script>
 
-{#if authModalOpen}
-	<div class="fixed inset-0 z-[950] grid place-items-center bg-black/75 p-4 backdrop-blur-sm">
-		<div class="rt-panel w-full max-w-sm overflow-hidden rounded-xl shadow-2xl shadow-black/50">
-			<div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
-				<div>
-					<div class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">Account</div>
-					<div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-						{authMode === 'login' ? 'Login to use RAG chat' : 'Create RiftThai account'}
-					</div>
-				</div>
-				<button
-					type="button"
-					class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5"
-					aria-label="Close account popup"
-					onclick={() => (authModalOpen = false)}
-				>
+<Modal bind:open={authModalOpen} title="Account" subtitle={authMode === 'login' ? 'Login to use RAG chat' : 'Create RiftThai account'}>
+	<form
+		class="space-y-3"
+		onsubmit={(event) => {
+			event.preventDefault();
+			login();
+		}}
+	>
+		<div class="grid grid-cols-2 rounded-lg border border-white/10 bg-slate-900 p-1">
+			<button
+				type="button"
+				class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
+				'login'
+					? 'bg-cyan-300 text-slate-950'
+					: 'text-slate-500'} cursor-pointer"
+				onclick={() => {
+					authMode = 'login';
+					loginError = '';
+					registerSent = false;
+					confirmPassword = '';
+					loginDisplayName = '';
+				}}
+			>
+				Login
+			</button>
+			<button
+				type="button"
+				class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
+				'register'
+					? 'bg-cyan-300 text-slate-950'
+					: 'text-slate-500'} cursor-pointer"
+				onclick={() => {
+					authMode = 'register';
+					loginError = '';
+					registerSent = false;
+					loginDisplayName = '';
+				}}
+			>
+				Register
+			</button>
+		</div>
+		{#if registerSent}
+			<div
+				class="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200"
+			>
+				Check your email and click the verification link before logging in.
+			</div>
+		{/if}
+		{#if authMode === 'register'}
+			<Input
+				bind:value={loginDisplayName}
+				autocomplete="name"
+				placeholder="Display Name"
+				required
+			/>
+		{/if}
+		<Input
+			bind:value={loginEmail}
+			type="email"
+			autocomplete="email"
+			placeholder="Email"
+			required
+		/>
+		<div class="relative">
+			<Input
+				bind:value={loginPassword}
+				type={showPassword ? 'text' : 'password'}
+				autocomplete={authMode === 'register' ? 'new-password' : 'current-password'}
+				placeholder="Password"
+				required
+			/>
+			<button
+				type="button"
+				class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200 cursor-pointer"
+				aria-label={showPassword ? 'Hide password' : 'Show password'}
+				title={showPassword ? 'Hide password' : 'Show password'}
+				onclick={() => (showPassword = !showPassword)}
+			>
+				{#if showPassword}
 					<svg
 						class="h-4 w-4"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
-						stroke-width="3"
+						stroke-width="2.6"
 						stroke-linecap="round"
+						stroke-linejoin="round"
 					>
-						<path d="M6 18 18 6" />
-						<path d="m6 6 12 12" />
+						<path d="M3 3l18 18" />
+						<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+						<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
+						<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
 					</svg>
+				{:else}
+					<svg
+						class="h-4 w-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.6"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+						<circle cx="12" cy="12" r="3" />
+					</svg>
+				{/if}
+			</button>
+		</div>
+		{#if authMode === 'register'}
+			<div class="relative">
+				<Input
+					bind:value={confirmPassword}
+					type={showConfirmPassword ? 'text' : 'password'}
+					autocomplete="new-password"
+					placeholder="Confirm password"
+					required
+				/>
+				<button
+					type="button"
+					class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200 cursor-pointer"
+					aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+					title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+					onclick={() => (showConfirmPassword = !showConfirmPassword)}
+				>
+					{#if showConfirmPassword}
+						<svg
+							class="h-4 w-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.6"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M3 3l18 18" />
+							<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+							<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
+							<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
+						</svg>
+					{:else}
+						<svg
+							class="h-4 w-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.6"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+							<circle cx="12" cy="12" r="3" />
+						</svg>
+					{/if}
 				</button>
 			</div>
-
-			<form
-				class="space-y-3 p-4"
-				onsubmit={(event) => {
-					event.preventDefault();
-					login();
-				}}
+		{/if}
+		{#if loginError}
+			<div
+				class="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200"
 			>
-				<div class="grid grid-cols-2 rounded-lg border border-white/10 bg-slate-900 p-1">
-					<button
-						type="button"
-						class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
-						'login'
-							? 'bg-cyan-300 text-slate-950'
-							: 'text-slate-500'}"
-						onclick={() => {
-							authMode = 'login';
-							loginError = '';
-							registerSent = false;
-							confirmPassword = '';
-						}}
-					>
-						Login
-					</button>
-					<button
-						type="button"
-						class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
-						'register'
-							? 'bg-cyan-300 text-slate-950'
-							: 'text-slate-500'}"
-						onclick={() => {
-							authMode = 'register';
-							loginError = '';
-							registerSent = false;
-						}}
-					>
-						Register
-					</button>
-				</div>
-				{#if registerSent}
-					<div
-						class="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200"
-					>
-						Check your email and click the verification link before logging in.
-					</div>
-				{/if}
-				<input
-					bind:value={loginEmail}
-					type="email"
-					autocomplete="email"
-					class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-					placeholder="Email"
-				/>
-				<div class="relative">
-					<input
-						bind:value={loginPassword}
-						type={showPassword ? 'text' : 'password'}
-						autocomplete={authMode === 'register' ? 'new-password' : 'current-password'}
-						class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 pr-12 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-						placeholder="Password"
-					/>
-					<button
-						type="button"
-						class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200"
-						aria-label={showPassword ? 'Hide password' : 'Show password'}
-						title={showPassword ? 'Hide password' : 'Show password'}
-						onclick={() => (showPassword = !showPassword)}
-					>
-						{#if showPassword}
-							<svg
-								class="h-4 w-4"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2.6"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M3 3l18 18" />
-								<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-								<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
-								<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
-							</svg>
-						{:else}
-							<svg
-								class="h-4 w-4"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2.6"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
-								<circle cx="12" cy="12" r="3" />
-							</svg>
-						{/if}
-					</button>
-				</div>
-				{#if authMode === 'register'}
-					<div class="relative">
-						<input
-							bind:value={confirmPassword}
-							type={showConfirmPassword ? 'text' : 'password'}
-							autocomplete="new-password"
-							class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 pr-12 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-							placeholder="Confirm password"
-						/>
-						<button
-							type="button"
-							class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200"
-							aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-							title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-							onclick={() => (showConfirmPassword = !showConfirmPassword)}
-						>
-							{#if showConfirmPassword}
-								<svg
-									class="h-4 w-4"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2.6"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M3 3l18 18" />
-									<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-									<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
-									<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
-								</svg>
-							{:else}
-								<svg
-									class="h-4 w-4"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2.6"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
-									<circle cx="12" cy="12" r="3" />
-								</svg>
-							{/if}
-						</button>
-					</div>
-				{/if}
-				{#if loginError}
-					<div
-						class="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200"
-					>
-						{loginError}
-					</div>
-				{/if}
-				<button
-					type="submit"
-					class="h-11 w-full rounded-lg bg-cyan-300 text-sm font-black tracking-widest text-slate-950 uppercase transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
-					disabled={authLoading ||
-						(authMode === 'register' &&
-							(!acceptedTerms || !loginPassword || loginPassword !== confirmPassword))}
+				{loginError}
+			</div>
+		{/if}
+		<Button
+			type="submit"
+			class="h-11 w-full"
+			disabled={authLoading ||
+				(authMode === 'register' &&
+					(!acceptedTerms || !loginPassword || loginPassword !== confirmPassword))}
+		>
+			{authMode === 'login' ? 'Login' : 'Create account'}
+		</Button>
+		{#if authMode === 'register'}
+			<Checkbox bind:checked={acceptedTerms} required>
+				ฉันอ่านและยอมรับ
+				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy" target="_blank" rel="noopener noreferrer"
+					>นโยบายความเป็นส่วนตัว</a
 				>
-					{authMode === 'login' ? 'Login' : 'Create account'}
-				</button>
-				{#if authMode === 'register'}
-					<label
-						class="flex gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-[11px] leading-relaxed font-semibold text-slate-500"
-					>
-						<input
-							bind:checked={acceptedTerms}
-							type="checkbox"
-							class="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-slate-950 accent-cyan-300"
-							required
-						/>
-						<span>
-							ฉันอ่านและยอมรับ
-							<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy"
-								>นโยบายความเป็นส่วนตัว</a
-							>
-							และ
-							<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms"
-								>ข้อกำหนดการใช้งาน</a
-							>
-						</span>
-					</label>
-				{/if}
-			</form>
-		</div>
-	</div>
-{/if}
+				และ
+				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms" target="_blank" rel="noopener noreferrer"
+					>ข้อกำหนดการใช้งาน</a
+				>
+			</Checkbox>
+		{/if}
+	</form>
+</Modal>
 
 <div
 	class="fixed z-[900] font-sans {isHomePage

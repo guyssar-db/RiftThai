@@ -6,18 +6,23 @@
 		href: string;
 		external?: boolean;
 		active?: boolean;
-		icon: 'domains' | 'qa' | 'deck' | 'donate' | 'official';
+		icon: 'domains' | 'qa' | 'deck' | 'donate' | 'official' | 'collection';
 	};
 
 	type AuthSession = {
 		user: {
+			id: string;
 			email: string;
+			displayName: string;
+			profileHandle: string;
+			profileSlug: string;
 			isAdmin: boolean;
 		} | null;
 	};
 
-	let { active = '' } = $props<{ active?: 'domains' | 'qa' | 'deck' | 'donate' | '' }>();
+	let { active = '' } = $props<{ active?: 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | '' }>();
 	let isOpen = $state(false);
+	let accountOpen = $state(false);
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
 
@@ -25,6 +30,7 @@
 		{ label: 'Domains', href: '/domains', active: active === 'domains', icon: 'domains' },
 		{ label: 'Q&A', href: '/qa', active: active === 'qa', icon: 'qa' },
 		{ label: 'Deck', href: '/deck', active: active === 'deck', icon: 'deck' },
+		{ label: 'Collection', href: '/collection', active: active === 'collection', icon: 'collection' },
 		{ label: 'Donate', href: '/donate', active: active === 'donate', icon: 'donate' },
 		// { label: 'Chat', href: '/chat' },
 		{ label: 'Official', href: 'https://riftbound.com', external: true, icon: 'official' }
@@ -59,6 +65,7 @@
 		await fetch('/api/auth/logout', { method: 'POST' });
 		currentUser = null;
 		isOpen = false;
+		accountOpen = false;
 		window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 	}
 </script>
@@ -151,16 +158,68 @@
 						Loading
 					</div>
 				{:else if currentUser}
-					<div class="truncate px-4 py-2 text-[10px] font-bold text-slate-500">
-						{currentUser.email}
-					</div>
 					<button
 						type="button"
-						class="flex min-h-12 w-full items-center rounded-lg px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
-						onclick={logout}
+						class="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg border border-cyan-300/15 bg-cyan-300/8 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white"
+						aria-expanded={accountOpen}
+						onclick={() => (accountOpen = !accountOpen)}
 					>
-						Logout
+						<span class="truncate">{currentUser.profileHandle}</span>
+						<svg
+							class="h-4 w-4 shrink-0 transition {accountOpen ? 'rotate-180' : ''}"
+							viewBox="0 0 20 20"
+							fill="currentColor"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+								clip-rule="evenodd"
+							/>
+						</svg>
 					</button>
+					{#if accountOpen}
+						<div class="mt-1 space-y-1 rounded-lg border border-white/10 bg-slate-950/70 p-1">
+							{#if currentUser.isAdmin}
+								<a
+									href="/admin"
+									class="flex min-h-11 items-center rounded-md px-3 text-xs font-black tracking-widest text-cyan-300 uppercase transition hover:bg-white/5 hover:text-cyan-100"
+									onclick={() => {
+										isOpen = false;
+										accountOpen = false;
+									}}
+								>
+									Admin Panel
+								</a>
+							{/if}
+							<a
+								href="/profile/{currentUser.profileSlug}"
+								class="flex min-h-11 items-center rounded-md px-3 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
+								onclick={() => {
+									isOpen = false;
+									accountOpen = false;
+								}}
+							>
+								Profile
+							</a>
+							<a
+								href="/setting"
+								class="flex min-h-11 items-center rounded-md px-3 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
+								onclick={() => {
+									isOpen = false;
+									accountOpen = false;
+								}}
+							>
+								Setting
+							</a>
+							<button
+								type="button"
+								class="flex min-h-11 w-full items-center rounded-md px-3 text-left text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
+								onclick={logout}
+							>
+								Logout
+							</button>
+						</div>
+					{/if}
 				{:else}
 					<button
 						type="button"

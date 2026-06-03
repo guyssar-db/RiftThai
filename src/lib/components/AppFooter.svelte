@@ -16,8 +16,8 @@
 				<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6" /></svg>
 			</a>
 			<div class="flex flex-wrap justify-center gap-4 text-xs font-black uppercase tracking-widest text-slate-500 md:justify-start">
-				<a class="transition hover:text-cyan-300" href="/privacy">Privacy Policy</a>
-				<a class="transition hover:text-cyan-300" href="/terms">Terms</a>
+				<a class="transition hover:text-cyan-300" href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+				<a class="transition hover:text-cyan-300" href="/terms" target="_blank" rel="noopener noreferrer">Terms</a>
 				<a class="transition hover:text-cyan-300" href="/chat">Support</a>
 			</div>
 		</div>

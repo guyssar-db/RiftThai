@@ -6,6 +6,7 @@
 		hasUnread: boolean;
 		app_users?: {
 			email: string;
+			display_name: string | null;
 		};
 	};
 
@@ -25,6 +26,8 @@
 	let conversationsLoading = $state(false);
 	let { data } = $props();
 	let selectedConversation = $derived(conversations.find((conversation) => conversation.id === selectedId));
+	const getDisplayName = (user?: { email: string; display_name: string | null }) =>
+		user?.display_name || user?.email?.split('@')[0] || 'Unknown player';
 
 	$effect(() => {
 		void loadConversations();
@@ -117,7 +120,7 @@
 					<div class="min-w-0">
 						<p class="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-300">Admin</p>
 						<h1 class="mt-1 text-xl font-black">Inbox</h1>
-						<p class="mt-1 truncate text-xs font-medium text-slate-500">{data.user.email}</p>
+						<p class="mt-1 truncate text-xs font-medium text-slate-500">{data.user.profileHandle}</p>
 					</div>
 					<a href="/" class="shrink-0 rounded-lg border border-white/10 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300 transition hover:bg-white/5">Back</a>
 				</div>
@@ -138,7 +141,7 @@
 						>
 							<span class="h-2.5 w-2.5 shrink-0 rounded-full {conversation.hasUnread ? 'bg-cyan-300 shadow-[0_0_12px_rgba(45,212,191,0.7)]' : 'bg-slate-700'}"></span>
 							<span class="min-w-0 flex-1">
-								<span class="block truncate text-sm font-bold">{conversation.app_users?.email ?? conversation.user_id}</span>
+								<span class="block truncate text-sm font-bold">{getDisplayName(conversation.app_users) ?? conversation.user_id}</span>
 								<span class="text-xs text-slate-500">{conversation.last_message_at ? new Date(conversation.last_message_at).toLocaleString() : 'No messages'}</span>
 							</span>
 						</button>
@@ -152,7 +155,7 @@
 				<div class="min-w-0">
 					<p class="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Conversation</p>
 					<p class="mt-1 truncate text-sm font-bold text-white">
-						{selectedConversation?.app_users?.email ?? (selectedId ? selectedId : 'No conversation selected')}
+						{selectedConversation?.app_users ? getDisplayName(selectedConversation.app_users) : selectedId ? selectedId : 'No conversation selected'}
 					</p>
 				</div>
 				{#if selectedConversation?.hasUnread}

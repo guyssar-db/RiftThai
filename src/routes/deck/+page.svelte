@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
+	import DeckValidationPanel from '$lib/components/DeckValidationPanel.svelte';
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
+	import PlaytestModal from '$lib/components/PlaytestModal.svelte';
 	import { getDomainIcon } from '$lib/data/domainIcons';
 	import { getTypeIcons } from '$lib/data/typeIcons';
 	import type { Card } from '$lib/types/card';
@@ -23,6 +26,7 @@
 		normalizeDeckCollection,
 		readDeckCollectionFromStorage,
 		setActiveStoredDeck,
+		validateDeck,
 		writeDeckCollectionToStorage,
 		type DeckCollection,
 		type DeckCard,
@@ -39,6 +43,15 @@
 	let isDeckDetailOpen = $state(false);
 	let exportMode = $state<'preview' | 'download' | ''>('');
 	let exportError = $state('');
+	let isPlaytestOpen = $state(false);
+
+	function openPlaytest() {
+		isPlaytestOpen = true;
+	}
+
+	function closePlaytest() {
+		isPlaytestOpen = false;
+	}
 	let previewUrl = $state('');
 	let openDeckMenuId = $state('');
 	let shareCode = $state('');
@@ -49,13 +62,19 @@
 	let savingDeckId = $state('');
 	let publishingDeckId = $state('');
 	let deletingDeckId = $state('');
+	let deleteConfirmDeckId = $state('');
+	let visibilityConfirmDeckId = $state('');
+	let visibilityConfirmTarget = $state<'private' | 'public' | ''>('');
 	let exportLayout = $state<'portrait' | 'landscape'>('portrait');
+	const imageCache = new Map<string, Promise<HTMLImageElement | null>>();
 
 	$effect(() => {
 		if (!browser) return;
 		const stored = localStorage.getItem('riftthai-export-layout');
 		if (stored === 'portrait' || stored === 'landscape') {
 			exportLayout = stored;
+		} else {
+			void loadPreferredDeckSettings();
 		}
 	});
 
@@ -65,12 +84,19 @@
 	});
 
 	let selectedDeck = $derived(collection.decks.find((deck) => deck.id === selectedDeckId) ?? null);
+	let deleteConfirmDeck = $derived(
+		collection.decks.find((deck) => deck.id === deleteConfirmDeckId) ?? null
+	);
+	let visibilityConfirmDeck = $derived(
+		collection.decks.find((deck) => deck.id === visibilityConfirmDeckId) ?? null
+	);
 	let championCard = $derived(getChampionCard(cards, selectedDeck?.championCode));
 	let deckCards = $derived(buildDeckCards(cards, selectedDeck?.entries ?? []));
 	let sideboardCards = $derived(buildDeckCards(cards, selectedDeck?.sideboardEntries ?? []));
 	let stats = $derived(calculateDeckStats(deckCards, sideboardCards));
 	let zones = $derived(getDeckZones(deckCards));
 	let hasDeck = $derived(deckCards.length > 0 || sideboardCards.length > 0);
+	let deckValidation = $derived(validateDeck(cards, selectedDeck));
 	let libraryStats = $derived(
 		collection.decks.reduce(
 			(total, deck) => {
@@ -81,7 +107,7 @@
 				return {
 					decks: total.decks + 1,
 					cards: total.cards + deckStats.total,
-					complete: total.complete + (deckStats.legendTotal > 0 && deckStats.mainTotal >= maxMainDeckCards ? 1 : 0)
+					complete: total.complete + (validateDeck(cards, deck).isReady ? 1 : 0)
 				};
 			},
 			{ decks: 0, cards: 0, complete: 0 }
@@ -106,7 +132,10 @@
 			const byId = new Map(baseCollection.decks.map((deck) => [deck.id, deck]));
 			for (const onlineDeck of payload.decks as StoredDeck[]) {
 				const current = byId.get(onlineDeck.id);
-				if (!current || new Date(onlineDeck.updatedAt).getTime() >= new Date(current.updatedAt).getTime()) {
+				if (
+					!current ||
+					new Date(onlineDeck.updatedAt).getTime() >= new Date(current.updatedAt).getTime()
+				) {
 					byId.set(onlineDeck.id, onlineDeck);
 				} else {
 					byId.set(onlineDeck.id, {
@@ -125,6 +154,17 @@
 			writeDeckCollectionToStorage(localStorage, nextCollection);
 		} catch {
 			// Local decks are still usable when online sync is unavailable.
+		}
+	}
+
+	async function loadPreferredDeckSettings() {
+		try {
+			const response = await fetch('/api/auth/session');
+			const payload = await response.json().catch(() => ({}));
+			const layout = payload.user?.settings?.defaultExportLayout;
+			if (layout === 'portrait' || layout === 'landscape') exportLayout = layout;
+		} catch {
+			// Deck exports keep the built-in portrait default if account settings are unavailable.
 		}
 	}
 
@@ -176,6 +216,29 @@
 		writeDeckCollectionToStorage(localStorage, nextCollection);
 		collection = nextCollection;
 		window.location.href = `/deck/${nextDeck.id}/edit`;
+	}
+
+	function duplicateDeck(deckId: string) {
+		if (!browser) return;
+		const targetDeck = collection.decks.find((d) => d.id === deckId);
+		if (!targetDeck) return;
+
+		const copiedDeck = createEmptyDeck(`${targetDeck.name} Copy`);
+		copiedDeck.championCode = targetDeck.championCode;
+		copiedDeck.entries = targetDeck.entries;
+		copiedDeck.sideboardEntries = targetDeck.sideboardEntries ?? [];
+		copiedDeck.source = 'local';
+		copiedDeck.visibility = 'private';
+
+		const nextCollection = normalizeDeckCollection({
+			activeDeckId: copiedDeck.id,
+			decks: [...collection.decks, copiedDeck]
+		});
+
+		writeDeckCollectionToStorage(localStorage, nextCollection);
+		collection = nextCollection;
+		openDeckMenuId = '';
+		showActionNotice('คัดลอกเด็คสำเร็จ (Copy Success)', 'success');
 	}
 
 	function closeDeck() {
@@ -234,7 +297,11 @@
 			const payload = await response.json().catch(() => ({}));
 
 			if (!response.ok) {
-				throw new Error(payload.error === 'login required' ? 'Login required to save online' : payload.error || 'Could not save deck');
+				throw new Error(
+					payload.error === 'login required'
+						? 'Login required to save online'
+						: payload.error || 'Could not save deck'
+				);
 			}
 
 			const savedDeck = payload.deck as StoredDeck;
@@ -283,7 +350,11 @@
 			});
 			const payload = await response.json().catch(() => ({}));
 			if (!response.ok) {
-				throw new Error(payload.error === 'login required' ? 'Login required to publish deck' : payload.error || 'Could not update deck');
+				throw new Error(
+					payload.error === 'login required'
+						? 'Login required to publish deck'
+						: payload.error || 'Could not update deck'
+				);
 			}
 
 			const savedDeck = payload.deck as StoredDeck;
@@ -311,12 +382,45 @@
 		}
 	}
 
+	function requestDeckVisibility(deckId: string, visibility: 'private' | 'public') {
+		visibilityConfirmDeckId = deckId;
+		visibilityConfirmTarget = visibility;
+		openDeckMenuId = '';
+	}
+
+	function cancelDeckVisibility() {
+		visibilityConfirmDeckId = '';
+		visibilityConfirmTarget = '';
+	}
+
+	async function confirmDeckVisibility() {
+		if (!visibilityConfirmDeckId || !visibilityConfirmTarget) return;
+		await updateDeckVisibility(visibilityConfirmDeckId, visibilityConfirmTarget);
+		visibilityConfirmDeckId = '';
+		visibilityConfirmTarget = '';
+	}
+
+	function requestDeleteDeckFromLibrary(deckId: string) {
+		deleteConfirmDeckId = deckId;
+		openDeckMenuId = '';
+	}
+
+	function cancelDeleteDeckFromLibrary() {
+		deleteConfirmDeckId = '';
+	}
+
+	async function confirmDeleteDeckFromLibrary() {
+		if (!deleteConfirmDeckId) return;
+		await deleteDeckFromLibrary(deleteConfirmDeckId);
+	}
+
 	async function deleteDeckFromLibrary(deckId: string) {
 		if (!browser || deletingDeckId) return;
 		const deck = collection.decks.find((item) => item.id === deckId);
 		if (!deck) return;
 
 		deletingDeckId = deckId;
+		deleteConfirmDeckId = deckId;
 		openDeckMenuId = '';
 
 		try {
@@ -326,7 +430,11 @@
 				});
 				const payload = await response.json().catch(() => ({}));
 				if (!response.ok) {
-					throw new Error(payload.error === 'login required' ? 'Login required to delete online deck' : payload.error || 'Could not delete online deck');
+					throw new Error(
+						payload.error === 'login required'
+							? 'Login required to delete online deck'
+							: payload.error || 'Could not delete online deck'
+					);
 				}
 			}
 
@@ -337,19 +445,23 @@
 			});
 			collection = nextCollection;
 			writeDeckCollectionToStorage(localStorage, nextCollection);
-			showActionNotice(deck.source === 'online' ? 'Online deck deleted' : 'Local deck deleted', 'success');
+			showActionNotice(
+				deck.source === 'online' ? 'Online deck deleted' : 'Local deck deleted',
+				'success'
+			);
 		} catch (error) {
 			showActionNotice(error instanceof Error ? error.message : 'Could not delete deck', 'error');
 		} finally {
 			deletingDeckId = '';
+			deleteConfirmDeckId = '';
 		}
 	}
 
 	function showActionNotice(message: string, type: 'success' | 'error' | 'info' = 'info') {
-		actionNotice = { message, type };
+		actionNotice = null;
 		window.setTimeout(() => {
-			if (actionNotice?.message === message) actionNotice = null;
-		}, 2600);
+			actionNotice = { message, type };
+		}, 0);
 	}
 
 	function importDeckCode() {
@@ -358,7 +470,9 @@
 
 		try {
 			const payload = decodeDeckShare(importCode);
-			const importedDeck = createEmptyDeck(payload.name || `Imported Deck ${collection.decks.length + 1}`);
+			const importedDeck = createEmptyDeck(
+				payload.name || `Imported Deck ${collection.decks.length + 1}`
+			);
 			importedDeck.championCode = payload.championCode;
 			importedDeck.entries = normalizeDeck(payload.entries);
 			const nextCollection = normalizeDeckCollection({
@@ -375,6 +489,25 @@
 		}
 	}
 
+	async function preloadPreviewAssets() {
+		const legendChampion = getLegendChampionCards();
+		const allItems = [
+			...legendChampion,
+			...zones.battlefields,
+			...zones.main,
+			...zones.runes,
+			...sideboardCards,
+			...zones.tokens,
+			...zones.other
+		];
+		const cardUrls = [...new Set(allItems.map((item) => item.card.image_url).filter(Boolean))].map(url => getCanvasImageUrl(url));
+		const domainUrls = stats.domains.map(d => getDomainIconUrl(d.label)).filter(Boolean) as string[];
+		const typeUrls = stats.types.map(t => getTypeIconUrl(t.label)).filter(Boolean) as string[];
+
+		const allUrls = [...new Set([...cardUrls, ...domainUrls, ...typeUrls])];
+		await Promise.all(allUrls.map((url) => loadImage(url)));
+	}
+
 	async function downloadPng() {
 		if (!browser || isExporting || !selectedDeck || deckCards.length === 0) return;
 
@@ -383,6 +516,7 @@
 		exportError = '';
 
 		try {
+			await preloadPreviewAssets();
 			const canvas = await buildExportCanvas();
 			const link = document.createElement('a');
 			link.download = `riftthai-${slugify(selectedDeck.name)}-${new Date().toISOString().slice(0, 10)}.png`;
@@ -404,6 +538,7 @@
 		exportError = '';
 
 		try {
+			await preloadPreviewAssets();
 			const canvas = await buildExportCanvas();
 			previewUrl = canvas.toDataURL('image/png');
 		} catch (error) {
@@ -433,24 +568,26 @@
 		let height = 1220;
 		if (isLandscape) {
 			const legendRows = getSectionRows(legendChampionCards, 2);
-			const legendHeight = legendChampionCards.length > 0 ? (46 + 22 + legendRows * 226 + 34) : 0;
+			const legendHeight = legendChampionCards.length > 0 ? 46 + 22 + legendRows * 226 + 34 : 0;
 			const row1EndY = 210 + Math.max(230, legendHeight);
 
 			const battlefieldRows = getSectionRows(zones.battlefields, 4);
-			const battlefieldHeight = zones.battlefields.length > 0 ? (46 + 22 + battlefieldRows * 192 + 34) : 0;
-			
+			const battlefieldHeight =
+				zones.battlefields.length > 0 ? 46 + 22 + battlefieldRows * 192 + 34 : 0;
+
 			const runeRows = getSectionRows(zones.runes, 5);
-			const runeHeight = zones.runes.length > 0 ? (46 + 22 + runeRows * 226 + 34) : 0;
-			
+			const runeHeight = zones.runes.length > 0 ? 46 + 22 + runeRows * 226 + 34 : 0;
+
 			const row2EndY = row1EndY + Math.max(battlefieldHeight, runeHeight);
 
 			const mainRows = getSectionRows(zones.main, 10);
-			const mainHeight = zones.main.length > 0 ? (46 + 22 + mainRows * 226 + 34) : 0;
+			const mainHeight = zones.main.length > 0 ? 46 + 22 + mainRows * 226 + 34 : 0;
 			let row3EndY = row2EndY + mainHeight;
 
 			let bottomHeight = 0;
 			const bottomSections = [];
-			if (sideboardCards.length > 0) bottomSections.push({ title: 'Sideboard', cards: sideboardCards });
+			if (sideboardCards.length > 0)
+				bottomSections.push({ title: 'Sideboard', cards: sideboardCards });
 			if (zones.tokens.length > 0) bottomSections.push({ title: 'Tokens', cards: zones.tokens });
 			if (zones.other.length > 0) bottomSections.push({ title: 'Other', cards: zones.other });
 
@@ -482,9 +619,13 @@
 				getSectionRows(sideboardCards, columns) +
 				getSectionRows(zones.tokens, columns) +
 				getSectionRows(zones.other, columns);
-			const remainingSectionCount = [zones.main, zones.runes, sideboardCards, zones.tokens, zones.other].filter(
-				(section) => section.length > 0
-			).length;
+			const remainingSectionCount = [
+				zones.main,
+				zones.runes,
+				sideboardCards,
+				zones.tokens,
+				zones.other
+			].filter((section) => section.length > 0).length;
 			const sectionHeaderAndGap = 112;
 			const bottomPadding = 96;
 			height = Math.max(
@@ -509,23 +650,84 @@
 
 		if (isLandscape) {
 			drawExportStats(context, stats.costs, 48, 210, 460, 230, 'Cost Curve');
-			await drawExportIconStats(context, stats.types, 548, 210, 460, 230, 'Card Types', getTypeIconUrl, true);
-			await drawExportIconStats(context, stats.domains, 1048, 210, 460, 230, 'Main Domains', getDomainIconUrl, false);
+			await drawExportIconStats(
+				context,
+				stats.types,
+				548,
+				210,
+				460,
+				230,
+				'Card Types',
+				getTypeIconUrl,
+				true
+			);
+			await drawExportIconStats(
+				context,
+				stats.domains,
+				1048,
+				210,
+				460,
+				230,
+				'Main Domains',
+				getDomainIconUrl,
+				false
+			);
 
 			const legendRows = getSectionRows(legendChampionCards, 2);
-			const legendHeight = legendChampionCards.length > 0 ? (46 + 22 + legendRows * 226 + 34) : 0;
-			const legendEndY = await drawExportSection(context, 'Legend + Champion', legendChampionCards, 1548, 210, cardWidth, cardHeight, 2, 404);
+			const legendHeight = legendChampionCards.length > 0 ? 46 + 22 + legendRows * 226 + 34 : 0;
+			const legendEndY = await drawExportSection(
+				context,
+				'Legend + Champion',
+				legendChampionCards,
+				1548,
+				210,
+				cardWidth,
+				cardHeight,
+				2,
+				404
+			);
 			const row1EndY = 210 + Math.max(230, legendHeight);
 
-			const battlefieldEndY = await drawExportSection(context, 'Battlefield', zones.battlefields, 48, row1EndY, cardWidth, cardHeight, 4, 928);
-			const runeEndY = await drawExportSection(context, 'Rune Deck', zones.runes, 1024, row1EndY, cardWidth, cardHeight, 5, 928);
+			const battlefieldEndY = await drawExportSection(
+				context,
+				'Battlefield',
+				zones.battlefields,
+				48,
+				row1EndY,
+				cardWidth,
+				cardHeight,
+				4,
+				928
+			);
+			const runeEndY = await drawExportSection(
+				context,
+				'Rune Deck',
+				zones.runes,
+				1024,
+				row1EndY,
+				cardWidth,
+				cardHeight,
+				5,
+				928
+			);
 			const row2EndY = Math.max(battlefieldEndY, runeEndY);
 
-			const mainEndY = await drawExportSection(context, 'Main Deck', zones.main, 48, row2EndY, cardWidth, cardHeight, 10, 1904);
+			const mainEndY = await drawExportSection(
+				context,
+				'Main Deck',
+				zones.main,
+				48,
+				row2EndY,
+				cardWidth,
+				cardHeight,
+				10,
+				1904
+			);
 			let currentY = mainEndY;
 
 			const bottomSections = [];
-			if (sideboardCards.length > 0) bottomSections.push({ title: 'Sideboard', cards: sideboardCards });
+			if (sideboardCards.length > 0)
+				bottomSections.push({ title: 'Sideboard', cards: sideboardCards });
 			if (zones.tokens.length > 0) bottomSections.push({ title: 'Tokens', cards: zones.tokens });
 			if (zones.other.length > 0) bottomSections.push({ title: 'Other', cards: zones.other });
 
@@ -533,27 +735,142 @@
 				const left = bottomSections[i];
 				const right = bottomSections[i + 1];
 				if (left && right) {
-					const leftEndY = await drawExportSection(context, left.title, left.cards, 48, currentY, cardWidth, cardHeight, 5, 928);
-					const rightEndY = await drawExportSection(context, right.title, right.cards, 1024, currentY, cardWidth, cardHeight, 5, 928);
+					const leftEndY = await drawExportSection(
+						context,
+						left.title,
+						left.cards,
+						48,
+						currentY,
+						cardWidth,
+						cardHeight,
+						5,
+						928
+					);
+					const rightEndY = await drawExportSection(
+						context,
+						right.title,
+						right.cards,
+						1024,
+						currentY,
+						cardWidth,
+						cardHeight,
+						5,
+						928
+					);
 					currentY = Math.max(leftEndY, rightEndY);
 				} else if (left) {
-					currentY = await drawExportSection(context, left.title, left.cards, 48, currentY, cardWidth, cardHeight, 10, 1904);
+					currentY = await drawExportSection(
+						context,
+						left.title,
+						left.cards,
+						48,
+						currentY,
+						cardWidth,
+						cardHeight,
+						10,
+						1904
+					);
 				}
 			}
 		} else {
 			drawExportStats(context, stats.costs, 48, 210, 460, 230, 'Cost Curve');
-			await drawExportIconStats(context, stats.types, 548, 210, 460, 230, 'Card Types', getTypeIconUrl, true);
-			await drawExportIconStats(context, stats.domains, 1048, 210, 460, 230, 'Main Domains', getDomainIconUrl, false);
+			await drawExportIconStats(
+				context,
+				stats.types,
+				548,
+				210,
+				460,
+				230,
+				'Card Types',
+				getTypeIconUrl,
+				true
+			);
+			await drawExportIconStats(
+				context,
+				stats.domains,
+				1048,
+				210,
+				460,
+				230,
+				'Main Domains',
+				getDomainIconUrl,
+				false
+			);
 
 			const topSectionY = 480;
-			const legendEndY = await drawExportSection(context, 'Legend + Champion', legendChampionCards, 48, topSectionY, cardWidth, cardHeight, 2, 520);
-			const battlefieldEndY = await drawExportSection(context, 'Battlefield', zones.battlefields, 600, topSectionY, cardWidth, cardHeight, topCardColumns, 908);
+			const legendEndY = await drawExportSection(
+				context,
+				'Legend + Champion',
+				legendChampionCards,
+				48,
+				topSectionY,
+				cardWidth,
+				cardHeight,
+				2,
+				520
+			);
+			const battlefieldEndY = await drawExportSection(
+				context,
+				'Battlefield',
+				zones.battlefields,
+				600,
+				topSectionY,
+				cardWidth,
+				cardHeight,
+				topCardColumns,
+				908
+			);
 			let sectionY = Math.max(legendEndY, battlefieldEndY);
-			sectionY = await drawExportSection(context, 'Main Deck', zones.main, 48, sectionY, cardWidth, cardHeight, columns);
-			sectionY = await drawExportSection(context, 'Rune Deck', zones.runes, 48, sectionY, cardWidth, cardHeight, columns);
-			sectionY = await drawExportSection(context, 'Sideboard', sideboardCards, 48, sectionY, cardWidth, cardHeight, columns);
-			sectionY = await drawExportSection(context, 'Tokens', zones.tokens, 48, sectionY, cardWidth, cardHeight, columns);
-			await drawExportSection(context, 'Other', zones.other, 48, sectionY, cardWidth, cardHeight, columns);
+			sectionY = await drawExportSection(
+				context,
+				'Main Deck',
+				zones.main,
+				48,
+				sectionY,
+				cardWidth,
+				cardHeight,
+				columns
+			);
+			sectionY = await drawExportSection(
+				context,
+				'Rune Deck',
+				zones.runes,
+				48,
+				sectionY,
+				cardWidth,
+				cardHeight,
+				columns
+			);
+			sectionY = await drawExportSection(
+				context,
+				'Sideboard',
+				sideboardCards,
+				48,
+				sectionY,
+				cardWidth,
+				cardHeight,
+				columns
+			);
+			sectionY = await drawExportSection(
+				context,
+				'Tokens',
+				zones.tokens,
+				48,
+				sectionY,
+				cardWidth,
+				cardHeight,
+				columns
+			);
+			await drawExportSection(
+				context,
+				'Other',
+				zones.other,
+				48,
+				sectionY,
+				cardWidth,
+				cardHeight,
+				columns
+			);
 		}
 
 		// Draw watermark website link at the bottom-right corner
@@ -671,7 +988,15 @@
 			context.font = '700 14px Arial';
 			context.fillText(item.label.slice(0, 18), x + 20, top + 15);
 			fillRoundRect(context, x + 150, top, width - 210, barHeight, 5, 'rgba(83,234,253,0.13)');
-			fillRoundRect(context, x + 150, top, ((width - 210) * item.count) / max, barHeight, 5, '#53EAFD');
+			fillRoundRect(
+				context,
+				x + 150,
+				top,
+				((width - 210) * item.count) / max,
+				barHeight,
+				5,
+				'#53EAFD'
+			);
 			context.fillStyle = '#ffffff';
 			context.font = '900 14px Arial';
 			context.fillText(String(item.count), x + width - 42, top + 15);
@@ -770,22 +1095,59 @@
 		context.fillStyle = '#9aa8b8';
 		context.font = compactHeader ? '700 13px Arial' : '700 16px Arial';
 		const totalCards = items.reduce((total, item) => total + item.quantity, 0);
-		context.fillText(`${totalCards} cards`, startX + (compactHeader ? 18 : sectionWidth - 96), startY + (compactHeader ? 54 : 30));
+		context.fillText(
+			`${totalCards} cards`,
+			startX + (compactHeader ? 18 : sectionWidth - 96),
+			startY + (compactHeader ? 54 : 30)
+		);
 
 		const cardStartY = startY + headerHeight + 22;
 		for (const [index, item] of items.entries()) {
 			const x = startX + (index % columns) * colStep;
 			const y = cardStartY + Math.floor(index / columns) * rowStep;
 
-			fillRoundRect(context, x - 6, y - 6, currentCardWidth + 12, currentCardHeight + 44, 12, 'rgba(18,26,36,0.82)');
-			strokeRoundRect(context, x - 6, y - 6, currentCardWidth + 12, currentCardHeight + 44, 12, 'rgba(83,234,253,0.14)', 1);
+			fillRoundRect(
+				context,
+				x - 6,
+				y - 6,
+				currentCardWidth + 12,
+				currentCardHeight + 44,
+				12,
+				'rgba(18,26,36,0.82)'
+			);
+			strokeRoundRect(
+				context,
+				x - 6,
+				y - 6,
+				currentCardWidth + 12,
+				currentCardHeight + 44,
+				12,
+				'rgba(83,234,253,0.14)',
+				1
+			);
 
 			if (item.card.image_url) {
 				const image = await loadImage(getCanvasImageUrl(item.card.image_url));
 				if (image) {
-					drawContainedImage(context, image, x, y, currentCardWidth, currentCardHeight, 8, !isBattlefield);
+					drawContainedImage(
+						context,
+						image,
+						x,
+						y,
+						currentCardWidth,
+						currentCardHeight,
+						8,
+						!isBattlefield
+					);
 				} else {
-					drawCardPlaceholder(context, item.card.name_en, x, y, currentCardWidth, currentCardHeight);
+					drawCardPlaceholder(
+						context,
+						item.card.name_en,
+						x,
+						y,
+						currentCardWidth,
+						currentCardHeight
+					);
 				}
 			} else {
 				drawCardPlaceholder(context, item.card.name_en, x, y, currentCardWidth, currentCardHeight);
@@ -854,7 +1216,7 @@
 	}
 
 	function getCanvasImageUrl(imageUrl: string) {
-		return `/api/card-image?url=${encodeURIComponent(getCardImageUrl(imageUrl, 320))}`;
+		return `/api/card-image?url=${encodeURIComponent(getCardImageUrl(imageUrl, 320, 'webp'))}`;
 	}
 
 	function getDomainIconUrl(label: string) {
@@ -979,12 +1341,28 @@
 	}
 
 	function loadImage(src: string) {
-		return new Promise<HTMLImageElement | null>((resolve) => {
+		if (imageCache.has(src)) return imageCache.get(src)!;
+
+		const promise = new Promise<HTMLImageElement | null>((resolve) => {
 			const image = new Image();
-			image.onload = () => resolve(image);
-			image.onerror = () => resolve(null);
+			const timer = setTimeout(() => {
+				image.onload = null;
+				image.onerror = null;
+				resolve(null);
+			}, 2500);
+
+			image.onload = () => {
+				clearTimeout(timer);
+				resolve(image);
+			};
+			image.onerror = () => {
+				clearTimeout(timer);
+				resolve(null);
+			};
 			image.src = src;
 		});
+		imageCache.set(src, promise);
+		return promise;
 	}
 
 	function getMaxCount(items: { label: string; count: number }[]) {
@@ -1000,6 +1378,7 @@
 		const sideboardItems = buildDeckCards(cards, deck.sideboardEntries ?? []);
 		const stats = calculateDeckStats(deckItems, sideboardItems);
 		const champion = getChampionCard(cards, deck.championCode);
+		const validation = validateDeck(cards, deck);
 		const legend = getDeckZones(deckItems).legends[0];
 		const cover = [
 			...(legend ? [legend] : []),
@@ -1008,12 +1387,18 @@
 		const primaryCover = cover[0] ?? null;
 		const secondaryCover = cover[1] ?? null;
 		const domains = stats.domains.filter(({ label }) => label !== 'Colorless');
-		return { cover, primaryCover, secondaryCover, domains, stats };
+		return { cover, primaryCover, secondaryCover, domains, stats, validation };
 	}
 
 	function getDeckSourceLabel(deck: StoredDeck) {
-		const sourceFields = deck as StoredDeck & { source?: string; origin?: string; storage?: string };
-		const source = String(sourceFields.source ?? sourceFields.origin ?? sourceFields.storage ?? 'local').toLowerCase();
+		const sourceFields = deck as StoredDeck & {
+			source?: string;
+			origin?: string;
+			storage?: string;
+		};
+		const source = String(
+			sourceFields.source ?? sourceFields.origin ?? sourceFields.storage ?? 'local'
+		).toLowerCase();
 		return source === 'online' || source === 'remote' || source === 'cloud' ? 'Online' : 'Local';
 	}
 
@@ -1032,10 +1417,7 @@
 	}
 
 	function getLegendChampionCards() {
-		return [
-			...zones.legends,
-			...(championCard ? [{ card: championCard, quantity: 1 }] : [])
-		];
+		return [...zones.legends, ...(championCard ? [{ card: championCard, quantity: 1 }] : [])];
 	}
 
 	function encodeDeckShare(deck: StoredDeck) {
@@ -1051,7 +1433,11 @@
 		return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 	}
 
-	function decodeDeckShare(code: string): { name: string; championCode: string; entries: DeckEntry[] } {
+	function decodeDeckShare(code: string): {
+		name: string;
+		championCode: string;
+		entries: DeckEntry[];
+	} {
 		const safeCode = code.trim().replace(/\s+/g, '');
 		if (!safeCode) throw new Error('Paste a deck share code first');
 
@@ -1106,13 +1492,23 @@
 					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-amber-200/15 bg-amber-200/5 text-slate-200 transition hover:border-amber-200/30 hover:bg-amber-200/10 hover:text-amber-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-200/25 sm:w-auto sm:px-4"
 					aria-label="Back to home"
 				>
-					<svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+					<svg
+						class="h-5 w-5 shrink-0"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
 						<path d="m15 18-6-6 6-6" />
 					</svg>
-					<span class="hidden text-xs font-black uppercase tracking-widest sm:ml-2 sm:block">Back</span>
+					<span class="hidden text-xs font-black tracking-widest uppercase sm:ml-2 sm:block"
+						>Back</span
+					>
 				</a>
 
-				<a href="/" class="shrink-0 text-xl font-black uppercase italic text-white sm:text-2xl">
+				<a href="/" class="shrink-0 text-xl font-black text-white uppercase italic sm:text-2xl">
 					Rift<span class="text-cyan-300">Thai</span>
 				</a>
 			</div>
@@ -1122,38 +1518,52 @@
 
 	<main class="rt-container py-6 sm:py-10">
 		<header class="rt-panel rt-topline rt-scanline relative mb-6 overflow-hidden rounded-xl">
-			<div class="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-cyan-300/12 blur-3xl"></div>
+			<div
+				class="pointer-events-none absolute -top-20 -right-16 h-64 w-64 rounded-full bg-cyan-300/12 blur-3xl"
+			></div>
 			<div class="rt-rule-line relative p-5 pl-7 sm:p-7 sm:pl-9">
 				<div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 					<div class="min-w-0">
 						<p class="rt-kicker mb-3">Deck Library</p>
 						<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">My Decks</h1>
 						<p class="rt-copy mt-3 max-w-2xl text-sm">
-							จัดการเด็คทั้งหมดในเครื่องนี้ เลือกเปิดดูสรุป, export PNG หรือเข้า builder เพื่อแก้ไขเด็ค
+							จัดการเด็คทั้งหมดในเครื่องนี้ เลือกเปิดดูสรุป, export PNG หรือเข้า builder
+							เพื่อแก้ไขเด็ค
 						</p>
 					</div>
 					<div class="grid grid-cols-3 gap-2 sm:min-w-[23rem]">
 						<div class="rounded-lg border border-cyan-300/15 bg-black/20 p-3 text-center">
 							<div class="text-xl font-black text-white">{libraryStats.decks}</div>
-							<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Decks</div>
+							<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
+								Decks
+							</div>
 						</div>
 						<div class="rounded-lg border border-cyan-300/15 bg-black/20 p-3 text-center">
 							<div class="text-xl font-black text-white">{libraryStats.cards}</div>
-							<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Cards</div>
+							<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
+								Cards
+							</div>
 						</div>
 						<div class="rounded-lg border border-cyan-300/15 bg-black/20 p-3 text-center">
 							<div class="text-xl font-black text-white">{libraryStats.complete}</div>
-							<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Ready</div>
+							<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
+								Ready
+							</div>
 						</div>
 					</div>
 				</div>
 				<div class="mt-5 flex flex-wrap gap-2">
 					<button type="button" class="rt-action" onclick={createNewDeck}>New Deck</button>
-					<a href="/deck/browser" class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 px-4 text-xs font-black uppercase tracking-widest text-cyan-100 transition hover:bg-cyan-300/10">
+					<a
+						href="/deck/browser"
+						class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10"
+					>
 						Browser
 					</a>
 				</div>
-				<div class="mt-4 grid gap-2 rounded-lg border border-white/10 bg-black/20 p-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+				<div
+					class="mt-4 grid gap-2 rounded-lg border border-white/10 bg-black/20 p-2 sm:grid-cols-[minmax(0,1fr)_auto]"
+				>
 					<input
 						bind:value={importCode}
 						class="min-h-11 min-w-0 rounded-md border border-white/10 bg-slate-950/70 px-3 text-xs font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
@@ -1161,7 +1571,7 @@
 					/>
 					<button
 						type="button"
-						class="inline-flex min-h-11 items-center justify-center rounded-md border border-cyan-300/20 px-4 text-xs font-black uppercase tracking-widest text-cyan-100 transition hover:bg-cyan-300/10"
+						class="inline-flex min-h-11 items-center justify-center rounded-md border border-cyan-300/20 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10"
 						onclick={importDeckCode}
 					>
 						Import Deck
@@ -1175,24 +1585,46 @@
 
 		{#if collection.decks.length === 0 && !isDeckLoading}
 			<section class="rt-panel rounded-xl p-8 text-center">
-				<h2 class="text-2xl font-black uppercase italic text-white">ยังไม่มีเด็ค</h2>
-				<p class="rt-copy mx-auto mt-3 max-w-lg text-sm">ไปหน้า edit เพื่อเพิ่มการ์ดก่อน แล้วกลับมาดูสรุปหรือ export PNG ได้</p>
+				<h2 class="text-2xl font-black text-white uppercase italic">ยังไม่มีเด็ค</h2>
+				<p class="rt-copy mx-auto mt-3 max-w-lg text-sm">
+					ไปหน้า edit เพื่อเพิ่มการ์ดก่อน แล้วกลับมาดูสรุปหรือ export PNG ได้
+				</p>
 				<button type="button" class="rt-action mt-6" onclick={createNewDeck}>New Deck</button>
 			</section>
 		{:else if !isDeckLoading}
 			<section class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
 				{#each collection.decks as deck}
 					{@const deckSummary = getStoredDeckSummary(deck)}
-					<article class="rt-panel group relative grid grid-cols-[8.5rem_minmax(0,1fr)] overflow-visible rounded-xl transition hover:border-cyan-300/30 sm:grid-cols-[9.5rem_minmax(0,1fr)] lg:grid-cols-[10rem_minmax(0,1fr)]">
-						<div class="pointer-events-none absolute left-2 top-2 z-20 flex max-w-[calc(100%-1rem)] gap-1.5">
-							<span class="rounded-full border border-cyan-300/25 bg-slate-950/92 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.18em] text-cyan-100 shadow-lg shadow-black/40 backdrop-blur">
+					<article
+						class="rt-panel group relative grid grid-cols-[8.5rem_minmax(0,1fr)] overflow-visible rounded-xl transition hover:border-cyan-300/30 sm:grid-cols-[9.5rem_minmax(0,1fr)] lg:grid-cols-[10rem_minmax(0,1fr)]"
+					>
+						<div
+							class="pointer-events-none absolute top-2 left-2 z-20 flex max-w-[calc(100%-1rem)] gap-1.5"
+						>
+							<span
+								class="rounded-full border border-cyan-300/25 bg-slate-950/92 px-2.5 py-1 text-[0.62rem] font-black tracking-[0.18em] text-cyan-100 uppercase shadow-lg shadow-black/40 backdrop-blur"
+							>
 								{getDeckSourceLabel(deck)}
 							</span>
 							{#if isOnlineDeck(deck)}
-								<span class="rounded-full border px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.18em] shadow-lg shadow-black/40 backdrop-blur {getDeckVisibilityClass(deck)}">
+								<span
+									class="rounded-full border px-2.5 py-1 text-[0.62rem] font-black tracking-[0.18em] uppercase shadow-lg shadow-black/40 backdrop-blur {getDeckVisibilityClass(
+										deck
+									)}"
+								>
 									{getDeckVisibilityLabel(deck)}
 								</span>
 							{/if}
+							<span
+								class="rounded-full border px-2.5 py-1 text-[0.62rem] font-black tracking-[0.18em] uppercase shadow-lg shadow-black/40 backdrop-blur {deckSummary
+									.validation.isReady
+									? 'border-emerald-300/35 bg-emerald-300/14 text-emerald-100'
+									: 'border-amber-200/30 bg-amber-300/14 text-amber-100'}"
+							>
+								{deckSummary.validation.isReady
+									? 'Ready'
+									: `${deckSummary.validation.errorCount} Fix`}
+							</span>
 						</div>
 						<a
 							href="/deck/{deck.id}"
@@ -1201,7 +1633,9 @@
 						>
 							{#if deckSummary.primaryCover}
 								{@const item = deckSummary.primaryCover}
-								<div class="relative aspect-[744/1039] overflow-hidden rounded-lg border border-white/10 bg-black/20 shadow-[0_16px_28px_rgba(0,0,0,0.28)]">
+								<div
+									class="relative aspect-[744/1039] overflow-hidden rounded-lg border border-white/10 bg-black/20 shadow-[0_16px_28px_rgba(0,0,0,0.28)]"
+								>
 									<img
 										src={getCardImageUrl(item.card.image_url, 260, 'webp')}
 										class="h-full min-h-0 w-full object-contain transition group-hover:scale-[1.03]"
@@ -1210,19 +1644,38 @@
 									/>
 								</div>
 							{:else}
-								<div class="grid aspect-[744/1039] w-full place-items-center rounded-lg border border-dashed border-amber-200/20 bg-amber-500/5 text-center p-3 shadow-inner">
+								<div
+									class="grid aspect-[744/1039] w-full place-items-center rounded-lg border border-dashed border-amber-200/20 bg-amber-500/5 p-3 text-center shadow-inner"
+								>
 									<div class="flex flex-col items-center gap-1.5">
-										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-amber-200/35">
-											<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-3-12h5.25c.621 0 1.125.504 1.125 1.125v10.5c0 .621-.504 1.125-1.125 1.125h-5.25M3.75 6h9c.621 0 1.125.504 1.125 1.125v10.5c0 .621-.504 1.125-1.125 1.125h-9a1.125 1.125 0 01-1.125-1.125v-10.5C2.625 6.504 3.129 6 3.75 6z" />
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke-width="1.5"
+											stroke="currentColor"
+											class="h-6 w-6 text-amber-200/35"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-3-12h5.25c.621 0 1.125.504 1.125 1.125v10.5c0 .621-.504 1.125-1.125 1.125h-5.25M3.75 6h9c.621 0 1.125.504 1.125 1.125v10.5c0 .621-.504 1.125-1.125 1.125h-9a1.125 1.125 0 01-1.125-1.125v-10.5C2.625 6.504 3.129 6 3.75 6z"
+											/>
 										</svg>
-										<div class="text-[9px] font-black uppercase tracking-[0.25em] text-amber-200/40">Empty</div>
+										<div
+											class="text-[9px] font-black tracking-[0.25em] text-amber-200/40 uppercase"
+										>
+											Empty
+										</div>
 									</div>
 								</div>
 							{/if}
 
 							{#if deckSummary.secondaryCover}
 								{@const item = deckSummary.secondaryCover}
-								<div class="absolute bottom-2 right-2 w-[56%] sm:w-[36%] overflow-hidden rounded-md border border-cyan-300/25 bg-slate-950 shadow-2xl shadow-black/60 sm:bottom-4 sm:right-4 sm:w-[43%] sm:rounded-lg">
+								<div
+									class="absolute right-2 bottom-2 w-[56%] overflow-hidden rounded-md border border-cyan-300/25 bg-slate-950 shadow-2xl shadow-black/60 sm:right-4 sm:bottom-4 sm:w-[36%] sm:w-[43%] sm:rounded-lg"
+								>
 									<img
 										src={getCardImageUrl(item.card.image_url, 180, 'webp')}
 										class="aspect-[744/1039] w-full object-contain"
@@ -1235,12 +1688,16 @@
 						<div class="flex min-w-0 flex-col p-3 sm:p-5">
 							<div class="flex items-start justify-between gap-3">
 								<div class="min-w-0">
-									<h2 class="truncate text-base font-black uppercase italic text-white sm:text-xl">{deck.name}</h2>
-									<p class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+									<h2 class="truncate text-base font-black text-white uppercase italic sm:text-xl">
+										{deck.name}
+									</h2>
+									<p class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
 										Updated {new Date(deck.updatedAt).toLocaleDateString()}
 									</p>
 								</div>
-								<div class="rt-chip hidden shrink-0 sm:inline-flex">{deckSummary.stats.total} Cards</div>
+								<div class="rt-chip hidden shrink-0 sm:inline-flex">
+									{deckSummary.stats.total} Cards
+								</div>
 							</div>
 
 							<div class="mt-3 flex min-h-8 flex-wrap gap-1.5 sm:mt-4 sm:min-h-9 sm:gap-2">
@@ -1251,7 +1708,11 @@
 											title={`${domain.label}: ${domain.count}`}
 										>
 											{#if getDomainIcon(domain.label)}
-												<img src={getDomainIcon(domain.label) ?? ''} class="h-5 w-5 object-contain" alt={domain.label} />
+												<img
+													src={getDomainIcon(domain.label) ?? ''}
+													class="h-5 w-5 object-contain"
+													alt={domain.label}
+												/>
 											{:else}
 												<span class="h-2 w-2 rounded-full bg-cyan-200"></span>
 											{/if}
@@ -1262,34 +1723,60 @@
 									<span class="text-xs font-bold text-slate-600">No main domains yet</span>
 								{/if}
 							</div>
-							<div class="mt-3 grid grid-cols-2 gap-1.5 text-center sm:mt-4 sm:grid-cols-4 sm:gap-2">
+							<div
+								class="mt-3 grid grid-cols-2 gap-1.5 text-center sm:mt-4 sm:grid-cols-4 sm:gap-2"
+							>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
-									<div class="text-xs font-black text-white sm:text-sm">{deckSummary.stats.mainTotal}</div>
-									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Main</div>
+									<div class="text-xs font-black text-white sm:text-sm">
+										{deckSummary.stats.mainTotal}
+									</div>
+									<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
+										Main
+									</div>
 								</div>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
-									<div class="text-xs font-black text-white sm:text-sm">{deckSummary.stats.runeTotal}</div>
-									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Rune</div>
+									<div class="text-xs font-black text-white sm:text-sm">
+										{deckSummary.stats.runeTotal}
+									</div>
+									<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
+										Rune
+									</div>
 								</div>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
-									<div class="text-xs font-black text-white sm:text-sm">{deckSummary.stats.battlefieldTotal}</div>
-									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Field</div>
+									<div class="text-xs font-black text-white sm:text-sm">
+										{deckSummary.stats.battlefieldTotal}
+									</div>
+									<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
+										Field
+									</div>
 								</div>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
-									<div class="text-xs font-black text-white sm:text-sm">{deckSummary.stats.tokenTotal}</div>
-									<div class="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-500">Token</div>
+									<div class="text-xs font-black text-white sm:text-sm">
+										{deckSummary.stats.tokenTotal}
+									</div>
+									<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
+										Token
+									</div>
 								</div>
 							</div>
+							{#if !deckSummary.validation.isReady}
+								<div
+									class="mt-3 rounded-lg border border-amber-200/20 bg-amber-300/8 px-3 py-2 text-xs leading-relaxed font-bold text-amber-100"
+								>
+									<span class="font-black tracking-widest uppercase">Check:</span>
+									{deckSummary.validation.issues[0]?.message}
+								</div>
+							{/if}
 							<div class="relative mt-auto grid grid-cols-[1fr_1fr_auto] gap-1.5 pt-4">
 								<a
 									href="/deck/{deck.id}"
-									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-cyan-100 transition hover:bg-cyan-300/14 hover:text-white"
+									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-2 text-[10px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white sm:text-[11px]"
 								>
 									List
 								</a>
 								<button
 									type="button"
-									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/10 bg-white/5 px-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-200 transition hover:bg-white/10 hover:text-white"
+									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/10 bg-white/5 px-2 text-[10px] font-black tracking-widest text-slate-200 uppercase transition hover:bg-white/10 hover:text-white sm:text-[11px]"
 									onclick={() => editDeck(deck.id)}
 								>
 									Edit
@@ -1304,21 +1791,31 @@
 									&vellip;
 								</button>
 								{#if openDeckMenuId === deck.id}
-									<div class="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-950/98 p-1 shadow-2xl shadow-black/60 backdrop-blur-xl">
+									<div
+										class="absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-950/98 p-1 shadow-2xl shadow-black/60 backdrop-blur-xl"
+									>
 										<button
 											type="button"
-											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black uppercase tracking-widest text-emerald-100 transition hover:bg-emerald-300/10 disabled:cursor-not-allowed disabled:opacity-45"
+											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black tracking-widest text-emerald-100 uppercase transition hover:bg-emerald-300/10 disabled:cursor-not-allowed disabled:opacity-45"
 											disabled={savingDeckId === deck.id}
 											onclick={() => saveDeckOnline(deck.id)}
 										>
-											{savingDeckId === deck.id ? 'Saving...' : isOnlineDeck(deck) ? 'Update' : 'Save Online'}
+											{savingDeckId === deck.id
+												? 'Saving...'
+												: isOnlineDeck(deck)
+													? 'Update'
+													: 'Save Online'}
 										</button>
 										{#if isOnlineDeck(deck)}
 											<button
 												type="button"
-												class="block w-full rounded-md px-3 py-3 text-left text-xs font-black uppercase tracking-widest text-orange-100 transition hover:bg-orange-300/10 disabled:cursor-not-allowed disabled:opacity-45"
+												class="block w-full rounded-md px-3 py-3 text-left text-xs font-black tracking-widest text-orange-100 uppercase transition hover:bg-orange-300/10 disabled:cursor-not-allowed disabled:opacity-45"
 												disabled={publishingDeckId === deck.id}
-												onclick={() => updateDeckVisibility(deck.id, deck.visibility === 'public' ? 'private' : 'public')}
+												onclick={() =>
+													requestDeckVisibility(
+														deck.id,
+														deck.visibility === 'public' ? 'private' : 'public'
+													)}
 											>
 												{publishingDeckId === deck.id
 													? 'Updating...'
@@ -1329,15 +1826,26 @@
 										{/if}
 										<button
 											type="button"
-											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black uppercase tracking-widest text-rose-100 transition hover:bg-rose-300/10 disabled:cursor-not-allowed disabled:opacity-45"
+											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black tracking-widest text-rose-100 uppercase transition hover:bg-rose-300/10 disabled:cursor-not-allowed disabled:opacity-45"
 											disabled={deletingDeckId === deck.id}
-											onclick={() => deleteDeckFromLibrary(deck.id)}
+											onclick={() => requestDeleteDeckFromLibrary(deck.id)}
 										>
-											{deletingDeckId === deck.id ? 'Deleting...' : isOnlineDeck(deck) ? 'Delete Online' : 'Delete Local'}
+											{deletingDeckId === deck.id
+												? 'Deleting...'
+												: isOnlineDeck(deck)
+													? 'Delete Online'
+													: 'Delete Local'}
 										</button>
 										<button
 											type="button"
-											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black uppercase tracking-widest text-slate-200 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
+											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10"
+											onclick={() => duplicateDeck(deck.id)}
+										>
+											Copy / คัดลอก
+										</button>
+										<button
+											type="button"
+											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black tracking-widest text-slate-200 uppercase transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
 											disabled={deckSummary.stats.total === 0 || isExporting}
 											onclick={() => runDeckAction(deck.id, 'preview')}
 										>
@@ -1345,7 +1853,7 @@
 										</button>
 										<button
 											type="button"
-											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black uppercase tracking-widest text-amber-100 transition hover:bg-amber-300/10 disabled:cursor-not-allowed disabled:opacity-45"
+											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black tracking-widest text-amber-100 uppercase transition hover:bg-amber-300/10 disabled:cursor-not-allowed disabled:opacity-45"
 											disabled={deckSummary.stats.total === 0}
 											onclick={() => runDeckAction(deck.id, 'share')}
 										>
@@ -1364,8 +1872,12 @@
 	{#if isDeckLoading}
 		<div class="fixed inset-0 z-[980] grid place-items-center bg-black/80 p-4 backdrop-blur-sm">
 			<div class="rt-panel w-full max-w-xs rounded-xl p-5 text-center">
-				<div class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"></div>
-				<div class="mt-4 text-sm font-black uppercase tracking-widest text-white">Loading Decks</div>
+				<div
+					class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"
+				></div>
+				<div class="mt-4 text-sm font-black tracking-widest text-white uppercase">
+					Loading Decks
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -1373,32 +1885,44 @@
 	{#if selectedDeck && isDeckDetailOpen}
 		<div class="fixed inset-0 z-[900] overflow-y-auto bg-black/80 p-4 backdrop-blur-sm">
 			<div class="mx-auto max-w-7xl">
-				<div class="sticky top-0 z-10 mb-4 rounded-xl border border-white/10 bg-[#0a0e15]/95 p-4 backdrop-blur-xl">
+				<div
+					class="sticky top-0 z-10 mb-4 rounded-xl border border-white/10 bg-[#0a0e15]/95 p-4 backdrop-blur-xl"
+				>
 					<div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 						<div class="min-w-0">
 							<div class="rt-kicker">Deck Detail</div>
-							<h2 class="truncate text-3xl font-black uppercase italic text-white">{selectedDeck.name}</h2>
+							<h2 class="truncate text-3xl font-black text-white uppercase italic">
+								{selectedDeck.name}
+							</h2>
 						</div>
 						<div class="flex flex-wrap gap-2">
-							<div class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-slate-950/40 p-1">
+							<div
+								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-slate-950/40 p-1"
+							>
 								<button
 									type="button"
-									class="rounded-md px-3 py-1.5 text-xs font-black uppercase tracking-widest transition {exportLayout === 'portrait' ? 'bg-cyan-300 text-slate-950' : 'text-slate-400 hover:text-white'}"
-									onclick={() => exportLayout = 'portrait'}
+									class="rounded-md px-3 py-1.5 text-xs font-black tracking-widest uppercase transition {exportLayout ===
+									'portrait'
+										? 'bg-cyan-300 text-slate-950'
+										: 'text-slate-400 hover:text-white'}"
+									onclick={() => (exportLayout = 'portrait')}
 								>
 									Portrait
 								</button>
 								<button
 									type="button"
-									class="rounded-md px-3 py-1.5 text-xs font-black uppercase tracking-widest transition {exportLayout === 'landscape' ? 'bg-cyan-300 text-slate-950' : 'text-slate-400 hover:text-white'}"
-									onclick={() => exportLayout = 'landscape'}
+									class="rounded-md px-3 py-1.5 text-xs font-black tracking-widest uppercase transition {exportLayout ===
+									'landscape'
+										? 'bg-cyan-300 text-slate-950'
+										: 'text-slate-400 hover:text-white'}"
+									onclick={() => (exportLayout = 'landscape')}
 								>
 									Landscape
 								</button>
 							</div>
 							<button
 								type="button"
-								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 px-4 text-xs font-black uppercase tracking-widest text-slate-300 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
+								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white disabled:opacity-50"
 								disabled={!hasDeck || isExporting}
 								onclick={previewPng}
 							>
@@ -1414,7 +1938,7 @@
 							</button>
 							<button
 								type="button"
-								class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 px-4 text-xs font-black uppercase tracking-widest text-cyan-100 transition hover:bg-cyan-300/10 disabled:opacity-50"
+								class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10 disabled:opacity-50"
 								disabled={!hasDeck}
 								onclick={shareDeck}
 							>
@@ -1422,14 +1946,23 @@
 							</button>
 							<button
 								type="button"
-								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 px-4 text-xs font-black uppercase tracking-widest text-slate-300 transition hover:bg-white/5 hover:text-white"
+								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
 								onclick={() => editDeck(selectedDeck.id)}
 							>
 								Edit Deck
 							</button>
+							{#if hasDeck}
+								<button
+									type="button"
+									class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white"
+									onclick={openPlaytest}
+								>
+									Playtest
+								</button>
+							{/if}
 							<button
 								type="button"
-								class="inline-flex min-h-11 items-center rounded-lg px-4 text-xs font-black uppercase tracking-widest text-slate-400 transition hover:bg-white/5 hover:text-white"
+								class="inline-flex min-h-11 items-center rounded-lg px-4 text-xs font-black tracking-widest text-slate-400 uppercase transition hover:bg-white/5 hover:text-white"
 								onclick={closeDeck}
 							>
 								Close
@@ -1439,25 +1972,27 @@
 				</div>
 
 				{#if exportError}
-					<div class="mb-5 rounded-lg border border-rose-400/20 bg-rose-500/10 p-4 text-sm font-bold text-rose-100">
+					<div
+						class="mb-5 rounded-lg border border-rose-400/20 bg-rose-500/10 p-4 text-sm font-bold text-rose-100"
+					>
 						{exportError}
 					</div>
 				{/if}
 
 				{#if shareCode}
 					<div class="mb-5 rounded-xl border border-cyan-300/15 bg-slate-950/80 p-4">
-						<div class="mb-2 text-[10px] font-black uppercase tracking-widest text-cyan-100">
+						<div class="mb-2 text-[10px] font-black tracking-widest text-cyan-100 uppercase">
 							Deck Share Code
 						</div>
 						<div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
 							<textarea
 								readonly
-								class="h-24 min-w-0 resize-none rounded-lg border border-white/10 bg-black/30 p-3 text-xs font-bold leading-relaxed text-slate-100 focus:outline-none"
+								class="h-24 min-w-0 resize-none rounded-lg border border-white/10 bg-black/30 p-3 text-xs leading-relaxed font-bold text-slate-100 focus:outline-none"
 								value={shareCode}
 							></textarea>
 							<button
 								type="button"
-								class="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-300 px-4 text-xs font-black uppercase tracking-widest text-slate-950 transition hover:bg-cyan-200"
+								class="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-300 px-4 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-200"
 								onclick={copyShareCode}
 							>
 								{shareCopied ? 'Copied' : 'Copy Code'}
@@ -1471,44 +2006,62 @@
 
 				{#if !hasDeck}
 					<section class="rt-panel rounded-xl p-8 text-center">
-						<h2 class="text-2xl font-black uppercase italic text-white">Empty Deck</h2>
+						<h2 class="text-2xl font-black text-white uppercase italic">Empty Deck</h2>
 						<p class="rt-copy mx-auto mt-3 max-w-lg text-sm">เด็คนี้ยังไม่มีการ์ด</p>
 					</section>
 				{:else}
 					<section class="mb-6 grid gap-3 sm:grid-cols-4 lg:grid-cols-8">
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{stats.legendTotal}</div>
-							<div class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">Legend</div>
+							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Legend
+							</div>
 						</div>
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{championCard ? 1 : 0}</div>
-							<div class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">Champion</div>
+							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Champion
+							</div>
 						</div>
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{stats.battlefieldTotal}</div>
-							<div class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">Battlefield</div>
+							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Battlefield
+							</div>
 						</div>
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{stats.mainTotal}</div>
-							<div class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">Main / {maxMainDeckCards}</div>
+							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Main / {maxMainDeckCards}
+							</div>
 						</div>
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{stats.runeTotal}</div>
-							<div class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">Rune / {maxRuneCards}</div>
+							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Rune / {maxRuneCards}
+							</div>
 						</div>
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{stats.sideboardTotal}</div>
-							<div class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">Sideboard / {maxSideboardCards}</div>
+							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Sideboard / {maxSideboardCards}
+							</div>
 						</div>
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{stats.tokenTotal}</div>
-							<div class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">Token</div>
+							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Token
+							</div>
 						</div>
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{stats.total}</div>
-							<div class="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-500">Total Cards</div>
+							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								Total Cards
+							</div>
 						</div>
 					</section>
+
+					<DeckValidationPanel validation={deckValidation} />
 
 					<section class="mb-6 grid gap-5 lg:grid-cols-3">
 						{@render ChartPanel('Cost Curve', stats.costs)}
@@ -1518,45 +2071,45 @@
 
 					<section class="mb-6 space-y-5">
 						<div class="rt-panel rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black uppercase italic text-white">Legend + Champion</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Legend + Champion</h2>
 							{@render CardList(getLegendChampionCards(), true)}
 						</div>
 
 						<div class="rt-panel rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black uppercase italic text-white">Battlefield</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Battlefield</h2>
 							{@render CardList(zones.battlefields, true)}
 						</div>
 					</section>
 
 					<section class="mb-6 space-y-5">
 						<div class="rt-panel rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black uppercase italic text-white">Rune Deck</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Rune Deck</h2>
 							{@render CardList(zones.runes, true)}
 						</div>
 
 						<div class="rt-panel rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black uppercase italic text-white">Main Deck Cards</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Main Deck Cards</h2>
 							{@render CardList(zones.main)}
 						</div>
 					</section>
 
 					{#if sideboardCards.length > 0}
 						<section class="rt-panel mb-6 rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black uppercase italic text-white">Sideboard</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Sideboard</h2>
 							{@render CardList(sideboardCards)}
 						</section>
 					{/if}
 
 					{#if zones.tokens.length > 0}
 						<section class="rt-panel mb-6 rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black uppercase italic text-white">Tokens</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Tokens</h2>
 							{@render CardList(zones.tokens, true)}
 						</section>
 					{/if}
 
 					{#if zones.other.length > 0}
 						<section class="rt-panel rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black uppercase italic text-white">Other Cards</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Other Cards</h2>
 							{@render CardList(zones.other)}
 						</section>
 					{/if}
@@ -1568,14 +2121,14 @@
 	{#if isExporting}
 		<div class="fixed inset-0 z-[980] grid place-items-center bg-black/80 p-4 backdrop-blur-sm">
 			<div class="rt-panel rt-topline w-full max-w-sm rounded-xl p-6 text-center">
-				<div class="mx-auto mb-5 h-14 w-14 animate-spin rounded-full border-4 border-white/10 border-t-cyan-300"></div>
+				<div
+					class="mx-auto mb-5 h-14 w-14 animate-spin rounded-full border-4 border-white/10 border-t-cyan-300"
+				></div>
 				<div class="rt-kicker mb-2">Loading</div>
-				<h2 class="text-xl font-black uppercase italic text-white">
+				<h2 class="text-xl font-black text-white uppercase italic">
 					{exportMode === 'preview' ? 'Preparing Preview' : 'Preparing Download'}
 				</h2>
-				<p class="rt-copy mt-3 text-sm">
-					กำลังโหลดรูปการ์ดและสร้าง PNG กรุณารอสักครู่
-				</p>
+				<p class="rt-copy mt-3 text-sm">กำลังโหลดรูปการ์ดและสร้าง PNG กรุณารอสักครู่</p>
 			</div>
 		</div>
 	{/if}
@@ -1583,17 +2136,24 @@
 	{#if previewUrl}
 		<div class="fixed inset-0 z-[950] overflow-y-auto bg-black/80 p-4 backdrop-blur-sm">
 			<div class="mx-auto max-w-6xl">
-				<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-white/10 bg-[#0a0e15]/95 p-4 backdrop-blur-xl">
+				<div
+					class="mb-4 flex flex-col gap-3 rounded-xl border border-white/10 bg-[#0a0e15]/95 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between"
+				>
 					<div>
 						<div class="rt-kicker">Developer Preview</div>
 						<div class="text-sm font-bold text-slate-300">PNG export preview</div>
 					</div>
 					<div class="flex flex-wrap items-center gap-3">
 						<!-- Segmented Control for Layout -->
-						<div class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-slate-950/40 p-1">
+						<div
+							class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-slate-950/40 p-1"
+						>
 							<button
 								type="button"
-								class="rounded-md px-3 py-1.5 text-xs font-black uppercase tracking-widest transition {exportLayout === 'portrait' ? 'bg-cyan-300 text-slate-950' : 'text-slate-400 hover:text-white'}"
+								class="rounded-md px-3 py-1.5 text-xs font-black tracking-widest uppercase transition {exportLayout ===
+								'portrait'
+									? 'bg-cyan-300 text-slate-950'
+									: 'text-slate-400 hover:text-white'}"
 								onclick={() => changeLayout('portrait')}
 								disabled={isExporting}
 							>
@@ -1601,7 +2161,10 @@
 							</button>
 							<button
 								type="button"
-								class="rounded-md px-3 py-1.5 text-xs font-black uppercase tracking-widest transition {exportLayout === 'landscape' ? 'bg-cyan-300 text-slate-950' : 'text-slate-400 hover:text-white'}"
+								class="rounded-md px-3 py-1.5 text-xs font-black tracking-widest uppercase transition {exportLayout ===
+								'landscape'
+									? 'bg-cyan-300 text-slate-950'
+									: 'text-slate-400 hover:text-white'}"
 								onclick={() => changeLayout('landscape')}
 								disabled={isExporting}
 							>
@@ -1622,7 +2185,7 @@
 						<!-- Close Button -->
 						<button
 							type="button"
-							class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-slate-950 px-4 text-xs font-black uppercase tracking-widest text-slate-200 hover:bg-white/5"
+							class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-slate-950 px-4 text-xs font-black tracking-widest text-slate-200 uppercase hover:bg-white/5"
 							onclick={() => (previewUrl = '')}
 						>
 							Close
@@ -1633,8 +2196,12 @@
 					{#if isExporting}
 						<div class="absolute inset-0 z-10 grid place-items-center bg-black/70 backdrop-blur-xs">
 							<div class="text-center">
-								<div class="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-cyan-300"></div>
-								<div class="text-xs font-black uppercase tracking-widest text-white">Regenerating Preview...</div>
+								<div
+									class="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-cyan-300"
+								></div>
+								<div class="text-xs font-black tracking-widest text-white uppercase">
+									Regenerating Preview...
+								</div>
 							</div>
 						</div>
 					{/if}
@@ -1644,78 +2211,135 @@
 		</div>
 	{/if}
 
-	{#if actionNotice}
-		<div
-			class="rt-toast fixed right-4 top-20 z-[970] w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-xl border bg-slate-950/95 text-slate-100 shadow-2xl shadow-black/55 backdrop-blur-xl sm:right-6 {actionNotice.type === 'success' ? 'border-emerald-300/30 shadow-emerald-950/20' : actionNotice.type === 'error' ? 'border-rose-300/30 shadow-rose-950/25' : 'border-cyan-300/30 shadow-cyan-950/20'}"
-			role="status"
-			aria-live="polite"
-		>
-			<div class="h-1 {actionNotice.type === 'success' ? 'bg-emerald-300' : actionNotice.type === 'error' ? 'bg-rose-300' : 'bg-cyan-300'}"></div>
-			<div class="rt-toast-progress {actionNotice.type === 'success' ? 'bg-emerald-300/80' : actionNotice.type === 'error' ? 'bg-rose-300/80' : 'bg-cyan-300/80'}"></div>
-			<div class="flex items-start gap-3 p-4">
-				<div class="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-lg border {actionNotice.type === 'success' ? 'border-emerald-300/25 bg-emerald-300/12 text-emerald-100' : actionNotice.type === 'error' ? 'border-rose-300/25 bg-rose-300/12 text-rose-100' : 'border-cyan-300/25 bg-cyan-300/12 text-cyan-100'}">
-					<span class="h-2.5 w-2.5 rounded-full {actionNotice.type === 'success' ? 'bg-emerald-300' : actionNotice.type === 'error' ? 'bg-rose-300' : 'bg-cyan-300'}"></span>
-				</div>
-				<div class="min-w-0">
-					<div class="text-[0.65rem] font-black uppercase tracking-[0.22em] {actionNotice.type === 'success' ? 'text-emerald-200' : actionNotice.type === 'error' ? 'text-rose-200' : 'text-cyan-200'}">
-						{actionNotice.type === 'success' ? 'Success' : actionNotice.type === 'error' ? 'Error' : 'Notice'}
-					</div>
-					<div class="mt-1 text-sm font-black leading-snug text-white">{actionNotice.message}</div>
+	{#if selectedDeck}
+		<PlaytestModal
+			deck={selectedDeck}
+			cards={cards}
+			isOpen={isPlaytestOpen}
+			onClose={closePlaytest}
+		/>
+	{/if}
+
+	{#if deleteConfirmDeck}
+		<div class="fixed inset-0 z-[980] grid place-items-center bg-slate-950/82 p-4 backdrop-blur-sm">
+			<div
+				class="rt-panel w-full max-w-md rounded-xl border border-rose-300/20 p-5 shadow-2xl shadow-rose-950/30"
+			>
+				<p class="rt-kicker mb-3 text-rose-100">Confirm Delete</p>
+				<h2 class="text-2xl font-black text-white uppercase italic">Delete Deck?</h2>
+				<p class="rt-copy mt-3 text-sm">
+					This will delete
+					<span class="font-black text-white">{deleteConfirmDeck.name}</span>
+					from your {isOnlineDeck(deleteConfirmDeck)
+						? 'online deck storage'
+						: 'local browser storage'}.
+				</p>
+				{#if isOnlineDeck(deleteConfirmDeck)}
+					<p
+						class="mt-3 rounded-lg border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-100"
+					>
+						Online decks will be removed from the server for your account.
+					</p>
+				{/if}
+				<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+					<button
+						type="button"
+						class="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white disabled:opacity-50"
+						disabled={Boolean(deletingDeckId)}
+						onclick={cancelDeleteDeckFromLibrary}
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						class="inline-flex min-h-11 items-center justify-center rounded-lg bg-rose-300 px-4 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-rose-200 disabled:opacity-50"
+						disabled={Boolean(deletingDeckId)}
+						onclick={confirmDeleteDeckFromLibrary}
+					>
+						{deletingDeckId ? 'Deleting...' : 'Delete'}
+					</button>
 				</div>
 			</div>
 		</div>
 	{/if}
+
+	{#if visibilityConfirmDeck && visibilityConfirmTarget}
+		<div class="fixed inset-0 z-[980] grid place-items-center bg-slate-950/82 p-4 backdrop-blur-sm">
+			<div
+				class="rt-panel w-full max-w-md rounded-xl border border-orange-300/20 p-5 shadow-2xl shadow-black/40"
+			>
+				<p class="rt-kicker mb-3 text-orange-100">Confirm Visibility</p>
+				<h2 class="text-2xl font-black text-white uppercase italic">
+					{visibilityConfirmTarget === 'public' ? 'Publish Deck?' : 'Set Private?'}
+				</h2>
+				<p class="rt-copy mt-3 text-sm">
+					{visibilityConfirmTarget === 'public'
+						? 'This deck will appear in the public deck browser.'
+						: 'This deck will be hidden from the public deck browser.'}
+					<span class="font-black text-white">{visibilityConfirmDeck.name}</span>
+				</p>
+				<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+					<button
+						type="button"
+						class="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white disabled:opacity-50"
+						disabled={Boolean(publishingDeckId)}
+						onclick={cancelDeckVisibility}
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						class="inline-flex min-h-11 items-center justify-center rounded-lg bg-orange-300 px-4 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-orange-200 disabled:opacity-50"
+						disabled={Boolean(publishingDeckId)}
+						onclick={confirmDeckVisibility}
+					>
+						{publishingDeckId
+							? 'Updating...'
+							: visibilityConfirmTarget === 'public'
+								? 'Publish'
+								: 'Set Private'}
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#if actionNotice}
+		<Toast
+			show={true}
+			message={actionNotice.message}
+			type={actionNotice.type}
+			onclose={() => actionNotice = null}
+		/>
+	{/if}
 </div>
-
-<style>
-	.rt-toast {
-		animation: rt-toast-enter 220ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
-	}
-
-	.rt-toast-progress {
-		height: 2px;
-		transform-origin: left;
-		animation: rt-toast-progress 2600ms linear forwards;
-	}
-
-	@keyframes rt-toast-enter {
-		from {
-			opacity: 0;
-			transform: translate3d(18px, -10px, 0) scale(0.98);
-		}
-		to {
-			opacity: 1;
-			transform: translate3d(0, 0, 0) scale(1);
-		}
-	}
-
-	@keyframes rt-toast-progress {
-		from {
-			transform: scaleX(1);
-		}
-		to {
-			transform: scaleX(0);
-		}
-	}
-</style>
 
 {#snippet ChartPanel(title: string, items: { label: string; count: number }[], icons = false)}
 	<div class="rt-panel rounded-xl p-5">
-		<h2 class="mb-4 text-lg font-black uppercase italic text-white">{title}</h2>
+		<h2 class="mb-4 text-lg font-black text-white uppercase italic">{title}</h2>
 		<div class="space-y-3">
 			{#each items as item}
 				<div>
-					<div class="mb-1 flex items-center justify-between gap-3 text-xs font-black uppercase tracking-widest">
+					<div
+						class="mb-1 flex items-center justify-between gap-3 text-xs font-black tracking-widest uppercase"
+					>
 						<span class="flex min-w-0 items-center gap-2 text-slate-300">
 							{#if icons && getDomainIcon(item.label)}
-								<img src={getDomainIcon(item.label) ?? ''} class="h-4 w-4 object-contain" alt={item.label} />
+								<img
+									src={getDomainIcon(item.label) ?? ''}
+									class="h-4 w-4 object-contain"
+									alt={item.label}
+								/>
 							{/if}
 							<span class="truncate">{item.label}</span>
 						</span>
 						<span class="text-amber-200">{item.count}</span>
 					</div>
 					<div class="h-2 overflow-hidden rounded-sm bg-black/30">
-						<div class="h-full bg-cyan-300" style="width: {(item.count / getMaxCount(items)) * 100}%"></div>
+						<div
+							class="h-full bg-cyan-300"
+							style="width: {(item.count / getMaxCount(items)) * 100}%"
+						></div>
 					</div>
 				</div>
 			{:else}
@@ -1726,24 +2350,42 @@
 {/snippet}
 
 {#snippet CardList(items: DeckCard[], horizontal = false)}
-	<div class={horizontal ? 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}>
+	<div
+		class={horizontal
+			? 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3'
+			: 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}
+	>
 		{#each items as item}
-			<article class={horizontal ? 'group grid min-h-32 grid-cols-[8.5rem_1fr] gap-3 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35 sm:grid-cols-[10.5rem_1fr]' : 'group min-w-0 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35'}>
+			<article
+				class={horizontal
+					? 'group grid min-h-32 grid-cols-[8.5rem_1fr] gap-3 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35 sm:grid-cols-[10.5rem_1fr]'
+					: 'group min-w-0 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35'}
+			>
 				<div class="relative overflow-hidden rounded-md bg-slate-950">
 					<img
 						src={getCardImageUrl(item.card.image_url, 260, 'webp')}
-						class={horizontal ? 'aspect-[1039/744] h-full w-full object-cover' : 'aspect-[744/1039] w-full object-cover'}
-						style={!horizontal && item.card.name_en === 'Baron Pit' ? 'transform: rotate(90deg) scale(1.4);' : ''}
+						class={horizontal
+							? 'aspect-[1039/744] h-full w-full object-cover'
+							: 'aspect-[744/1039] w-full object-cover'}
+						style={!horizontal && item.card.name_en === 'Baron Pit'
+							? 'transform: rotate(90deg) scale(1.4);'
+							: ''}
 						alt={item.card.name_en}
 						loading="lazy"
 					/>
-					<div class="absolute right-2 top-2 rounded-md bg-amber-200 px-2 py-1 text-xs font-black text-slate-950 shadow-lg">
+					<div
+						class="absolute top-2 right-2 rounded-md bg-amber-200 px-2 py-1 text-xs font-black text-slate-950 shadow-lg"
+					>
 						x{item.quantity}
 					</div>
 				</div>
-				<div class={horizontal ? 'min-w-0 self-center py-1 pr-1' : 'min-w-0 px-1 pb-1 pt-2'}>
-					<div class="truncate text-sm font-black uppercase italic text-white">{item.card.name_en}</div>
-					<div class="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500">
+				<div class={horizontal ? 'min-w-0 self-center py-1 pr-1' : 'min-w-0 px-1 pt-2 pb-1'}>
+					<div class="truncate text-sm font-black text-white uppercase italic">
+						{item.card.name_en}
+					</div>
+					<div
+						class="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] font-black tracking-widest text-slate-500 uppercase"
+					>
 						<span class="truncate">{item.card.type}</span>
 						<span class="text-slate-700">/</span>
 						<span class="truncate">{item.card.code}</span>
@@ -1751,9 +2393,16 @@
 					<div class="mt-2 flex max-h-6 flex-wrap gap-1 overflow-hidden">
 						{#each item.card.domains ?? [] as domain}
 							{#if getDomainIcon(domain)}
-								<img src={getDomainIcon(domain) ?? ''} class="h-5 w-5 object-contain" alt={domain} title={domain} />
+								<img
+									src={getDomainIcon(domain) ?? ''}
+									class="h-5 w-5 object-contain"
+									alt={domain}
+									title={domain}
+								/>
 							{:else}
-								<span class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-300">
+								<span
+									class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black tracking-widest text-slate-300 uppercase"
+								>
 									{domain}
 								</span>
 							{/if}
@@ -1766,3 +2415,4 @@
 		{/each}
 	</div>
 {/snippet}
+

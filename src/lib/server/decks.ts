@@ -1,4 +1,5 @@
 import { getRagConfig } from '$lib/server/rag/config';
+import { getUserDisplayName, getUserProfileHandle, getUserProfileSlug } from '$lib/server/auth';
 import { normalizeDeck, type DeckEntry, type StoredDeck } from '$lib/utils/deck';
 
 type UserDeckRow = {
@@ -10,8 +11,19 @@ type UserDeckRow = {
 	entries: DeckEntry[];
 	sideboard_entries?: DeckEntry[];
 	visibility: 'private' | 'unlisted' | 'public';
+	likes_count?: number;
+	hidden?: boolean;
 	created_at: string;
 	updated_at: string;
+	app_users?: {
+		id: string;
+		email: string;
+		display_name: string | null;
+		profile_slug: string | null;
+		profile_number: string | null;
+		profile_public?: boolean | null;
+		public_decks_visible?: boolean | null;
+	} | null;
 };
 
 export async function listUserDecks(userId: string) {
@@ -23,13 +35,34 @@ export async function listUserDecks(userId: string) {
 	return rows.map(rowToStoredDeck);
 }
 
-export async function listPublicDecks() {
+export async function listPublicDecks(orderBy: 'updated_at.desc' | 'likes_count.desc,updated_at.desc' = 'updated_at.desc') {
 	const rows =
 		(await deckRequest<UserDeckRow[]>(
-			'/rest/v1/user_decks?visibility=eq.public&select=*&order=updated_at.desc&limit=60'
+			`/rest/v1/user_decks?visibility=eq.public&hidden=eq.false&select=*,app_users!inner(id,email,display_name,profile_slug,profile_number,profile_public,public_decks_visible)&app_users.profile_public=eq.true&app_users.public_decks_visible=eq.true&order=${orderBy}&limit=60`
 		)) ?? [];
 
 	return rows.map(rowToStoredDeck);
+}
+
+export async function listPublicDecksByUser(userId: string) {
+	const rows =
+		(await deckRequest<UserDeckRow[]>(
+			`/rest/v1/user_decks?user_id=eq.${encodeURIComponent(userId)}&visibility=eq.public&hidden=eq.false&select=*,app_users(id,email,display_name,profile_slug,profile_number)&order=updated_at.desc`
+		)) ?? [];
+
+	return rows.map(rowToStoredDeck);
+}
+
+export async function getDeckById(deckId: string) {
+	let rows = await deckRequest<UserDeckRow[]>(
+		`/rest/v1/user_decks?local_deck_id=eq.${encodeURIComponent(deckId)}&select=*,app_users(id,email,display_name,profile_slug,profile_number)`
+	);
+	if (!rows?.[0] && deckId.length === 36) {
+		rows = await deckRequest<UserDeckRow[]>(
+			`/rest/v1/user_decks?id=eq.${encodeURIComponent(deckId)}&select=*,app_users(id,email,display_name,profile_slug,profile_number)`
+		);
+	}
+	return rows?.[0] ? rowToStoredDeck(rows[0]) : null;
 }
 
 export async function upsertUserDeck(userId: string, deck: StoredDeck) {
@@ -125,7 +158,22 @@ function rowToStoredDeck(row: UserDeckRow): StoredDeck {
 		updatedAt: row.updated_at,
 		source: 'online',
 		onlineId: row.id,
-		visibility: row.visibility
+		visibility: row.visibility,
+		likesCount: row.likes_count ?? 0,
+		hidden: Boolean(row.hidden),
+		owner: row.app_users
+			? {
+					id: row.app_users.id,
+					displayName: getUserDisplayName(row.app_users),
+					profileHandle: getUserProfileHandle(row.app_users),
+					profileSlug: getUserProfileSlug(row.app_users)
+				}
+			: {
+					id: row.user_id,
+					displayName: 'Player',
+					profileHandle: 'player',
+					profileSlug: 'player'
+				}
 	};
 }
 
@@ -158,4 +206,88 @@ async function deckRequest<T = unknown>(path: string, init: RequestInit = {}) {
 	if (response.status === 204) return undefined as T;
 	const text = await response.text();
 	return text ? (JSON.parse(text) as T) : (undefined as T);
+}
+
+export async function getUserLikedDeckIds(userId: string): Promise<Set<string>> {
+	interface LikeRow {
+		deck_id: string;
+	}
+	const rows = await deckRequest<LikeRow[]>(
+		`/rest/v1/deck_likes?user_id=eq.${encodeURIComponent(userId)}&select=deck_id`
+	);
+	return new Set(rows?.map((r) => r.deck_id) ?? []);
+}
+
+export async function likeDeck(userId: string, deckId: string): Promise<void> {
+	await deckRequest('/rest/v1/deck_likes', {
+		method: 'POST',
+		headers: {
+			Prefer: 'resolution=merge-duplicates,return=minimal'
+		},
+		body: JSON.stringify({
+			user_id: userId,
+			deck_id: deckId
+		})
+	});
+}
+
+export async function unlikeDeck(userId: string, deckId: string): Promise<void> {
+	await deckRequest(
+		`/rest/v1/deck_likes?user_id=eq.${encodeURIComponent(userId)}&deck_id=eq.${encodeURIComponent(deckId)}`,
+		{
+			method: 'DELETE',
+			headers: {
+				Prefer: 'return=minimal'
+			}
+		}
+	);
+}
+
+export async function adminDeleteDeck(onlineId: string) {
+	await deckRequest(`/rest/v1/user_decks?id=eq.${encodeURIComponent(onlineId)}`, {
+		method: 'DELETE',
+		headers: {
+			Prefer: 'return=minimal'
+		}
+	});
+}
+
+export async function adminSetDeckHidden(onlineId: string, hidden: boolean) {
+	const rows = await deckRequest<UserDeckRow[]>(
+		`/rest/v1/user_decks?id=eq.${encodeURIComponent(onlineId)}&select=*`,
+		{
+			method: 'PATCH',
+			headers: {
+				Prefer: 'return=representation'
+			},
+			body: JSON.stringify({
+				hidden,
+				updated_at: new Date().toISOString()
+			})
+		}
+	);
+
+	const row = rows?.[0];
+	if (!row) throw new Error('Deck not found');
+	return rowToStoredDeck(row);
+}
+
+export async function adminSetDeckVisibility(onlineId: string, visibility: 'private' | 'unlisted' | 'public') {
+	const rows = await deckRequest<UserDeckRow[]>(
+		`/rest/v1/user_decks?id=eq.${encodeURIComponent(onlineId)}&select=*`,
+		{
+			method: 'PATCH',
+			headers: {
+				Prefer: 'return=representation'
+			},
+			body: JSON.stringify({
+				visibility,
+				updated_at: new Date().toISOString()
+			})
+		}
+	);
+
+	const row = rows?.[0];
+	if (!row) throw new Error('Deck not found');
+	return rowToStoredDeck(row);
 }
