@@ -317,25 +317,35 @@
 	}
 
 	async function setPlaysets() {
-		if (!currentUser || !confirm('ต้องการตั้งค่าการ์ดทั้งหมดให้เป็น Playset หรือไม่?')) return;
+		if (!currentUser) return;
+		
+		const isAll = selectedSet === 'All';
+		const confirmMsg = isAll 
+			? 'ต้องการตั้งค่าการ์ดทั้งหมดในทุกชุดให้เป็น Playset หรือไม่?' 
+			: `ต้องการตั้งค่าการ์ดทั้งหมดในชุด ${selectedSet} ให้เป็น Playset หรือไม่?`;
+			
+		if (!confirm(confirmMsg)) return;
 		
 		collectionLoading = true;
 		try {
-			// 1. Delete all current collections first
-			await fetch('/api/collection', { method: 'DELETE' });
+			if (isAll) {
+				await fetch('/api/collection', { method: 'DELETE' });
+			}
 
-			// 2. Build entries list for all cards
+			const setCards = isAll 
+				? cards 
+				: cards.filter(c => c.set_name === selectedSet);
+
 			const entries: { cardCode: string; quantity: number }[] = [];
-			const nextCollection: Record<string, number> = {};
+			const nextCollection = isAll ? {} : { ...collection };
 
-			for (const card of cards) {
+			for (const card of setCards) {
 				let qty = 3;
 				if (isLegendCard(card) || isBattlefieldCard(card)) qty = 1;
 				entries.push({ cardCode: card.code, quantity: qty });
 				nextCollection[card.code] = qty;
 			}
 
-			// 3. Batch post the updates
 			const response = await fetch('/api/collection', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -348,7 +358,10 @@
 			}
 
 			collection = nextCollection;
-			showActionNotice('ตั้งค่า Playset สำหรับการ์ดทั้งหมดสำเร็จ', 'success');
+			const successMsg = isAll 
+				? 'ตั้งค่า Playset สำหรับการ์ดทั้งหมดสำเร็จ' 
+				: `ตั้งค่า Playset สำหรับการ์ดในชุด ${selectedSet} สำเร็จ`;
+			showActionNotice(successMsg, 'success');
 		} catch (error) {
 			console.error('Failed to set playsets:', error);
 			showActionNotice('พบข้อผิดพลาดขณะบันทึกข้อมูลสะสม', 'error');
@@ -358,19 +371,56 @@
 	}
 
 	async function clearCollection() {
-		if (!currentUser || !confirm('ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดหรือไม่?')) return;
+		if (!currentUser) return;
+
+		const isAll = selectedSet === 'All';
+		const confirmMsg = isAll 
+			? 'ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดในทุกชุดหรือไม่?' 
+			: `ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดในชุด ${selectedSet} หรือไม่?`;
+
+		if (!confirm(confirmMsg)) return;
 
 		collectionLoading = true;
 		try {
-			const response = await fetch('/api/collection', {
-				method: 'DELETE'
-			});
-			if (!response.ok) {
-				const payload = await response.json().catch(() => ({}));
-				throw new Error(payload.error || 'Failed to clear collection');
+			if (isAll) {
+				const response = await fetch('/api/collection', {
+					method: 'DELETE'
+				});
+				if (!response.ok) {
+					const payload = await response.json().catch(() => ({}));
+					throw new Error(payload.error || 'Failed to clear collection');
+				}
+				collection = {};
+			} else {
+				const setCards = cards.filter(c => c.set_name === selectedSet);
+				const entries: { cardCode: string; quantity: number }[] = [];
+				const nextCollection = { ...collection };
+
+				for (const card of setCards) {
+					entries.push({ cardCode: card.code, quantity: 0 });
+					entries.push({ cardCode: card.code + '_foil', quantity: 0 });
+					delete nextCollection[card.code];
+					delete nextCollection[card.code + '_foil'];
+				}
+
+				const response = await fetch('/api/collection', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ entries })
+				});
+
+				if (!response.ok) {
+					const payload = await response.json().catch(() => ({}));
+					throw new Error(payload.error || 'Failed to clear set collection');
+				}
+
+				collection = nextCollection;
 			}
-			collection = {};
-			showActionNotice('ล้างข้อมูลการ์ดสะสมสำเร็จ', 'success');
+
+			const successMsg = isAll 
+				? 'ล้างข้อมูลการ์ดสะสมทั้งหมดสำเร็จ' 
+				: `ล้างข้อมูลการ์ดสะสมในชุด ${selectedSet} สำเร็จ`;
+			showActionNotice(successMsg, 'success');
 		} catch (error) {
 			console.error('Failed to clear collection:', error);
 			showActionNotice('พบข้อผิดพลาดขณะล้างข้อมูลสะสม', 'error');
@@ -873,7 +923,11 @@
 								onclick={setPlaysets}
 								disabled={collectionLoading}
 							>
-								ตั้งค่าการ์ดทุกใบเป็น Playset
+								{#if selectedSet === 'All'}
+									ตั้งค่าการ์ดทั้งหมดเป็น Playset
+								{:else}
+									ตั้งค่าการ์ดในชุดนี้เป็น Playset
+								{/if}
 							</button>
 
 							<button
@@ -882,7 +936,11 @@
 								onclick={clearCollection}
 								disabled={collectionLoading || Object.keys(collection).length === 0}
 							>
-								ล้างข้อมูลคอลเล็กชันทั้งหมด
+								{#if selectedSet === 'All'}
+									ล้างข้อมูลคอลเล็กชันทั้งหมด
+								{:else}
+									ล้างข้อมูลชุดนี้ทั้งหมด
+								{/if}
 							</button>
 						</div>
 					</div>
