@@ -23,6 +23,7 @@ export type StoredDeck = {
 	};
 	likesCount?: number;
 	isLiked?: boolean;
+	hidden?: boolean;
 };
 
 export type DeckCollection = {

@@ -900,7 +900,7 @@
 							{@const quantity = isEditingSideboard
 								? getCardQuantity(sideboardEntries, card.code)
 								: getCardQuantity(entries, card.code)}
-							{@const owned = userCardCollection[card.code] ?? 0}
+							{@const owned = (userCardCollection[card.code] ?? 0) + (userCardCollection[card.code + '_foil'] ?? 0)}
 							{@const isMissing = Object.keys(userCardCollection).length > 0 && quantity > 0 && owned < quantity}
 							<article
 								class="group overflow-hidden rounded-xl border transition hover:-translate-y-1 hover:border-cyan-300/35 hover:shadow-[0_0_36px_rgba(45,212,191,0.10)]
@@ -1201,7 +1201,7 @@
 						class="h-[calc(100dvh-22rem)] space-y-2 overflow-y-auto pr-1 lg:h-auto lg:max-h-[70dvh]"
 					>
 						{#each (isEditingSideboard ? sideboardCards : deckCards).filter((item) => !isLegendCard(item.card)) as item}
-							{@const owned = userCardCollection[item.card.code] ?? 0}
+							{@const owned = (userCardCollection[item.card.code] ?? 0) + (userCardCollection[item.card.code + '_foil'] ?? 0)}
 							{@const isMissing = Object.keys(userCardCollection).length > 0 && owned < item.quantity}
 							<div
 								class="relative overflow-hidden rounded-lg border bg-black/20 {isMissing ? 'border-amber-500/30' : 'border-white/10'} {item

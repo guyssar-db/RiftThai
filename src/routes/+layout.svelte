@@ -2,6 +2,8 @@
 	import { page } from '$app/state';
 	import { navigating } from '$app/stores';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import Toast from '$lib/components/ui/Toast.svelte';
 	import './layout.css';
 	import FakeAiChat from '$lib/components/FakeAiChat.svelte';
 	import PcSideNav from '$lib/components/PcSideNav.svelte';
@@ -110,13 +112,80 @@
 		})
 	);
 
+	let banNotice = $state<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+	let checkingSession = false;
+	let lastUserStatus: boolean | null = null;
+
 	onMount(() => {
 		const savedChoice = localStorage.getItem('riftthai_cookie_choice');
 		if (savedChoice === 'accepted' || savedChoice === 'declined') {
 			cookieChoice = savedChoice;
 		}
 		isHydrated = true;
+
+		// Register Service Worker for PWA (offline capability)
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('/service-worker.js', { type: 'module' }).catch((error) => {
+				console.error('Service worker registration failed:', error);
+			});
+		}
+
+		void checkSessionBan();
+		window.addEventListener('riftthai-auth-changed', () => void checkSessionBan());
+
+		const interval = setInterval(() => {
+			void checkSessionBan();
+		}, 30000); // Check every 30 seconds
+
+		return () => {
+			window.removeEventListener('riftthai-auth-changed', () => void checkSessionBan());
+			clearInterval(interval);
+		};
 	});
+
+	$effect(() => {
+		// Run session check on page navigation
+		const _ = page.url.pathname;
+		if (isHydrated) {
+			void checkSessionBan();
+		}
+	});
+
+	async function checkSessionBan() {
+		if (checkingSession) return;
+		checkingSession = true;
+		try {
+			const res = await fetch('/api/auth/session');
+			const data = await res.json().catch(() => ({}));
+			
+			const isLoggedIn = !!data.user;
+
+			if (data.error === 'banned') {
+				banNotice = null;
+				window.setTimeout(() => {
+					banNotice = {
+						message: 'บัญชีนี้ถูกระงับการใช้งานเนื่องจากละเมิดกฎกติกา (This account has been suspended.)',
+						type: 'error'
+					};
+				}, 0);
+				lastUserStatus = false;
+				window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
+				if (window.location.pathname === '/setting') {
+					goto('/');
+				}
+				return;
+			}
+
+			if (lastUserStatus !== null && isLoggedIn !== lastUserStatus) {
+				window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
+			}
+			lastUserStatus = isLoggedIn;
+		} catch (err) {
+			console.error('Session check failed:', err);
+		} finally {
+			checkingSession = false;
+		}
+	}
 
 	function setCookieChoice(choice: 'accepted' | 'declined') {
 		cookieChoice = choice;
@@ -187,11 +256,11 @@
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<p class="text-xs leading-relaxed font-semibold text-slate-300">
 				เราใช้คุกกี้ที่จำเป็นเพื่อให้ระบบบัญชีและการใช้งานเว็บทำงานได้ดีขึ้น อ่าน
-				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy"
+				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy" target="_blank" rel="noopener noreferrer"
 					>นโยบายความเป็นส่วนตัว</a
 				>
 				และ
-				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms"
+				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms" target="_blank" rel="noopener noreferrer"
 					>ข้อกำหนดการใช้งาน</a
 				>
 			</p>
@@ -214,6 +283,16 @@
 		</div>
 	</div>
 {/if}
+
+{#if banNotice}
+	<Toast
+		show={true}
+		message={banNotice.message}
+		type={banNotice.type}
+		onclose={() => banNotice = null}
+	/>
+{/if}
+
 <FakeAiChat />
 <UserGuide />
 

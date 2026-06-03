@@ -3,7 +3,9 @@
 	import { goto } from '$app/navigation';
 	import DeckValidationPanel from '$lib/components/DeckValidationPanel.svelte';
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
 	import PlaytestModal from '$lib/components/PlaytestModal.svelte';
+	import CardModal from '$lib/components/CardModal.svelte';
 	import { getDomainIcon } from '$lib/data/domainIcons';
 	import type { Card } from '$lib/types/card';
 	import { getCardImageUrl } from '$lib/utils/cardImages';
@@ -28,10 +30,20 @@
 	let cards = $derived((data.cards as Card[]) || []);
 	let deckId = $derived(data.deckId ?? '');
 	let loadedDeck = $derived(data.loadedDeck as StoredDeck | null);
-		let collection = $state<DeckCollection | null>(null);
+	let collection = $state<DeckCollection | null>(null);
 	let isLoading = $state(true);
 	let isPlaytestOpen = $state(false);
 	let userCardCollection = $state<Record<string, number>>({});
+	let selectedPopupCard = $state<Card | null>(null);
+	let currentUser = $state<{ id: string; email: string; displayName: string; isAdmin: boolean } | null>(null);
+
+	function openCardPopup(card: Card) {
+		selectedPopupCard = card;
+	}
+
+	function closeCardPopup() {
+		selectedPopupCard = null;
+	}
 
 	$effect(() => {
 		if (!browser) return;
@@ -42,6 +54,7 @@
 		try {
 			const res = await fetch('/api/auth/session');
 			const session = await res.json().catch(() => ({}));
+			currentUser = session.user || null;
 			if (session.user) {
 				const colRes = await fetch('/api/collection');
 				const colData = await colRes.json().catch(() => ({}));
@@ -74,10 +87,63 @@
 	let actionNotice = $state<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
 	function showActionNotice(message: string, type: 'success' | 'error' | 'info' = 'info') {
-		actionNotice = { message, type };
+		actionNotice = null;
 		window.setTimeout(() => {
-			if (actionNotice?.message === message) actionNotice = null;
-		}, 2600);
+			actionNotice = { message, type };
+		}, 0);
+	}
+
+	async function toggleDeckHidden() {
+		if (!selectedDeck?.onlineId) return;
+		try {
+			const nextHidden = !selectedDeck.hidden;
+			const res = await fetch('/api/decks', {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ deckId: selectedDeck.id, hidden: nextHidden })
+			});
+			if (!res.ok) throw new Error('Failed to update deck');
+			showActionNotice(nextHidden ? 'ซ่อนเด็คสำเร็จ' : 'แสดงเด็คสำเร็จ', 'success');
+			if (browser) {
+				window.location.reload();
+			}
+		} catch (err) {
+			console.error(err);
+			showActionNotice('เกิดข้อผิดพลาด', 'error');
+		}
+	}
+
+	async function deleteDeckAdmin() {
+		if (!selectedDeck?.onlineId) return;
+		if (!confirm('ยืนยันที่จะลบเด็คนี้ใช่หรือไม่?')) return;
+		try {
+			const res = await fetch(`/api/decks?deckId=${selectedDeck.id}`, {
+				method: 'DELETE'
+			});
+			if (!res.ok) throw new Error('Failed to delete deck');
+			showActionNotice('ลบเด็คสำเร็จ', 'success');
+			goto('/deck');
+		} catch (err) {
+			console.error(err);
+			showActionNotice('เกิดข้อผิดพลาด', 'error');
+		}
+	}
+
+	async function banOwner() {
+		if (!selectedDeck?.owner?.id) return;
+		if (!confirm(`ยืนยันที่จะแบนผู้ใช้ ${selectedDeck.owner.displayName} หรือไม่?`)) return;
+		try {
+			const res = await fetch('/api/admin/ban', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ userId: selectedDeck.owner.id, action: 'ban' })
+			});
+			if (!res.ok) throw new Error('Failed to ban user');
+			showActionNotice('แบนผู้ใช้สำเร็จและตัดการเชื่อมต่อแล้ว', 'success');
+		} catch (err) {
+			console.error(err);
+			showActionNotice('เกิดข้อผิดพลาด', 'error');
+		}
 	}
 
 	let collectionStats = $derived.by(() => {
@@ -100,7 +166,7 @@
 			if (!card) continue;
 
 			requiredTotal += entry.quantity;
-			const owned = userCardCollection[card.code] ?? 0;
+			const owned = (userCardCollection[card.code] ?? 0) + (userCardCollection[card.code + '_foil'] ?? 0);
 			ownedTotal += Math.min(entry.quantity, owned);
 
 			if (owned < entry.quantity) {
@@ -209,6 +275,9 @@
 							</h1>
 							<p class="rt-copy mt-3 text-sm">
 								Updated {new Date(selectedDeck.updatedAt).toLocaleDateString()} · {stats.total} cards
+								{#if selectedDeck.owner}
+									· Creator: <a href="/profile/{selectedDeck.owner.profileSlug}" class="font-bold text-cyan-300 hover:underline">{selectedDeck.owner.displayName}</a>
+								{/if}
 							</p>
 							{#if isLocal && (selectedDeck.source !== 'online' || !selectedDeck.onlineId)}
 								<div class="mt-4 rounded-lg border border-amber-300/20 bg-amber-400/5 p-3.5 text-xs text-amber-200">
@@ -224,6 +293,12 @@
 								</div>
 							{:else if selectedDeck.onlineId}
 								<div class="mt-4 flex flex-wrap gap-2">
+									{#if selectedDeck.hidden}
+										<span class="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-black text-rose-300 uppercase tracking-widest">
+											<span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>
+											Hidden (ซ่อนโดย Admin)
+										</span>
+									{/if}
 									{#if selectedDeck.visibility === 'public'}
 										<span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black text-emerald-300 uppercase tracking-widest">
 											<span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -263,22 +338,40 @@
 							{:else}
 								<button onclick={cloneDeckToLocal} class="rt-action cursor-pointer">Copy to My Decks</button>
 							{/if}
+							{#if currentUser?.isAdmin && selectedDeck.onlineId}
+								<button
+									onclick={toggleDeckHidden}
+									class="inline-flex min-h-11 items-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 text-xs font-black tracking-widest text-amber-200 uppercase transition hover:bg-amber-500/20 cursor-pointer"
+								>
+									{selectedDeck.hidden ? 'Unhide Deck' : 'Hide Deck'}
+								</button>
+								<button
+									onclick={deleteDeckAdmin}
+									class="inline-flex min-h-11 items-center rounded-lg border border-red-500/20 bg-red-500/10 px-4 text-xs font-black tracking-widest text-red-200 uppercase transition hover:bg-red-500/20 cursor-pointer"
+								>
+									Delete Deck (Admin)
+								</button>
+								{#if selectedDeck.owner?.id}
+									<button
+										onclick={banOwner}
+										class="inline-flex min-h-11 items-center rounded-lg border border-rose-600/20 bg-rose-600/10 px-4 text-xs font-black tracking-widest text-rose-200 uppercase transition hover:bg-rose-600/20 cursor-pointer"
+									>
+										Ban Owner
+									</button>
+								{/if}
+							{/if}
 						</div>
 					</div>
 				</div>
 			</header>
 
 			{#if actionNotice}
-				<div
-					class="animate-in fade-in slide-in-from-top-4 fixed top-20 right-4 z-[300] flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-black uppercase tracking-wider shadow-2xl backdrop-blur-xl duration-150
-					{actionNotice.type === 'success'
-						? 'border-emerald-300/20 bg-emerald-950/90 text-emerald-300'
-						: actionNotice.type === 'error'
-							? 'border-rose-300/20 bg-rose-950/90 text-rose-300'
-							: 'border-cyan-300/20 bg-cyan-950/90 text-cyan-300'}"
-				>
-					{actionNotice.message}
-				</div>
+				<Toast
+					show={true}
+					message={actionNotice.message}
+					type={actionNotice.type}
+					onclose={() => actionNotice = null}
+				/>
 			{/if}
 
 			{#if collectionStats && collectionStats.missingCount > 0}
@@ -458,43 +551,47 @@
 		{#each items as item}
 			{@const owned = userCardCollection[item.card.code] ?? 0}
 			{@const isMissing = Object.keys(userCardCollection).length > 0 && owned < item.quantity}
+			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<article
 				class={horizontal
-					? `group grid min-h-32 grid-cols-[8.5rem_1fr] gap-3 rounded-lg border p-2 transition hover:border-cyan-300/35 sm:grid-cols-[10.5rem_1fr] ${isMissing ? 'border-amber-500/30 bg-slate-950/80 shadow-[inset_0_0_12px_rgba(245,158,11,0.03)]' : 'border-white/10 bg-slate-950/70'}`
-					: `group min-w-0 rounded-lg border p-2 transition hover:border-cyan-300/35 ${isMissing ? 'border-amber-500/30 bg-slate-950/80 shadow-[inset_0_0_12px_rgba(245,158,11,0.03)]' : 'border-white/10 bg-slate-950/70'}`}
+					? `group grid min-h-32 grid-cols-[8.5rem_1fr] gap-3 rounded-lg border p-2 transition hover:border-cyan-300/35 sm:grid-cols-[10.5rem_1fr] cursor-pointer hover:scale-[1.01] ${isMissing ? 'border-amber-500/30 bg-slate-950/80 shadow-[inset_0_0_12px_rgba(245,158,11,0.03)]' : 'border-white/10 bg-slate-950/70'}`
+					: `group min-w-0 rounded-lg border p-2 transition hover:border-cyan-300/35 cursor-pointer hover:scale-[1.01] ${isMissing ? 'border-amber-500/30 bg-slate-950/80 shadow-[inset_0_0_12px_rgba(245,158,11,0.03)]' : 'border-white/10 bg-slate-950/70'}`}
+				onclick={() => openCardPopup(item.card)}
 			>
 				<div class="relative overflow-hidden rounded-md bg-slate-950">
 					{#if item.card.image_url}
 						<img
 							src={getCardImageUrl(item.card.image_url, 260, 'webp')}
-							class={horizontal
+							class="{horizontal
 								? 'aspect-[1039/744] h-full w-full object-contain'
-								: 'aspect-[744/1039] w-full object-contain'}
-							style={!horizontal && item.card.name_en === 'Baron Pit'
-								? 'transform: rotate(90deg) scale(1.4);'
-								: ''}
+								: 'aspect-[744/1039] w-full object-contain'} {!horizontal && item.card.type === 'Battlefield' ? 'battlefield-rotated' : ''}"
 							alt={item.card.name_en}
 							loading="lazy"
 						/>
 					{/if}
-					<div
-						class="absolute top-2 right-2 rounded-md bg-cyan-300 px-2 py-1 text-xs font-black text-slate-950 shadow-lg"
-					>
-						x{item.quantity}
-					</div>
-					{#if Object.keys(userCardCollection).length > 0}
+					<div class="absolute top-2 left-2 right-2 z-10 flex items-center justify-between gap-1">
+						{#if Object.keys(userCardCollection).length > 0}
+							<div
+								class="rounded-md px-1.5 py-0.5 text-[9px] font-black tracking-wider uppercase shadow-md backdrop-blur border
+								{owned >= item.quantity
+									? 'bg-emerald-500/80 border-emerald-400 text-white'
+									: owned > 0
+										? 'bg-amber-500/80 border-amber-400 text-white'
+										: 'bg-rose-500/80 border-rose-400 text-white'}"
+								title="Owned: {owned} / {item.quantity}"
+							>
+								<span class="hidden sm:inline">Owned: </span>{owned}/{item.quantity}
+							</div>
+						{:else}
+							<div></div>
+						{/if}
 						<div
-							class="absolute bottom-2 left-2 rounded-md px-1.5 py-0.5 text-[9px] font-black tracking-wider uppercase shadow-md backdrop-blur border
-							{owned >= item.quantity
-								? 'bg-emerald-500/80 border-emerald-400 text-white'
-								: owned > 0
-									? 'bg-amber-500/80 border-amber-400 text-white'
-									: 'bg-rose-500/80 border-rose-400 text-white'}"
-							title="Owned: {owned} / {item.quantity}"
+							class="rounded-md bg-cyan-300 px-1.5 py-0.5 text-[10px] font-black text-slate-950 shadow-lg"
 						>
-							Owned: {owned}/{item.quantity}
+							x{item.quantity}
 						</div>
-					{/if}
+					</div>
 				</div>
 				<div class={horizontal ? 'min-w-0 self-center py-1 pr-1' : 'min-w-0 px-1 pt-2 pb-1'}>
 					<div class="truncate text-sm font-black text-white uppercase italic">
@@ -532,3 +629,7 @@
 		{/each}
 	</div>
 {/snippet}
+
+{#if selectedPopupCard}
+	<CardModal card={selectedPopupCard} closePopup={closeCardPopup} canEdit={false} />
+{/if}

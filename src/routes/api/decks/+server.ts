@@ -8,7 +8,10 @@ import {
 	listUserDecks,
 	setUserDeckVisibility,
 	upsertUserDeck,
-	getUserLikedDeckIds
+	getUserLikedDeckIds,
+	adminDeleteDeck,
+	adminSetDeckHidden,
+	adminSetDeckVisibility
 } from '$lib/server/decks';
 import { normalizeDeck, type StoredDeck } from '$lib/utils/deck';
 
@@ -20,8 +23,12 @@ export const GET = async ({ cookies, url }) => {
 		const deck = await getDeckById(deckId);
 		if (!deck) return json({ error: 'deck not found' }, { status: 404 });
 
+		if (deck.hidden && (!user || (!user.isAdmin && user.id !== deck.owner?.id))) {
+			return json({ error: 'access denied (moderated)' }, { status: 403 });
+		}
+
 		if (deck.visibility !== 'public' && deck.visibility !== 'unlisted') {
-			if (!user || user.id !== deck.owner?.id) {
+			if (!user || (!user.isAdmin && user.id !== deck.owner?.id)) {
 				return json({ error: 'access denied' }, { status: 403 });
 			}
 		}
@@ -87,11 +94,31 @@ export const PATCH = async ({ cookies, request }) => {
 
 	const body = await request.json().catch(() => null);
 	const deckId = typeof body?.deckId === 'string' ? body.deckId.trim() : '';
-	const visibility = body?.visibility === 'public' ? 'public' : body?.visibility === 'private' ? 'private' : '';
-	if (!deckId || !visibility) return json({ error: 'invalid visibility update' }, { status: 400 });
+	if (!deckId) return json({ error: 'deckId required' }, { status: 400 });
 
-	const deck = await setUserDeckVisibility(user.id, deckId, visibility);
-	return json({ deck });
+	const deck = await getDeckById(deckId);
+	if (!deck) return json({ error: 'deck not found' }, { status: 404 });
+
+	if (user.isAdmin) {
+		let updatedDeck = deck;
+		if (typeof body.hidden === 'boolean') {
+			updatedDeck = await adminSetDeckHidden(deck.onlineId!, body.hidden);
+		}
+		if (body.visibility === 'public' || body.visibility === 'private' || body.visibility === 'unlisted') {
+			updatedDeck = await adminSetDeckVisibility(deck.onlineId!, body.visibility);
+		}
+		return json({ deck: updatedDeck });
+	}
+
+	if (user.id !== deck.owner?.id) {
+		return json({ error: 'access denied' }, { status: 403 });
+	}
+
+	const visibility = body?.visibility === 'public' ? 'public' : body?.visibility === 'private' ? 'private' : '';
+	if (!visibility) return json({ error: 'invalid visibility update' }, { status: 400 });
+
+	const updatedDeck = await setUserDeckVisibility(user.id, deckId, visibility);
+	return json({ deck: updatedDeck });
 };
 
 export const DELETE = async ({ cookies, url }) => {
@@ -100,6 +127,18 @@ export const DELETE = async ({ cookies, url }) => {
 
 	const deckId = url.searchParams.get('deckId')?.trim() ?? '';
 	if (!deckId) return json({ error: 'deckId required' }, { status: 400 });
+
+	const deck = await getDeckById(deckId);
+	if (!deck) return json({ error: 'deck not found' }, { status: 404 });
+
+	if (user.isAdmin) {
+		await adminDeleteDeck(deck.onlineId!);
+		return json({ ok: true });
+	}
+
+	if (user.id !== deck.owner?.id) {
+		return json({ error: 'access denied' }, { status: 403 });
+	}
 
 	await deleteUserDeck(user.id, deckId);
 	return json({ ok: true });

@@ -6,7 +6,14 @@ import { getChatUsage } from '$lib/server/rag/supabase';
 
 export const GET = async ({ cookies }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ user: null });
+	if (!user) {
+		const isBannedNotice = cookies.get('riftthai_banned_notice');
+		if (isBannedNotice) {
+			cookies.delete('riftthai_banned_notice', { path: '/' });
+			return json({ user: null, error: 'banned' });
+		}
+		return json({ user: null });
+	}
 
 	const config = getRagConfig();
 	const used = user.isAdmin ? 0 : await getChatUsage(user.id);

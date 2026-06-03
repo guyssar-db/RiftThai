@@ -530,19 +530,17 @@
 									<span>{card.rarity || 'No Rarity'}</span>
 								</div>
 
-								<div
-									class="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black tracking-widest text-white uppercase"
-								>
-									<span class="text-[9px] text-slate-500">Energy</span>
-									{#if card.energy !== null}
+								{#if card.energy !== null}
+									<div
+										class="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black tracking-widest text-white uppercase"
+									>
+										<span class="text-[9px] text-slate-500">Energy</span>
 										<span
 											class="grid h-6 min-w-6 place-items-center rounded-full bg-white px-1 text-xs text-slate-950"
 											>{card.energy}</span
 										>
-									{:else}
-										<span class="text-slate-500">-</span>
-									{/if}
-								</div>
+									</div>
+								{/if}
 
 								{#if card.power !== null}
 									<div

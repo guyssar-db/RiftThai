@@ -179,6 +179,18 @@
 					</button>
 					{#if accountOpen}
 						<div class="mt-1 space-y-1 rounded-lg border border-white/10 bg-slate-950/70 p-1">
+							{#if currentUser.isAdmin}
+								<a
+									href="/admin"
+									class="flex min-h-11 items-center rounded-md px-3 text-xs font-black tracking-widest text-cyan-300 uppercase transition hover:bg-white/5 hover:text-cyan-100"
+									onclick={() => {
+										isOpen = false;
+										accountOpen = false;
+									}}
+								>
+									Admin Panel
+								</a>
+							{/if}
 							<a
 								href="/profile/{currentUser.profileSlug}"
 								class="flex min-h-11 items-center rounded-md px-3 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"

@@ -65,7 +65,7 @@
 							alt={card.name_en}
 							loading="lazy"
 							decoding="async"
-							class="h-full w-full object-cover transition duration-500 group-hover:scale-105 {card.type?.includes('Battlefield') ? 'battlefield-rotated' : ''}"
+							class="h-full w-full object-cover transition duration-500 {card.type?.includes('Battlefield') ? 'battlefield-rotated' : 'group-hover:scale-105'}"
 						/>
 					{:else}
 						<div class="px-3 text-center text-[10px] font-black uppercase tracking-widest text-slate-600">
@@ -84,15 +84,20 @@
 					</div>
 
 					{#if userCollection && Object.keys(userCollection).length > 0}
-						{@const owned = userCollection[card.code] ?? 0}
+						{@const ownedNormal = userCollection[card.code] ?? 0}
+						{@const ownedFoil = userCollection[card.code + '_foil'] ?? 0}
+						{@const owned = ownedNormal + ownedFoil}
 						<div
-							class="absolute left-3 bottom-3 rounded-md px-1.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase shadow-md backdrop-blur border z-10
+							class="absolute left-3 bottom-3 rounded-md px-1.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase shadow-md backdrop-blur border z-10 flex gap-1 items-center
 							{owned > 0
 								? 'bg-cyan-500/80 border-cyan-400 text-white shadow-[0_0_8px_rgba(34,211,238,0.4)]'
 								: 'bg-slate-950/90 border-white/5 text-slate-500'}"
-							title="Owned: {owned}"
+							title="Owned: {ownedNormal} Normal, {ownedFoil} Foil"
 						>
-							Own: {owned}
+							<span>Own: {owned}</span>
+							{#if ownedFoil > 0}
+								<span class="rounded bg-pink-500 text-white text-[8px] px-0.5 font-black uppercase">F</span>
+							{/if}
 						</div>
 					{/if}
 

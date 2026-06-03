@@ -242,6 +242,16 @@
 			</button>
 			{#if accountOpen}
 				<div class="space-y-1 rounded-xl border border-white/10 bg-slate-950/70 p-1.5">
+					{#if currentUser.isAdmin}
+						<a
+							href="/admin"
+							class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-cyan-300 uppercase transition hover:bg-white/8 hover:text-cyan-100 xl:justify-start xl:px-3"
+							aria-label="Admin Panel"
+							title="Admin Panel"
+						>
+							Admin Panel
+						</a>
+					{/if}
 					<a
 						href="/profile/{currentUser.profileSlug}"
 						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white xl:justify-start xl:px-3"

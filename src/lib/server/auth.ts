@@ -25,6 +25,7 @@ type AppUserRow = {
 	public_decks_visible: boolean | null;
 	default_deck_visibility: 'private' | 'public' | null;
 	default_export_layout: 'portrait' | 'landscape' | null;
+	banned?: boolean;
 	created_at: string;
 	updated_at: string;
 };
@@ -46,6 +47,7 @@ export type AuthUser = {
 	isAdmin: boolean;
 	role: 'user' | 'admin';
 	emailVerified: boolean;
+	banned: boolean;
 	createdAt: string;
 	settings: UserSettings;
 };
@@ -112,6 +114,7 @@ export async function loginUser(emailInput: string, password: string) {
 
 	const passwordOk = await verifyPassword(password, user.password_hash);
 	if (!passwordOk) throw new Error('Invalid email or password');
+	if (user.banned) throw new Error('บัญชีนี้ถูกระงับการใช้งาน');
 	if (!user.email_verified_at) throw new Error('Please verify your email before logging in');
 
 	const sessionToken = createToken();
@@ -187,7 +190,40 @@ export async function getAuthenticatedUser(cookies: Cookies): Promise<AuthUser |
 	}
 
 	const [user] = await authRequest<AppUserRow[]>(`/rest/v1/app_users?id=eq.${session.user_id}&select=*`);
-	if (!user || !user.email_verified_at) return null;
+	if (!user || !user.email_verified_at || user.banned) {
+		if (user?.banned) {
+			await deleteSession(sessionHash);
+			clearAuthCookies(cookies);
+			cookies.set('riftthai_banned_notice', '1', {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				secure: env.NODE_ENV === 'production',
+				maxAge: 10
+			});
+		}
+		return null;
+	}
+
+	// Rolling session & cookie renewal if less than 15 days remain
+	const remainingTime = new Date(session.expires_at).getTime() - Date.now();
+	const fifteenDays = 1000 * 60 * 60 * 24 * 15;
+	if (remainingTime < fifteenDays) {
+		const newExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
+		try {
+			await authRequest(`/rest/v1/user_sessions?id=eq.${session.id}`, {
+				method: 'PATCH',
+				headers: {
+					Prefer: 'return=minimal'
+				},
+				body: JSON.stringify({ expires_at: newExpiresAt })
+			});
+			setSessionCookie(cookies, token, newExpiresAt);
+		} catch (e) {
+			console.error('Failed to extend session token:', e);
+		}
+	}
+
 	return toAuthUser(user);
 }
 
@@ -337,6 +373,7 @@ function toAuthUser(user: AppUserRow): AuthUser {
 		isAdmin: admin,
 		role: admin ? 'admin' : 'user',
 		emailVerified: Boolean(user.email_verified_at),
+		banned: Boolean(user.banned),
 		createdAt: user.created_at,
 		settings: getUserSettings(user)
 	};
@@ -557,4 +594,29 @@ async function authRequest<T = unknown>(path: string, init: RequestInit = {}) {
 	if (response.status === 204) return undefined as T;
 	const text = await response.text();
 	return text ? (JSON.parse(text) as T) : (undefined as T);
+}
+
+export async function banUser(userId: string) {
+	await authRequest(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}`, {
+		method: 'PATCH',
+		headers: {
+			Prefer: 'return=minimal'
+		},
+		body: JSON.stringify({ banned: true })
+	});
+
+	// Evict sessions from database immediately
+	await authRequest(`/rest/v1/user_sessions?user_id=eq.${encodeURIComponent(userId)}`, {
+		method: 'DELETE'
+	});
+}
+
+export async function unbanUser(userId: string) {
+	await authRequest(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}`, {
+		method: 'PATCH',
+		headers: {
+			Prefer: 'return=minimal'
+		},
+		body: JSON.stringify({ banned: false })
+	});
 }

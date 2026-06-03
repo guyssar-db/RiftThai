@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
+	import Modal from '$lib/components/ui/Modal.svelte';
 	import type { Card } from '$lib/types/card';
 	import {
 		parseAnswerText,
@@ -57,6 +61,7 @@
 	let loginEmail = $state('');
 	let loginPassword = $state('');
 	let confirmPassword = $state('');
+	let loginDisplayName = $state('');
 	let loginError = $state('');
 	let authMode = $state<'login' | 'register'>('login');
 	let registerSent = $state(false);
@@ -126,7 +131,8 @@
 					},
 					body: JSON.stringify({
 						email: loginEmail,
-						password: loginPassword
+						password: loginPassword,
+						displayName: authMode === 'register' ? loginDisplayName : undefined
 					})
 				}
 			);
@@ -136,6 +142,7 @@
 				registerSent = true;
 				loginPassword = '';
 				confirmPassword = '';
+				loginDisplayName = '';
 				return;
 			}
 			if (!data.user) throw new Error(data.error || 'Login failed');
@@ -144,6 +151,7 @@
 			window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 			loginPassword = '';
 			confirmPassword = '';
+			loginDisplayName = '';
 		} catch (error) {
 			loginError = error instanceof Error ? error.message : 'Auth failed';
 		} finally {
@@ -251,224 +259,193 @@
 	}
 </script>
 
-{#if authModalOpen}
-	<div class="fixed inset-0 z-[950] grid place-items-center bg-black/75 p-4 backdrop-blur-sm">
-		<div class="rt-panel w-full max-w-sm overflow-hidden rounded-xl shadow-2xl shadow-black/50">
-			<div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
-				<div>
-					<div class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">Account</div>
-					<div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-						{authMode === 'login' ? 'Login to use RAG chat' : 'Create RiftThai account'}
-					</div>
-				</div>
-				<button
-					type="button"
-					class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5"
-					aria-label="Close account popup"
-					onclick={() => (authModalOpen = false)}
-				>
+<Modal bind:open={authModalOpen} title="Account" subtitle={authMode === 'login' ? 'Login to use RAG chat' : 'Create RiftThai account'}>
+	<form
+		class="space-y-3"
+		onsubmit={(event) => {
+			event.preventDefault();
+			login();
+		}}
+	>
+		<div class="grid grid-cols-2 rounded-lg border border-white/10 bg-slate-900 p-1">
+			<button
+				type="button"
+				class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
+				'login'
+					? 'bg-cyan-300 text-slate-950'
+					: 'text-slate-500'} cursor-pointer"
+				onclick={() => {
+					authMode = 'login';
+					loginError = '';
+					registerSent = false;
+					confirmPassword = '';
+					loginDisplayName = '';
+				}}
+			>
+				Login
+			</button>
+			<button
+				type="button"
+				class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
+				'register'
+					? 'bg-cyan-300 text-slate-950'
+					: 'text-slate-500'} cursor-pointer"
+				onclick={() => {
+					authMode = 'register';
+					loginError = '';
+					registerSent = false;
+					loginDisplayName = '';
+				}}
+			>
+				Register
+			</button>
+		</div>
+		{#if registerSent}
+			<div
+				class="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200"
+			>
+				Check your email and click the verification link before logging in.
+			</div>
+		{/if}
+		{#if authMode === 'register'}
+			<Input
+				bind:value={loginDisplayName}
+				autocomplete="name"
+				placeholder="Display Name"
+				required
+			/>
+		{/if}
+		<Input
+			bind:value={loginEmail}
+			type="email"
+			autocomplete="email"
+			placeholder="Email"
+			required
+		/>
+		<div class="relative">
+			<Input
+				bind:value={loginPassword}
+				type={showPassword ? 'text' : 'password'}
+				autocomplete={authMode === 'register' ? 'new-password' : 'current-password'}
+				placeholder="Password"
+				required
+			/>
+			<button
+				type="button"
+				class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200 cursor-pointer"
+				aria-label={showPassword ? 'Hide password' : 'Show password'}
+				title={showPassword ? 'Hide password' : 'Show password'}
+				onclick={() => (showPassword = !showPassword)}
+			>
+				{#if showPassword}
 					<svg
 						class="h-4 w-4"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
-						stroke-width="3"
+						stroke-width="2.6"
 						stroke-linecap="round"
+						stroke-linejoin="round"
 					>
-						<path d="M6 18 18 6" />
-						<path d="m6 6 12 12" />
+						<path d="M3 3l18 18" />
+						<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+						<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
+						<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
 					</svg>
+				{:else}
+					<svg
+						class="h-4 w-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.6"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+						<circle cx="12" cy="12" r="3" />
+					</svg>
+				{/if}
+			</button>
+		</div>
+		{#if authMode === 'register'}
+			<div class="relative">
+				<Input
+					bind:value={confirmPassword}
+					type={showConfirmPassword ? 'text' : 'password'}
+					autocomplete="new-password"
+					placeholder="Confirm password"
+					required
+				/>
+				<button
+					type="button"
+					class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200 cursor-pointer"
+					aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+					title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+					onclick={() => (showConfirmPassword = !showConfirmPassword)}
+				>
+					{#if showConfirmPassword}
+						<svg
+							class="h-4 w-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.6"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M3 3l18 18" />
+							<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+							<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
+							<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
+						</svg>
+					{:else}
+						<svg
+							class="h-4 w-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.6"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+							<circle cx="12" cy="12" r="3" />
+						</svg>
+					{/if}
 				</button>
 			</div>
-
-			<form
-				class="space-y-3 p-4"
-				onsubmit={(event) => {
-					event.preventDefault();
-					login();
-				}}
+		{/if}
+		{#if loginError}
+			<div
+				class="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200"
 			>
-				<div class="grid grid-cols-2 rounded-lg border border-white/10 bg-slate-900 p-1">
-					<button
-						type="button"
-						class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
-						'login'
-							? 'bg-cyan-300 text-slate-950'
-							: 'text-slate-500'}"
-						onclick={() => {
-							authMode = 'login';
-							loginError = '';
-							registerSent = false;
-							confirmPassword = '';
-						}}
-					>
-						Login
-					</button>
-					<button
-						type="button"
-						class="rounded-lg px-3 py-2 text-xs font-black tracking-widest uppercase {authMode ===
-						'register'
-							? 'bg-cyan-300 text-slate-950'
-							: 'text-slate-500'}"
-						onclick={() => {
-							authMode = 'register';
-							loginError = '';
-							registerSent = false;
-						}}
-					>
-						Register
-					</button>
-				</div>
-				{#if registerSent}
-					<div
-						class="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200"
-					>
-						Check your email and click the verification link before logging in.
-					</div>
-				{/if}
-				<input
-					bind:value={loginEmail}
-					type="email"
-					autocomplete="email"
-					class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-					placeholder="Email"
-				/>
-				<div class="relative">
-					<input
-						bind:value={loginPassword}
-						type={showPassword ? 'text' : 'password'}
-						autocomplete={authMode === 'register' ? 'new-password' : 'current-password'}
-						class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 pr-12 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-						placeholder="Password"
-					/>
-					<button
-						type="button"
-						class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200"
-						aria-label={showPassword ? 'Hide password' : 'Show password'}
-						title={showPassword ? 'Hide password' : 'Show password'}
-						onclick={() => (showPassword = !showPassword)}
-					>
-						{#if showPassword}
-							<svg
-								class="h-4 w-4"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2.6"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M3 3l18 18" />
-								<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-								<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
-								<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
-							</svg>
-						{:else}
-							<svg
-								class="h-4 w-4"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2.6"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
-								<circle cx="12" cy="12" r="3" />
-							</svg>
-						{/if}
-					</button>
-				</div>
-				{#if authMode === 'register'}
-					<div class="relative">
-						<input
-							bind:value={confirmPassword}
-							type={showConfirmPassword ? 'text' : 'password'}
-							autocomplete="new-password"
-							class="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 pr-12 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-							placeholder="Confirm password"
-						/>
-						<button
-							type="button"
-							class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200"
-							aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-							title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-							onclick={() => (showConfirmPassword = !showConfirmPassword)}
-						>
-							{#if showConfirmPassword}
-								<svg
-									class="h-4 w-4"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2.6"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M3 3l18 18" />
-									<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-									<path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 5 10 8a13.2 13.2 0 0 1-3.1 4.5" />
-									<path d="M6.1 6.1A13.2 13.2 0 0 0 2 12c1 3 5 8 10 8a10.9 10.9 0 0 0 4.1-.8" />
-								</svg>
-							{:else}
-								<svg
-									class="h-4 w-4"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2.6"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
-									<circle cx="12" cy="12" r="3" />
-								</svg>
-							{/if}
-						</button>
-					</div>
-				{/if}
-				{#if loginError}
-					<div
-						class="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200"
-					>
-						{loginError}
-					</div>
-				{/if}
-				<button
-					type="submit"
-					class="h-11 w-full rounded-lg bg-cyan-300 text-sm font-black tracking-widest text-slate-950 uppercase transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
-					disabled={authLoading ||
-						(authMode === 'register' &&
-							(!acceptedTerms || !loginPassword || loginPassword !== confirmPassword))}
+				{loginError}
+			</div>
+		{/if}
+		<Button
+			type="submit"
+			class="h-11 w-full"
+			disabled={authLoading ||
+				(authMode === 'register' &&
+					(!acceptedTerms || !loginPassword || loginPassword !== confirmPassword))}
+		>
+			{authMode === 'login' ? 'Login' : 'Create account'}
+		</Button>
+		{#if authMode === 'register'}
+			<Checkbox bind:checked={acceptedTerms} required>
+				ฉันอ่านและยอมรับ
+				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy" target="_blank" rel="noopener noreferrer"
+					>นโยบายความเป็นส่วนตัว</a
 				>
-					{authMode === 'login' ? 'Login' : 'Create account'}
-				</button>
-				{#if authMode === 'register'}
-					<label
-						class="flex gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-[11px] leading-relaxed font-semibold text-slate-500"
-					>
-						<input
-							bind:checked={acceptedTerms}
-							type="checkbox"
-							class="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-slate-950 accent-cyan-300"
-							required
-						/>
-						<span>
-							ฉันอ่านและยอมรับ
-							<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy"
-								>นโยบายความเป็นส่วนตัว</a
-							>
-							และ
-							<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms"
-								>ข้อกำหนดการใช้งาน</a
-							>
-						</span>
-					</label>
-				{/if}
-			</form>
-		</div>
-	</div>
-{/if}
+				และ
+				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms" target="_blank" rel="noopener noreferrer"
+					>ข้อกำหนดการใช้งาน</a
+				>
+			</Checkbox>
+		{/if}
+	</form>
+</Modal>
 
 <div
 	class="fixed z-[900] font-sans {isHomePage

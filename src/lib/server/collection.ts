@@ -42,7 +42,7 @@ export async function updateUserCollectionQuantity(
 		);
 	} else {
 		// Upsert
-		await collectionRequest('/rest/v1/user_collections', {
+		await collectionRequest('/rest/v1/user_collections?on_conflict=user_id,card_code', {
 			method: 'POST',
 			headers: {
 				Prefer: 'resolution=merge-duplicates,return=minimal'
@@ -53,6 +53,57 @@ export async function updateUserCollectionQuantity(
 				quantity: qty,
 				updated_at: new Date().toISOString()
 			})
+		});
+	}
+}
+
+export async function clearUserCollection(userId: string): Promise<void> {
+	await collectionRequest(
+		`/rest/v1/user_collections?user_id=eq.${encodeURIComponent(userId)}`,
+		{
+			method: 'DELETE',
+			headers: {
+				Prefer: 'return=minimal'
+			}
+		}
+	);
+}
+
+export async function batchUpsertUserCollection(
+	userId: string,
+	entries: { cardCode: string; quantity: number }[]
+): Promise<void> {
+	if (entries.length === 0) return;
+
+	const upserts = entries.filter((e) => e.quantity > 0).map((entry) => ({
+		user_id: userId,
+		card_code: entry.cardCode.toUpperCase(),
+		quantity: entry.quantity,
+		updated_at: new Date().toISOString()
+	}));
+
+	const deletes = entries.filter((e) => e.quantity === 0).map((entry) => entry.cardCode.toUpperCase());
+
+	if (deletes.length > 0) {
+		const formattedCodes = deletes.map((c) => `"${c}"`).join(',');
+		await collectionRequest(
+			`/rest/v1/user_collections?user_id=eq.${encodeURIComponent(userId)}&card_code=in.(${encodeURIComponent(formattedCodes)})`,
+			{
+				method: 'DELETE',
+				headers: {
+					Prefer: 'return=minimal'
+				}
+			}
+		);
+	}
+
+	if (upserts.length > 0) {
+		await collectionRequest('/rest/v1/user_collections?on_conflict=user_id,card_code', {
+			method: 'POST',
+			headers: {
+				Prefer: 'resolution=merge-duplicates,return=minimal'
+			},
+			body: JSON.stringify(upserts)
 		});
 	}
 }

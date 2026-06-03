@@ -12,6 +12,9 @@
 	import TurnPhasesSection from '$lib/components/TurnPhasesSection.svelte';
 	import { keywords } from '$lib/data/keywords';
 	import type { Card } from '$lib/types/card';
+	import { getCardImageUrl } from '$lib/utils/cardImages';
+	import { getDomainIcon } from '$lib/data/domainIcons';
+	import { buildDeckCards, getDeckZones, getChampionCard, type StoredDeck } from '$lib/utils/deck';
 
 	let { data } = $props();
 
@@ -26,6 +29,53 @@
 	let selectedPopupCard = $state<Card | null>(null);
 	let isFiltering = $state(false);
 	let userCollection = $state<Record<string, number> | null>(null);
+	let trendingDecks = $state<StoredDeck[]>([]);
+	let loadingTrending = $state(false);
+
+	async function loadTrendingDecks() {
+		loadingTrending = true;
+		try {
+			const res = await fetch('/api/decks?scope=public&sort=popular');
+			if (res.ok) {
+				const resData = await res.json();
+				trendingDecks = (resData.decks || []).slice(0, 8);
+			}
+		} catch (err) {
+			console.error('Failed to load trending decks:', err);
+		} finally {
+			loadingTrending = false;
+		}
+	}
+
+	function getTrendingDeckSummary(deck: StoredDeck) {
+		const deckCards = buildDeckCards(cards, deck.entries);
+		const champion = getChampionCard(cards, deck.championCode);
+		const legend = getDeckZones(deckCards).legends[0];
+		
+		const domains: Record<string, number> = {};
+		for (const item of deckCards) {
+			for (const d of item.card.domains ?? []) {
+				if (d !== 'Colorless') {
+					domains[d] = (domains[d] ?? 0) + item.quantity;
+				}
+			}
+		}
+		const sortedDomains = Object.entries(domains).sort((a, b) => b[1] - a[1]);
+		const primaryDomain = sortedDomains[0]?.[0] || 'Colorless';
+		const domainsList = sortedDomains.map(([label, count]) => ({ label, count }));
+
+		return {
+			coverCard: legend?.card ?? champion ?? null,
+			primaryDomain,
+			domains: domainsList,
+			cardCount: deckCards.reduce((acc, c) => acc + c.quantity, 0)
+		};
+	}
+
+	$effect(() => {
+		if (!browser) return;
+		void loadTrendingDecks();
+	});
 
 	$effect(() => {
 		const currentUrl = new URL(window.location.href);
@@ -242,6 +292,103 @@
 					</div>
 				</div>
 			</header>
+
+			{#if trendingDecks.length > 0}
+				<section class="rt-panel mb-6 rounded-xl p-5 relative overflow-hidden">
+					<div class="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-cyan-300/5 blur-3xl"></div>
+					<div class="mb-4 flex items-center justify-between">
+						<div>
+							<p class="rt-kicker">Trending Decks</p>
+							<h2 class="text-xl font-black text-white uppercase italic sm:text-2xl">
+								เด็คยอดนิยมจากชุมชน
+							</h2>
+						</div>
+						<a
+							href="/deck/browser"
+							class="text-xs font-black tracking-widest text-cyan-300 uppercase hover:text-cyan-100 transition"
+						>
+							ดูทั้งหมด (Browse All) &rarr;
+						</a>
+					</div>
+
+					<div class="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+						{#each trendingDecks as deck}
+							{@const summary = getTrendingDeckSummary(deck)}
+							<a
+								href="/deck/{deck.id}"
+								class="group relative flex w-72 flex-shrink-0 snap-start items-center gap-3.5 rounded-lg border border-white/5 bg-slate-950/50 p-3 transition-all duration-200 hover:border-cyan-300/25 hover:bg-slate-900/60 hover:scale-[1.01]"
+							>
+								<!-- Background Glow -->
+								<div class="absolute inset-0 -z-10 bg-gradient-to-br from-cyan-400/0 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+
+								<!-- Cover Image -->
+								<div class="relative w-16 aspect-[744/1039] shrink-0 overflow-hidden rounded bg-black/40 border border-white/10">
+									{#if summary.coverCard?.image_url}
+										<img
+											src={getCardImageUrl(summary.coverCard.image_url, 180, 'webp')}
+											class="h-full w-full object-contain transition duration-200 group-hover:scale-105"
+											alt={deck.name}
+											loading="lazy"
+										/>
+									{:else}
+										<div class="grid h-full w-full place-items-center text-[8px] font-black text-slate-600 uppercase">
+											No Cover
+										</div>
+									{/if}
+								</div>
+
+								<!-- Info -->
+								<div class="min-w-0 flex-1 flex flex-col justify-between h-full py-0.5">
+									<div>
+										<h3 class="truncate text-sm font-black text-white uppercase group-hover:text-cyan-300 transition">
+											{deck.name}
+										</h3>
+										<p class="mt-0.5 truncate text-[10px] font-bold text-slate-500 uppercase">
+											By {deck.owner?.profileHandle || 'Anonymous'}
+										</p>
+									</div>
+
+									<div class="mt-3 flex items-center justify-between gap-2">
+										<div class="flex items-center gap-1.5">
+											{#if summary.domains && summary.domains.length > 0}
+												<div class="flex -space-x-1">
+													{#each summary.domains as dom}
+														{#if getDomainIcon(dom.label)}
+															<img
+																src={getDomainIcon(dom.label)}
+																class="h-4.5 w-4.5 object-contain rounded-full bg-slate-950 ring-1 ring-white/10"
+																alt={dom.label}
+																title={dom.label}
+															/>
+														{/if}
+													{/each}
+												</div>
+											{:else if getDomainIcon(summary.primaryDomain)}
+												<img
+													src={getDomainIcon(summary.primaryDomain)}
+													class="h-4.5 w-4.5 object-contain"
+													alt={summary.primaryDomain}
+													title={summary.primaryDomain}
+												/>
+											{/if}
+											<span class="text-[9px] font-black tracking-widest text-slate-400 uppercase">
+												{summary.cardCount} Cards
+											</span>
+										</div>
+
+										<div class="flex items-center gap-1 text-pink-400 text-xs font-black">
+											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5">
+												<path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
+											</svg>
+											<span>{deck.likesCount ?? 0}</span>
+										</div>
+									</div>
+								</div>
+							</a>
+						{/each}
+					</div>
+				</section>
+			{/if}
 
 			<SearchBar
 				bind:searchTerm

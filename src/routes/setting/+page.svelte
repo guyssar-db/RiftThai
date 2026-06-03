@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
+	import Toast from '$lib/components/ui/Toast.svelte';
 
 	type UserSettings = {
 		profilePublic: boolean;
@@ -129,10 +130,10 @@
 	}
 
 	function showActionNotice(message: string, type: 'success' | 'error' | 'info' = 'info') {
-		actionNotice = { message, type };
+		actionNotice = null;
 		window.setTimeout(() => {
-			if (actionNotice?.message === message) actionNotice = null;
-		}, 2600);
+			actionNotice = { message, type };
+		}, 0);
 	}
 </script>
 
@@ -336,97 +337,12 @@
 	{/if}
 
 	{#if actionNotice}
-		<div
-			class="rt-toast fixed top-20 right-4 z-[970] w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-xl border bg-slate-950/95 text-slate-100 shadow-2xl shadow-black/55 backdrop-blur-xl sm:right-6 {actionNotice.type ===
-			'success'
-				? 'border-emerald-300/30 shadow-emerald-950/20'
-				: actionNotice.type === 'error'
-					? 'border-rose-300/30 shadow-rose-950/25'
-					: 'border-cyan-300/30 shadow-cyan-950/20'}"
-			role="status"
-			aria-live="polite"
-		>
-			<div
-				class="h-1 {actionNotice.type === 'success'
-					? 'bg-emerald-300'
-					: actionNotice.type === 'error'
-						? 'bg-rose-300'
-						: 'bg-cyan-300'}"
-			></div>
-			<div
-				class="rt-toast-progress {actionNotice.type === 'success'
-					? 'bg-emerald-300/80'
-					: actionNotice.type === 'error'
-						? 'bg-rose-300/80'
-						: 'bg-cyan-300/80'}"
-			></div>
-			<div class="flex items-start gap-3 p-4">
-				<div
-					class="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-lg border {actionNotice.type ===
-					'success'
-						? 'border-emerald-300/25 bg-emerald-300/12 text-emerald-100'
-						: actionNotice.type === 'error'
-							? 'border-rose-300/25 bg-rose-300/12 text-rose-100'
-							: 'border-cyan-300/25 bg-cyan-300/12 text-cyan-100'}"
-				>
-					<span
-						class="h-2.5 w-2.5 rounded-full {actionNotice.type === 'success'
-							? 'bg-emerald-300'
-							: actionNotice.type === 'error'
-								? 'bg-rose-300'
-								: 'bg-cyan-300'}"
-					></span>
-				</div>
-				<div class="min-w-0">
-					<div
-						class="text-[0.65rem] font-black tracking-[0.22em] uppercase {actionNotice.type ===
-						'success'
-							? 'text-emerald-200'
-							: actionNotice.type === 'error'
-								? 'text-rose-200'
-								: 'text-cyan-200'}"
-					>
-						{actionNotice.type === 'success'
-							? 'Success'
-							: actionNotice.type === 'error'
-								? 'Error'
-								: 'Notice'}
-					</div>
-					<div class="mt-1 text-sm leading-snug font-black text-white">{actionNotice.message}</div>
-				</div>
-			</div>
-		</div>
+		<Toast
+			show={true}
+			message={actionNotice.message}
+			type={actionNotice.type}
+			onclose={() => actionNotice = null}
+		/>
 	{/if}
 </div>
 
-<style>
-	.rt-toast {
-		animation: rt-toast-enter 220ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
-	}
-
-	.rt-toast-progress {
-		height: 2px;
-		transform-origin: left;
-		animation: rt-toast-progress 2600ms linear forwards;
-	}
-
-	@keyframes rt-toast-enter {
-		from {
-			opacity: 0;
-			transform: translate3d(18px, -10px, 0) scale(0.98);
-		}
-		to {
-			opacity: 1;
-			transform: translate3d(0, 0, 0) scale(1);
-		}
-	}
-
-	@keyframes rt-toast-progress {
-		from {
-			transform: scaleX(1);
-		}
-		to {
-			transform: scaleX(0);
-		}
-	}
-</style>
