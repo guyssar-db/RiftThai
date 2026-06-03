@@ -22,7 +22,7 @@
 	let query = $state('');
 	let selectedColor = $state('');
 	let selectedType = $state('All');
-	let selectedSet = $state('All');
+	let selectedSet = $state('');
 	let hideUnowned = $state(false);
 	let currentPage = $state(1);
 	const cardsPerPage = 40;
@@ -245,6 +245,36 @@
 		return { totalCards, uniqueOwned, totalOwned, percentUnique };
 	});
 
+	function getSetStats(setName: string) {
+		const setCards = setName === 'All' 
+			? cards 
+			: cards.filter(c => c.set_name === setName);
+		const totalCards = setCards.length;
+		let uniqueOwned = 0;
+		let totalOwned = 0;
+		for (const card of setCards) {
+			const countNormal = collection[card.code] ?? 0;
+			const countFoil = collection[card.code + '_foil'] ?? 0;
+			if (countNormal > 0 || countFoil > 0) {
+				uniqueOwned++;
+				totalOwned += countNormal + countFoil;
+			}
+		}
+		const percentUnique = totalCards > 0 ? Math.round((uniqueOwned / totalCards) * 100) : 0;
+		return { totalCards, uniqueOwned, totalOwned, percentUnique };
+	}
+
+	let setStatsSummary = $derived.by(() => {
+		return {
+			Origins: getSetStats('Origins'),
+			Spiritforged: getSetStats('Spiritforged'),
+			Unleashed: getSetStats('Unleashed'),
+			'Proving Grounds': getSetStats('Proving Grounds'),
+			All: getSetStats('All')
+		};
+	});
+
+
 	async function updateQuantity(cardCode: string, quantity: number) {
 		if (!currentUser) return;
 		const qty = Math.max(0, Math.min(9, quantity));
@@ -429,7 +459,181 @@
 					</button>
 				</div>
 			</section>
+		{:else if selectedSet === ''}
+			<!-- Set Selection Grid -->
+			<section class="space-y-6 max-w-7xl mx-auto py-2">
+				<header class="text-center py-6">
+					<h2 class="text-2xl font-black text-white uppercase italic tracking-wide">เลือกชุดการ์ดเพื่อจัดการสะสม</h2>
+					<p class="text-xs text-slate-400 mt-2">เลือกเซ็ตการ์ดด้านล่างเพื่อตรวจสอบ สถิติ และจัดการจำนวนการ์ดที่คุณสะสมไว้</p>
+				</header>
+
+				<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+					<!-- Origins Set -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'Origins'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-cyan-400/10 hover:border-cyan-400/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-6">
+							<img src="/images/Set/origins.webp" class="h-14 object-contain group-hover:scale-105 transition" alt="Origins Set" />
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">Origins</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">ชุดหลัก (Base Set)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary.Origins.totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-cyan-300 font-black">{setStatsSummary.Origins.uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-cyan-300" style="width: {setStatsSummary.Origins.percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary.Origins.percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+
+					<!-- Spiritforged Set -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'Spiritforged'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-purple-500/10 hover:border-purple-500/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-6">
+							<img src="/images/Set/spiritforged.webp" class="h-14 object-contain group-hover:scale-105 transition" alt="Spiritforged Set" />
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">Spiritforged</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">ชุดเสริม (Expansion Set)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary.Spiritforged.totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-purple-300 font-black">{setStatsSummary.Spiritforged.uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-purple-400" style="width: {setStatsSummary.Spiritforged.percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary.Spiritforged.percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+
+					<!-- Unleashed Set -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'Unleashed'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-amber-500/10 hover:border-amber-500/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-6">
+							<img src="/images/Set/unleashed.webp" class="h-14 object-contain group-hover:scale-105 transition" alt="Unleashed Set" />
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">Unleashed</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">ชุดเสริม (Expansion Set)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary.Unleashed.totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-amber-300 font-black">{setStatsSummary.Unleashed.uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-amber-400" style="width: {setStatsSummary.Unleashed.percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary.Unleashed.percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+
+					<!-- Proving Grounds Set -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'Proving Grounds'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-emerald-500/10 hover:border-emerald-500/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-4">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-12 w-12 text-emerald-400 group-hover:scale-105 transition">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+							</svg>
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">Proving Grounds</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">ชุดเสริมพิเศษ (Special Set)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary['Proving Grounds'].totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-emerald-300 font-black">{setStatsSummary['Proving Grounds'].uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-emerald-400" style="width: {setStatsSummary['Proving Grounds'].percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary['Proving Grounds'].percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+
+					<!-- All Cards -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'All'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-cyan-500/10 hover:border-cyan-500/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-4">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-12 w-12 text-cyan-400 group-hover:scale-105 transition">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12m-12-3h12m-12-3h12m-12-3h12m-12-3h12m-12-3h12" />
+							</svg>
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">All Cards</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">จัดการทั้งหมด (Manage All)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary.All.totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-cyan-300 font-black">{setStatsSummary.All.uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-cyan-300" style="width: {setStatsSummary.All.percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary.All.percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+				</div>
+			</section>
 		{:else}
+			<div class="mb-4">
+				<button 
+					type="button" 
+					onclick={() => selectedSet = ''}
+					class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/40 px-4 py-2.5 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
+				>
+					&larr; กลับไปเลือกชุดการ์ด (Back to Sets)
+				</button>
+			</div>
+
 			<!-- Collection Dashboard -->
 			<div class="grid gap-6 md:grid-cols-[1fr_minmax(240px,360px)]">
 				

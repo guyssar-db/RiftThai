@@ -23,6 +23,14 @@
 		resultsCount: number;
 	}>();
 
+	function getSetIcon(set: string) {
+		const lower = set.toLowerCase();
+		if (lower === 'origins') return '/images/Set/origins.webp';
+		if (lower === 'spiritforged') return '/images/Set/spiritforged.webp';
+		if (lower === 'unleashed') return '/images/Set/unleashed.webp';
+		return null;
+	}
+
 	let setOptions = $derived(sets.filter((set: string) => set !== 'All'));
 	let typeOptions = $derived(types.filter((type: string) => type !== 'All'));
 	let domainOptions = $derived(domains.filter((domain: string) => domain !== 'All'));
@@ -34,10 +42,14 @@
 	);
 	let setSelectOptions = $derived([
 		{ label: 'All Sets', value: 'All' },
-		...setOptions.map((set: string) => ({
-			label: set,
-			value: set
-		}))
+		...setOptions.map((set: string) => {
+			const icon = getSetIcon(set);
+			return {
+				label: set,
+				value: set,
+				icons: icon ? [{ label: set, src: icon }] : undefined
+			};
+		})
 	]);
 	let typeSelectOptions = $derived([
 		{ label: 'All Types', value: 'All' },
