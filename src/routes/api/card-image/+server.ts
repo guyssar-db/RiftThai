@@ -1,4 +1,6 @@
 import { error } from '@sveltejs/kit';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const allowedHosts = new Set(['cmsassets.rgpub.io']);
 
@@ -6,6 +8,29 @@ export const GET = async ({ url }) => {
 	const rawUrl = url.searchParams.get('url');
 	if (!rawUrl) error(400, 'Missing image URL');
 
+	// กรณี 1: หากเป็น Local Relative Path ใน Static Folder (เช่น /image/cards/xxx.avif)
+	if (rawUrl.startsWith('/')) {
+		// ป้องกัน Path Traversal
+		const safeUrl = path.normalize(rawUrl).replace(/^(\.\.(\/|\\|$))+/, '');
+		const localFilePath = path.join(process.cwd(), 'static', safeUrl);
+
+		if (!fs.existsSync(localFilePath)) {
+			error(404, 'Local image not found');
+		}
+
+		const fileBuffer = fs.readFileSync(localFilePath);
+		const ext = path.extname(localFilePath).toLowerCase();
+		const contentType = ext === '.avif' ? 'image/avif' : (ext === '.webp' ? 'image/webp' : 'image/png');
+
+		return new Response(fileBuffer, {
+			headers: {
+				'Cache-Control': 'public, max-age=86400, s-maxage=604800',
+				'Content-Type': contentType
+			}
+		});
+	}
+
+	// กรณี 2: หากเป็น URL รีโมตดั้งเดิม (Sanity CDN)
 	let imageUrl: URL;
 	try {
 		imageUrl = new URL(rawUrl);
@@ -29,3 +54,4 @@ export const GET = async ({ url }) => {
 		}
 	});
 };
+

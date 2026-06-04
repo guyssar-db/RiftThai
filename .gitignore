@@ -60,13 +60,19 @@ docs/site-structure.html
 !skills/**/*.md
 !skills/**/*.yaml
 
-# Ensure images are ALWAYS included
+# Ensure images in static/images and static/image are ALWAYS included
 !static/images/
-!*.png
-!*.jpg
-!*.jpeg
-!*.gif
-!*.svg
-!*.webp
-!*.avif
-!*.ico
+!static/images/**/*.png
+!static/images/**/*.jpg
+!static/images/**/*.jpeg
+!static/images/**/*.gif
+!static/images/**/*.svg
+!static/images/**/*.webp
+!static/images/**/*.avif
+!static/images/**/*.ico
+!static/image/
+!static/image/**/*.avif
+
+# Ignore temporary unused utility scripts
+download_and_convert.js
+update_json_images.js
