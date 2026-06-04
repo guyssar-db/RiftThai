@@ -9,6 +9,7 @@
 	import { getCardImageUrl } from '$lib/utils/cardImages';
 	import { isRuneCard, isLegendCard, isBattlefieldCard, isMainDeckCard } from '$lib/utils/deck';
 	import Toast from '$lib/components/ui/Toast.svelte';
+	import ConfirmModal from '$lib/components/ui/ConfirmModal.svelte';
 
 	let { data } = $props();
 	let cards = $derived((data.cards as Card[]) || []);
@@ -22,13 +23,15 @@
 	let query = $state('');
 	let selectedColor = $state('');
 	let selectedType = $state('All');
-	let selectedSet = $state('All');
+	let selectedSet = $state('');
 	let hideUnowned = $state(false);
 	let currentPage = $state(1);
 	const cardsPerPage = 40;
 	let actionNotice = $state<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 	let selectedPopupCard = $state<Card | null>(null);
 	let backupText = $state('');
+	let showPlaysetConfirm = $state(false);
+	let showClearConfirm = $state(false);
 
 	function openPopup(card: Card) {
 		selectedPopupCard = card;
@@ -245,6 +248,36 @@
 		return { totalCards, uniqueOwned, totalOwned, percentUnique };
 	});
 
+	function getSetStats(setName: string) {
+		const setCards = setName === 'All' 
+			? cards 
+			: cards.filter(c => c.set_name === setName);
+		const totalCards = setCards.length;
+		let uniqueOwned = 0;
+		let totalOwned = 0;
+		for (const card of setCards) {
+			const countNormal = collection[card.code] ?? 0;
+			const countFoil = collection[card.code + '_foil'] ?? 0;
+			if (countNormal > 0 || countFoil > 0) {
+				uniqueOwned++;
+				totalOwned += countNormal + countFoil;
+			}
+		}
+		const percentUnique = totalCards > 0 ? Math.round((uniqueOwned / totalCards) * 100) : 0;
+		return { totalCards, uniqueOwned, totalOwned, percentUnique };
+	}
+
+	let setStatsSummary = $derived.by(() => {
+		return {
+			Origins: getSetStats('Origins'),
+			Spiritforged: getSetStats('Spiritforged'),
+			Unleashed: getSetStats('Unleashed'),
+			'Proving Grounds': getSetStats('Proving Grounds'),
+			All: getSetStats('All')
+		};
+	});
+
+
 	async function updateQuantity(cardCode: string, quantity: number) {
 		if (!currentUser) return;
 		const qty = Math.max(0, Math.min(9, quantity));
@@ -286,26 +319,33 @@
 		}
 	}
 
-	async function setPlaysets() {
-		if (!currentUser || !confirm('ต้องการตั้งค่าการ์ดทั้งหมดให้เป็น Playset หรือไม่?')) return;
-		
+	function triggerSetPlaysets() {
+		if (!currentUser) return;
+		showPlaysetConfirm = true;
+	}
+
+	async function executeSetPlaysets() {
+		const isAll = selectedSet === 'All';
 		collectionLoading = true;
 		try {
-			// 1. Delete all current collections first
-			await fetch('/api/collection', { method: 'DELETE' });
+			if (isAll) {
+				await fetch('/api/collection', { method: 'DELETE' });
+			}
 
-			// 2. Build entries list for all cards
+			const setCards = isAll 
+				? cards 
+				: cards.filter(c => c.set_name === selectedSet);
+
 			const entries: { cardCode: string; quantity: number }[] = [];
-			const nextCollection: Record<string, number> = {};
+			const nextCollection = isAll ? {} : { ...collection };
 
-			for (const card of cards) {
+			for (const card of setCards) {
 				let qty = 3;
 				if (isLegendCard(card) || isBattlefieldCard(card)) qty = 1;
 				entries.push({ cardCode: card.code, quantity: qty });
 				nextCollection[card.code] = qty;
 			}
 
-			// 3. Batch post the updates
 			const response = await fetch('/api/collection', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -318,7 +358,10 @@
 			}
 
 			collection = nextCollection;
-			showActionNotice('ตั้งค่า Playset สำหรับการ์ดทั้งหมดสำเร็จ', 'success');
+			const successMsg = isAll 
+				? 'ตั้งค่า Playset สำหรับการ์ดทั้งหมดสำเร็จ' 
+				: `ตั้งค่า Playset สำหรับการ์ดในชุด ${selectedSet} สำเร็จ`;
+			showActionNotice(successMsg, 'success');
 		} catch (error) {
 			console.error('Failed to set playsets:', error);
 			showActionNotice('พบข้อผิดพลาดขณะบันทึกข้อมูลสะสม', 'error');
@@ -327,20 +370,54 @@
 		}
 	}
 
-	async function clearCollection() {
-		if (!currentUser || !confirm('ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดหรือไม่?')) return;
+	function triggerClearCollection() {
+		if (!currentUser) return;
+		showClearConfirm = true;
+	}
 
+	async function executeClearCollection() {
+		const isAll = selectedSet === 'All';
 		collectionLoading = true;
 		try {
-			const response = await fetch('/api/collection', {
-				method: 'DELETE'
-			});
-			if (!response.ok) {
-				const payload = await response.json().catch(() => ({}));
-				throw new Error(payload.error || 'Failed to clear collection');
+			if (isAll) {
+				const response = await fetch('/api/collection', {
+					method: 'DELETE'
+				});
+				if (!response.ok) {
+					const payload = await response.json().catch(() => ({}));
+					throw new Error(payload.error || 'Failed to clear collection');
+				}
+				collection = {};
+			} else {
+				const setCards = cards.filter(c => c.set_name === selectedSet);
+				const entries: { cardCode: string; quantity: number }[] = [];
+				const nextCollection = { ...collection };
+
+				for (const card of setCards) {
+					entries.push({ cardCode: card.code, quantity: 0 });
+					entries.push({ cardCode: card.code + '_foil', quantity: 0 });
+					delete nextCollection[card.code];
+					delete nextCollection[card.code + '_foil'];
+				}
+
+				const response = await fetch('/api/collection', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ entries })
+				});
+
+				if (!response.ok) {
+					const payload = await response.json().catch(() => ({}));
+					throw new Error(payload.error || 'Failed to clear set collection');
+				}
+
+				collection = nextCollection;
 			}
-			collection = {};
-			showActionNotice('ล้างข้อมูลการ์ดสะสมสำเร็จ', 'success');
+
+			const successMsg = isAll 
+				? 'ล้างข้อมูลการ์ดสะสมทั้งหมดสำเร็จ' 
+				: `ล้างข้อมูลการ์ดสะสมในชุด ${selectedSet} สำเร็จ`;
+			showActionNotice(successMsg, 'success');
 		} catch (error) {
 			console.error('Failed to clear collection:', error);
 			showActionNotice('พบข้อผิดพลาดขณะล้างข้อมูลสะสม', 'error');
@@ -429,7 +506,179 @@
 					</button>
 				</div>
 			</section>
+		{:else if selectedSet === ''}
+			<!-- Set Selection Grid -->
+			<section class="space-y-6 max-w-7xl mx-auto py-2">
+				<header class="text-center py-6">
+					<h2 class="text-2xl font-black text-white uppercase italic tracking-wide">เลือกชุดการ์ดเพื่อจัดการสะสม</h2>
+					<p class="text-xs text-slate-400 mt-2">เลือกเซ็ตการ์ดด้านล่างเพื่อตรวจสอบ สถิติ และจัดการจำนวนการ์ดที่คุณสะสมไว้</p>
+				</header>
+
+				<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+					<!-- Origins Set -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'Origins'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-cyan-400/10 hover:border-cyan-400/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-6">
+							<img src="/images/Set/origins.webp" class="h-14 object-contain group-hover:scale-105 transition" alt="Origins Set" />
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">Origins</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">ชุดหลัก (Base Set)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary.Origins.totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-cyan-300 font-black">{setStatsSummary.Origins.uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-cyan-300" style="width: {setStatsSummary.Origins.percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary.Origins.percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+
+					<!-- Spiritforged Set -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'Spiritforged'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-purple-500/10 hover:border-purple-500/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-6">
+							<img src="/images/Set/spiritforged.webp" class="h-14 object-contain group-hover:scale-105 transition" alt="Spiritforged Set" />
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">Spiritforged</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">ชุดเสริม (Expansion Set)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary.Spiritforged.totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-purple-300 font-black">{setStatsSummary.Spiritforged.uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-purple-400" style="width: {setStatsSummary.Spiritforged.percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary.Spiritforged.percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+
+					<!-- Unleashed Set -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'Unleashed'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-amber-500/10 hover:border-amber-500/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-6">
+							<img src="/images/Set/unleashed.webp" class="h-14 object-contain group-hover:scale-105 transition" alt="Unleashed Set" />
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">Unleashed</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">ชุดเสริม (Expansion Set)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary.Unleashed.totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-amber-300 font-black">{setStatsSummary.Unleashed.uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-amber-400" style="width: {setStatsSummary.Unleashed.percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary.Unleashed.percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+
+					<!-- Proving Grounds Set -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'Proving Grounds'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-emerald-500/10 hover:border-emerald-500/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-3">
+							<img src="/images/Set/proving-grounds.webp" class="h-20 object-contain group-hover:scale-105 transition" alt="Proving Grounds Set" />
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">Proving Grounds</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">ชุดเสริมพิเศษ (Special Set)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary['Proving Grounds'].totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-emerald-300 font-black">{setStatsSummary['Proving Grounds'].uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-emerald-400" style="width: {setStatsSummary['Proving Grounds'].percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary['Proving Grounds'].percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+
+					<!-- All Cards -->
+					<button
+						type="button"
+						onclick={() => selectedSet = 'All'}
+						class="rt-panel group flex flex-col justify-between overflow-hidden rounded-xl border border-white/5 bg-slate-950/30 p-5 text-left transition duration-200 hover:scale-[1.02] hover:shadow-cyan-500/10 hover:border-cyan-500/30 cursor-pointer"
+					>
+						<div class="flex flex-col items-center py-4">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-12 w-12 text-cyan-400 group-hover:scale-105 transition">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12m-12-3h12m-12-3h12m-12-3h12m-12-3h12m-12-3h12" />
+							</svg>
+						</div>
+						<div class="mt-4 border-t border-white/5 pt-4">
+							<h3 class="text-sm font-black text-white italic uppercase">All Cards</h3>
+							<p class="text-[9px] text-slate-500 font-bold uppercase mt-1">จัดการทั้งหมด (Manage All)</p>
+							
+							<div class="mt-4 space-y-2">
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">การ์ดทั้งหมด</span>
+									<span class="text-white font-black">{setStatsSummary.All.totalCards} ใบ</span>
+								</div>
+								<div class="flex justify-between text-[11px] font-bold">
+									<span class="text-slate-400">สะสมแล้ว</span>
+									<span class="text-cyan-300 font-black">{setStatsSummary.All.uniqueOwned} ใบ</span>
+								</div>
+								<div class="relative mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+									<div class="h-full bg-cyan-300" style="width: {setStatsSummary.All.percentUnique}%"></div>
+								</div>
+								<div class="text-right text-[9px] font-black text-slate-400 mt-1">{setStatsSummary.All.percentUnique}%</div>
+							</div>
+						</div>
+					</button>
+				</div>
+			</section>
 		{:else}
+			<div class="mb-4">
+				<button 
+					type="button" 
+					onclick={() => selectedSet = ''}
+					class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/40 px-4 py-2.5 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
+				>
+					&larr; กลับไปเลือกชุดการ์ด (Back to Sets)
+				</button>
+			</div>
+
 			<!-- Collection Dashboard -->
 			<div class="grid gap-6 md:grid-cols-[1fr_minmax(240px,360px)]">
 				
@@ -668,19 +917,27 @@
 							<button
 								type="button"
 								class="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-cyan-300/20 bg-cyan-300/5 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-								onclick={setPlaysets}
+								onclick={triggerSetPlaysets}
 								disabled={collectionLoading}
 							>
-								ตั้งค่าการ์ดทุกใบเป็น Playset
+								{#if selectedSet === 'All'}
+									ตั้งค่าการ์ดทั้งหมดเป็น Playset
+								{:else}
+									ตั้งค่าการ์ดในชุดนี้เป็น Playset
+								{/if}
 							</button>
 
 							<button
 								type="button"
 								class="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-rose-300/20 bg-rose-300/5 px-4 text-xs font-black tracking-widest text-rose-300 uppercase transition hover:bg-rose-300/10 hover:text-rose-100 disabled:opacity-50 disabled:cursor-not-allowed"
-								onclick={clearCollection}
+								onclick={triggerClearCollection}
 								disabled={collectionLoading || Object.keys(collection).length === 0}
 							>
-								ล้างข้อมูลคอลเล็กชันทั้งหมด
+								{#if selectedSet === 'All'}
+									ล้างข้อมูลคอลเล็กชันทั้งหมด
+								{:else}
+									ล้างข้อมูลชุดนี้ทั้งหมด
+								{/if}
 							</button>
 						</div>
 					</div>
@@ -725,3 +982,23 @@
 {#if selectedPopupCard}
 	<CardModal card={selectedPopupCard} {closePopup} canEdit={false} />
 {/if}
+
+<ConfirmModal
+	bind:open={showPlaysetConfirm}
+	title="ตั้งค่า Playset"
+	message={selectedSet === 'All' 
+		? 'ต้องการตั้งค่าการ์ดทั้งหมดในทุกชุดให้เป็น Playset หรือไม่?' 
+		: `ต้องการตั้งค่าการ์ดทั้งหมดในชุด ${selectedSet} ให้เป็น Playset หรือไม่?`}
+	confirmType="primary"
+	onconfirm={executeSetPlaysets}
+/>
+
+<ConfirmModal
+	bind:open={showClearConfirm}
+	title="ล้างข้อมูลคอลเล็กชัน"
+	message={selectedSet === 'All' 
+		? 'ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดในทุกชุดหรือไม่?' 
+		: `ต้องการล้างข้อมูลการ์ดสะสมทั้งหมดในชุด ${selectedSet} หรือไม่?`}
+	confirmType="danger"
+	onconfirm={executeClearCollection}
+/>
