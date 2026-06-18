@@ -4,10 +4,18 @@
 	import { getTypeIcons } from '$lib/data/typeIcons';
 	import type { Card } from '$lib/types/card';
 	import { getCardImageSources } from '$lib/utils/cardImages';
-	let { card, closePopup, canEdit } = $props<{
+	let {
+		card,
+		closePopup,
+		canEdit,
+		showAutoSkill = false,
+		onAutoSkill = undefined
+	} = $props<{
 		card: Card;
 		closePopup: () => void;
 		canEdit: boolean;
+		showAutoSkill?: boolean;
+		onAutoSkill?: () => void;
 	}>();
 
 	let isEditing = $state(false);
@@ -428,26 +436,17 @@
 						class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/5 opacity-50"
 					></div>
 					<div class="relative z-10 w-full max-w-[250px] sm:max-w-[340px] lg:max-w-[380px]">
-						<picture>
-							{#if modalImageSources.webpSrcset}
-								<source
-									type="image/webp"
-									srcset={modalImageSources.webpSrcset}
-									sizes="(min-width: 1024px) 380px, (min-width: 640px) 340px, 250px"
-								/>
-							{/if}
-							<img
-								src={modalImageSources.fallback}
-								srcset={modalImageSources.fallbackSrcset}
-								sizes="(min-width: 1024px) 380px, (min-width: 640px) 340px, 250px"
-								alt={card.name_en}
-								loading="eager"
-								decoding="async"
-								fetchpriority="high"
-								draggable="false"
-								class="pointer-events-none h-auto w-full rounded-xl border border-white/5 object-contain shadow-[0_30px_70px_rgba(0,0,0,0.6)] transition-transform duration-500 group-hover:scale-[1.01]"
-							/>
-						</picture>
+						<img
+							src={modalImageSources.fallback}
+							srcset={modalImageSources.fallbackSrcset}
+							sizes="(min-width: 1024px) 380px, (min-width: 640px) 340px, 250px"
+							alt={card.name_en}
+							loading="eager"
+							decoding="async"
+							fetchpriority="high"
+							draggable="false"
+							class="pointer-events-none h-auto w-full rounded-xl border border-white/5 object-contain shadow-[0_30px_70px_rgba(0,0,0,0.6)] transition-transform duration-500 group-hover:scale-[1.01]"
+						/>
 					</div>
 				</div>
 
@@ -608,8 +607,27 @@
 									</button>
 								{/if}
 							</div>
+						{/if}						{#if showAutoSkill && onAutoSkill}
+							<div class="rounded-2xl border border-cyan-400/20 bg-cyan-950/20 p-3 shadow-lg shadow-cyan-500/5 mb-4">
+								<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+									<div>
+										<div class="text-[10px] font-black tracking-[0.22em] text-cyan-400 uppercase">
+											Play Assistant (ระบบจำลองเอฟเฟกต์)
+										</div>
+										<div class="mt-1 text-xs font-semibold text-slate-400">
+											เปิดใช้งานและประมวลผลเอฟเฟกต์ตามคำอธิบายของการ์ดใบนี้บนสนามจำลอง
+										</div>
+									</div>
+									<button
+										type="button"
+										class="inline-flex min-h-10 items-center justify-center rounded-lg bg-cyan-400 px-4 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-300 shadow-md shadow-cyan-500/10"
+										onclick={onAutoSkill}
+									>
+										🪄 ใช้สกิล
+									</button>
+								</div>
+							</div>
 						{/if}
-
 						<div class="rounded-2xl border border-white/10 bg-slate-950/35 p-3">
 							<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 								<div>

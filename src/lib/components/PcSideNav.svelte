@@ -6,7 +6,7 @@
 		href: string;
 		external?: boolean;
 		active?: boolean;
-		icon: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'official' | 'collection';
+		icon: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'official' | 'collection' | 'rules';
 	};
 
 	type AuthSession = {
@@ -20,13 +20,14 @@
 		} | null;
 	};
 
-	let { active = '' } = $props<{ active?: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | '' }>();
+	let { active = '' } = $props<{ active?: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '' }>();
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
 	let accountOpen = $state(false);
 
 	let menuItems = $derived<MenuItem[]>([
 		{ label: 'Cards', href: '/', active: active === 'cards', icon: 'cards' },
+		{ label: 'Rules', href: '/rules', active: active === 'rules', icon: 'rules' },
 		{ label: 'Domains', href: '/domains', active: active === 'domains', icon: 'domains' },
 		{ label: 'Q&A', href: '/qa', active: active === 'qa', icon: 'qa' },
 		{ label: 'Deck', href: '/deck', active: active === 'deck', icon: 'deck' },
@@ -68,9 +69,16 @@
 </script>
 
 <aside
-	class="sticky top-0 z-[170] hidden h-dvh min-h-dvh flex-col border-r border-cyan-300/10 bg-slate-950/82 px-2 py-24 shadow-2xl shadow-black/25 backdrop-blur-xl lg:flex xl:px-3"
+	class="sticky top-0 z-[250] hidden h-dvh min-h-dvh flex-col border-r border-cyan-300/10 bg-[#07111f]/92 px-3 py-6 shadow-2xl shadow-black/25 backdrop-blur-xl lg:flex"
 >
-	<nav class="flex flex-1 flex-col gap-2" aria-label="Desktop navigation">
+	<!-- Brand Logo -->
+	<div class="mb-8 px-2">
+		<a href="/" class="flex items-center gap-2 border-l-2 border-cyan-300/60 pl-3 text-lg font-black uppercase italic tracking-wider text-white xl:text-xl font-display">
+			Rift<span class="text-cyan-300">Thai</span>
+		</a>
+	</div>
+
+	<nav class="flex flex-1 flex-col gap-1.5" aria-label="Desktop navigation">
 		{#each menuItems as item}
 			<a
 				href={item.href}
@@ -78,18 +86,18 @@
 				rel={item.external ? 'noreferrer' : undefined}
 				aria-label={item.label}
 				title={item.label}
-				class="group relative flex h-14 w-full items-center justify-center rounded-xl text-[11px] font-black tracking-widest uppercase transition xl:justify-start xl:gap-3 xl:px-3 {item.active
-					? 'bg-cyan-300 text-slate-950 shadow-[0_0_24px_rgba(83,234,253,0.2)]'
-					: 'text-slate-400 hover:bg-white/8 hover:text-white'} {item.external
+				class="group relative flex h-12 w-full items-center justify-center rounded-xl text-[11px] font-black tracking-widest uppercase transition xl:justify-start xl:gap-3 xl:px-3 {item.active
+					? 'border border-cyan-300/20 bg-cyan-300/10 text-cyan-200 shadow-[0_0_15px_rgba(83,234,253,0.1)]'
+					: 'text-slate-400 hover:bg-white/5 hover:text-white'} {item.external
 					? 'border border-white/10 bg-white/5 text-white hover:bg-white/10'
 					: ''}"
 			>
 				{#if item.active}
-					<span class="absolute -left-2 h-8 w-1 rounded-full bg-cyan-200 xl:-left-3"></span>
+					<span class="absolute -left-1.5 h-6 w-1 rounded-full bg-cyan-400 xl:-left-3"></span>
 				{/if}
 				<span
-					class="grid h-9 w-9 shrink-0 place-items-center rounded-lg transition {item.active
-						? 'bg-slate-950/15'
+					class="grid h-8 w-8 shrink-0 place-items-center rounded-lg transition {item.active
+						? 'bg-cyan-300/15 text-cyan-300'
 						: 'bg-white/5 text-cyan-200 group-hover:bg-cyan-300/10'}"
 				>
 					{#if item.icon === 'cards'}
@@ -106,6 +114,20 @@
 							<rect width="7" height="7" x="14" y="3" rx="1" />
 							<rect width="7" height="7" x="14" y="14" rx="1" />
 							<rect width="7" height="7" x="3" y="14" rx="1" />
+						</svg>
+					{:else if item.icon === 'rules'}
+						<svg
+							class="h-5 w-5"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.6"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+							<path d="M6 6h10" />
+							<path d="M6 10h10" />
 						</svg>
 					{:else if item.icon === 'domains'}
 						<svg
@@ -178,6 +200,7 @@
 							<path d="M6 8h6" />
 							<path d="M6 12h6" />
 						</svg>
+
 					{:else}
 						<svg
 							class="h-5 w-5"
@@ -199,7 +222,7 @@
 		{/each}
 	</nav>
 
-	<div class="mt-auto space-y-2 border-t border-white/10 pt-3">
+	<div class="mt-auto space-y-2 border-t border-white/10 pt-3 pb-20">
 		{#if authLoading}
 			<div
 				class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/15 border-t-cyan-300"

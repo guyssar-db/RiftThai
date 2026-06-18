@@ -8,6 +8,8 @@
 		selectedSet = $bindable(),
 		selectedType = $bindable(),
 		selectedDomains = $bindable(),
+		selectedEnergy = $bindable(),
+		selectedMight = $bindable(),
 		sets,
 		types,
 		domains,
@@ -17,6 +19,8 @@
 		selectedSet: string;
 		selectedType: string;
 		selectedDomains: string[];
+		selectedEnergy: number | null;
+		selectedMight: number | null;
 		sets: string[];
 		types: string[];
 		domains: string[];
@@ -39,7 +43,9 @@
 	let domainsOpen = $state(false);
 	let activeFilterCount = $derived(
 		[selectedSet, selectedType].filter((value) => value !== 'All').length +
-			(selectedDomains.length > 0 ? 1 : 0)
+			(selectedDomains.length > 0 ? 1 : 0) +
+			(selectedEnergy !== null ? 1 : 0) +
+			(selectedMight !== null ? 1 : 0)
 	);
 	let setSelectOptions = $derived([
 		{ label: 'All Sets', value: 'All' },
@@ -93,6 +99,8 @@
 		selectedSet = 'All';
 		selectedType = 'All';
 		selectedDomains = [];
+		selectedEnergy = null;
+		selectedMight = null;
 	}
 </script>
 
@@ -110,57 +118,10 @@
 	</div>
 
 	<div class="relative z-[60] rounded-lg border border-cyan-300/10 bg-black/25 p-2 shadow-inner shadow-cyan-300/5">
-		<div class="flex flex-col gap-3 lg:flex-row">
-			<div class="flex min-w-0 flex-grow gap-2">
-				<div class="group relative min-w-0 flex-grow">
-					<div
-						class="pointer-events-none absolute inset-y-0 left-5 flex items-center text-slate-500 transition-colors group-focus-within:text-cyan-300 sm:left-6"
-					>
-						<svg
-							class="h-5 w-5"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="3"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg
-						>
-					</div>
-					<input
-						type="text"
-						placeholder="ค้นหาชื่อการ์ด, รหัส, ความสามารถ หรือแท็ก..."
-						class="w-full rounded-md border border-white/10 bg-[#070a12]/86 py-4 pr-12 pl-14 text-sm font-medium text-white shadow-inner shadow-black/20 transition-all placeholder:text-slate-600 focus:border-cyan-300/55 focus:ring-4 focus:ring-cyan-300/10 focus:outline-none sm:py-5 sm:pl-16 sm:pr-14"
-						bind:value={searchTerm}
-					/>
-					{#if searchTerm}
-						<button
-							type="button"
-							class="absolute inset-y-0 right-4 flex items-center text-slate-500 hover:text-white transition-colors"
-							onclick={() => (searchTerm = '')}
-							aria-label="Clear search"
-						>
-							<svg
-								class="h-5 w-5"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2.5"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M18 6 6 18M6 6l12 12" />
-							</svg>
-						</button>
-					{/if}
-				</div>
-
-				<button
-					type="button"
-					class="relative flex h-auto min-w-14 shrink-0 items-center justify-center rounded-md border border-white/10 bg-[#070a12]/86 px-4 text-white transition-all focus:border-cyan-300/55 focus:ring-4 focus:ring-cyan-300/10 focus:outline-none active:scale-95 lg:hidden"
-					aria-label="Toggle filters"
-					aria-expanded={filtersOpen}
-					onclick={() => (filtersOpen = !filtersOpen)}
+		<div class="flex min-w-0 gap-2">
+			<div class="group relative min-w-0 flex-grow">
+				<div
+					class="pointer-events-none absolute inset-y-0 left-5 flex items-center text-slate-500 transition-colors group-focus-within:text-cyan-300 sm:left-6"
 				>
 					<svg
 						class="h-5 w-5"
@@ -170,280 +131,247 @@
 						stroke-width="3"
 						stroke-linecap="round"
 						stroke-linejoin="round"
+						><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg
 					>
-						<path d="M3 5h18" />
-						<path d="M7 12h10" />
-						<path d="M10 19h4" />
-					</svg>
-					{#if activeFilterCount > 0}
-						<span
-							class="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-md bg-cyan-300 px-1 text-[10px] font-black text-slate-950"
-						>
-							{activeFilterCount}
-						</span>
-					{/if}
-				</button>
-			</div>
-
-			<div class="hidden gap-3 lg:flex">
-				<IconSelect bind:value={selectedSet} label="All Sets" options={setSelectOptions} />
-
-				<IconSelect bind:value={selectedType} label="All Types" options={typeSelectOptions} />
-
-				<div class="relative min-w-0 {domainsOpen ? 'z-[1000]' : 'z-[130]'} lg:min-w-[210px]">
+				</div>
+				<input
+					type="text"
+					placeholder="ค้นหาชื่อการ์ด, รหัส, ความสามารถ หรือแท็ก..."
+					class="w-full rounded-md border border-white/10 bg-[#070a12]/86 py-4 pr-12 pl-14 text-sm font-medium text-white shadow-inner shadow-black/20 transition-all placeholder:text-slate-600 focus:border-cyan-300/55 focus:ring-4 focus:ring-cyan-300/10 focus:outline-none sm:py-5 sm:pl-16 sm:pr-14"
+					bind:value={searchTerm}
+				/>
+				{#if searchTerm}
 					<button
 						type="button"
-						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-cyan-300/10 bg-slate-950/68 px-5 py-4 text-left text-xs font-black tracking-widest text-white uppercase shadow-inner shadow-black/20 transition-all hover:border-cyan-300/25 hover:bg-slate-950/82 focus:border-cyan-400/50 focus:ring-4 focus:ring-cyan-400/10 focus:outline-none disabled:cursor-not-allowed disabled:opacity-45 sm:py-5"
-						aria-haspopup="listbox"
-						aria-expanded={domainsOpen}
-						disabled={isBattlefieldType}
-						onclick={() => (domainsOpen = !domainsOpen)}
-						onblur={(event) => {
-							if (
-								!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)
-							) {
-								domainsOpen = false;
-							}
-						}}
+						class="absolute inset-y-0 right-4 flex items-center text-slate-500 hover:text-white transition-colors"
+						onclick={() => (searchTerm = '')}
+						aria-label="Clear search"
 					>
-						<span class="flex min-w-0 items-center gap-2">
-							{#if selectedDomains.length > 0}
-								<span class="flex shrink-0 items-center -space-x-1">
-									{#each selectedDomains.slice(0, 3) as domain}
-										{@const icon = getDomainIcon(domain)}
-										{#if icon}
-											<img
-												src={icon}
-												class="h-5 w-5 rounded-full bg-slate-950 object-contain"
-												alt="{domain} icon"
-											/>
-										{/if}
-									{/each}
-								</span>
-							{/if}
-							<span class="truncate">{selectedDomainLabel}</span>
-						</span>
 						<svg
-							class="h-4 w-4 shrink-0 text-slate-500"
+							class="h-5 w-5"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
-							stroke-width="3"
+							stroke-width="2.5"
 							stroke-linecap="round"
 							stroke-linejoin="round"
 						>
-							<path d="m6 9 6 6 6-6" />
+							<path d="M18 6 6 18M6 6l12 12" />
 						</svg>
-					</button>
-
-					{#if domainsOpen && !isBattlefieldType}
-						<div
-							class="absolute inset-x-0 top-full z-[1000] mt-2 max-h-72 w-full min-w-0 overflow-y-auto rounded-2xl border border-cyan-300/15 bg-slate-950/96 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl lg:right-0 lg:left-auto lg:max-h-80 lg:min-w-60"
-							role="listbox"
-							tabindex="-1"
-						>
-							<button
-								type="button"
-								class="flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-left text-xs font-black tracking-widest uppercase transition {selectedDomains.length ===
-								0
-									? 'bg-cyan-400 text-slate-950'
-									: 'text-slate-300 hover:bg-white/5 hover:text-cyan-300'}"
-								role="option"
-								aria-selected={selectedDomains.length === 0}
-								onclick={clearDomains}
-							>
-								<span>All Domains</span>
-								{#if selectedDomains.length === 0}
-									<span>✓</span>
-								{/if}
-							</button>
-							{#each domainOptions as domain}
-								{@const icon = getDomainIcon(domain)}
-								{@const selected = selectedDomains.includes(domain)}
-								<button
-									type="button"
-									class="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-xs font-black tracking-widest uppercase transition {selected
-										? 'bg-cyan-400 text-slate-950'
-										: 'text-slate-300 hover:bg-white/5 hover:text-cyan-300'}"
-									role="option"
-									aria-selected={selected}
-									onclick={() => toggleDomain(domain)}
-								>
-									<span class="flex h-6 w-10 shrink-0 items-center gap-1">
-										{#if icon}
-											<img src={icon} class="h-5 w-5 object-contain" alt="{domain} icon" />
-										{/if}
-									</span>
-									<span class="min-w-0 flex-1 truncate">{domain}</span>
-									<span
-										class="grid h-5 w-5 place-items-center rounded border {selected
-											? 'border-slate-950/30 bg-slate-950/15'
-											: 'border-white/15'}"
-									>
-										{#if selected}
-											<svg
-												class="h-3.5 w-3.5"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												stroke-width="4"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-											>
-												<path d="m5 12 4 4L19 6" />
-											</svg>
-										{/if}
-									</span>
-								</button>
-							{/each}
-						</div>
-					{/if}
-				</div>
-
-				{#if activeFilterCount > 0}
-					<button
-						type="button"
-						class="inline-flex h-auto items-center justify-center gap-1.5 rounded-2xl border border-rose-500/25 bg-rose-500/10 px-4 text-xs font-black uppercase tracking-widest text-rose-300 transition-all hover:bg-rose-500/20 active:scale-95"
-						onclick={resetFilters}
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
-							<path fill-rule="evenodd" d="M8.75 1a7.75 7.75 0 0 0-7.75 7.75 7.75 7.75 0 0 0 13.897 4.705l3.966 3.965a.75.75 0 1 0 1.06-1.06l-3.965-3.966A7.75 7.75 0 0 0 8.75 1Zm-6.25 7.75a6.25 6.25 0 1 1 10.89 4.079.75.75 0 0 1-.14.453 6.25 6.25 0 0 1-10.75-4.532Zm9.124-2.828a.75.75 0 0 0-1.06 0L8.75 7.69 6.936 5.876a.75.75 0 0 0-1.06 1.06L7.69 8.75l-1.814 1.814a.75.75 0 0 0 1.06 1.06L8.75 9.81l1.814 1.814a.75.75 0 0 0 1.06-1.06L9.81 8.75l1.814-1.814a.75.75 0 0 0 0-1.06Z" clip-rule="evenodd" />
-						</svg>
-						Clear
 					</button>
 				{/if}
 			</div>
+
+			<button
+				type="button"
+				class="relative flex h-auto min-w-14 shrink-0 items-center justify-center rounded-md border border-white/10 bg-[#070a12]/86 px-4 text-white transition-all focus:border-cyan-300/55 focus:ring-4 focus:ring-cyan-300/10 focus:outline-none active:scale-95"
+				aria-label="Toggle filters"
+				aria-expanded={filtersOpen}
+				onclick={() => (filtersOpen = !filtersOpen)}
+			>
+				<svg
+					class="h-5 w-5"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="3"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M3 5h18" />
+					<path d="M7 12h10" />
+					<path d="M10 19h4" />
+				</svg>
+				{#if activeFilterCount > 0}
+					<span
+						class="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-md bg-cyan-300 px-1 text-[10px] font-black text-slate-950"
+					>
+						{activeFilterCount}
+					</span>
+				{/if}
+			</button>
 		</div>
 
-		{#if filtersOpen}
-			<div class="mt-3 grid grid-cols-1 gap-3 border-t border-white/10 pt-3 lg:hidden">
-				<IconSelect bind:value={selectedSet} label="All Sets" options={setSelectOptions} />
+		<!-- Horizontal Button Filters (Piltover Archive Style) -->
+		<div class="{filtersOpen ? 'flex' : 'hidden'} flex-col gap-4 border-t border-white/5 pt-4 mt-4">
+			
+			<!-- Card Types Filter Row -->
+			<div class="flex flex-col gap-2 lg:flex-row lg:items-center">
+				<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase lg:w-20 shrink-0">Types</span>
+				<div class="flex flex-wrap gap-1.5">
+					{#each types as type}
+						{@const active = selectedType === type}
+						{@const icons = getTypeIcons(type)}
+						<button
+							type="button"
+							class="flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-black tracking-wider uppercase transition-all active:scale-[0.97] cursor-pointer
+							{active
+								? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-200 shadow-[0_0_12px_rgba(83,234,253,0.15)]'
+								: 'border-white/5 bg-slate-950/40 text-slate-400 hover:border-white/15 hover:text-white'}"
+							onclick={() => (selectedType = type)}
+						>
+							{#if icons.length > 0}
+								<div class="flex gap-0.5">
+									{#each icons as icon}
+										<img src="/images/icons/{icon.src}" class="h-4 w-4 object-contain" alt="" />
+									{/each}
+								</div>
+							{/if}
+							<span>{type === 'All' ? 'All Types' : type}</span>
+						</button>
+					{/each}
+				</div>
+			</div>
 
-				<IconSelect bind:value={selectedType} label="All Types" options={typeSelectOptions} />
-
-				<div class="relative min-w-0 {domainsOpen ? 'z-[1000]' : 'z-[130]'}">
+			<!-- Domains Filter Row -->
+			<div class="flex flex-col gap-2 lg:flex-row lg:items-center">
+				<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase lg:w-20 shrink-0">Domains</span>
+				<div class="flex flex-wrap items-center gap-2">
 					<button
 						type="button"
-						class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border border-cyan-300/10 bg-slate-950/68 px-5 py-4 text-left text-xs font-black tracking-widest text-white uppercase shadow-inner shadow-black/20 transition-all hover:border-cyan-300/25 hover:bg-slate-950/82 focus:border-cyan-400/50 focus:ring-4 focus:ring-cyan-400/10 focus:outline-none disabled:cursor-not-allowed disabled:opacity-45 sm:py-5"
-						aria-haspopup="listbox"
-						aria-expanded={domainsOpen}
+						class="flex h-9 items-center justify-center rounded-lg border px-3 text-xs font-black tracking-wider uppercase transition-all active:scale-[0.97] cursor-pointer
+						{selectedDomains.length === 0
+							? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-200 shadow-[0_0_12px_rgba(83,234,253,0.15)]'
+							: 'border-white/5 bg-slate-950/40 text-slate-400 hover:border-white/15 hover:text-white'}
+						{isBattlefieldType ? 'opacity-40 cursor-not-allowed' : ''}"
 						disabled={isBattlefieldType}
-						onclick={() => (domainsOpen = !domainsOpen)}
-						onblur={(event) => {
-							if (
-								!event.currentTarget.parentElement?.contains(event.relatedTarget as Node | null)
-							) {
-								domainsOpen = false;
-							}
-						}}
+						onclick={clearDomains}
 					>
-						<span class="flex min-w-0 items-center gap-2">
-							{#if selectedDomains.length > 0}
-								<span class="flex shrink-0 items-center -space-x-1">
-									{#each selectedDomains.slice(0, 3) as domain}
-										{@const icon = getDomainIcon(domain)}
-										{#if icon}
-											<img
-												src={icon}
-												class="h-5 w-5 rounded-full bg-slate-950 object-contain"
-												alt="{domain} icon"
-											/>
-										{/if}
-									{/each}
-								</span>
-							{/if}
-							<span class="truncate">{selectedDomainLabel}</span>
-						</span>
-						<svg
-							class="h-4 w-4 shrink-0 text-slate-500"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="3"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="m6 9 6 6 6-6" />
-						</svg>
+						All Domains
 					</button>
 
-					{#if domainsOpen && !isBattlefieldType}
-						<div
-							class="absolute inset-x-0 top-full z-[1000] mt-2 max-h-72 w-full min-w-0 overflow-y-auto rounded-2xl border border-cyan-300/15 bg-slate-950/96 p-2 shadow-2xl shadow-black/60 backdrop-blur-2xl"
-							role="listbox"
-							tabindex="-1"
+					{#each domainOptions as domain}
+						{@const active = selectedDomains.includes(domain)}
+						{@const icon = getDomainIcon(domain)}
+						{@const glowClass = 
+							domain === 'Fury' ? 'border-red-500/80 bg-red-500/10 shadow-[0_0_12px_rgba(239,68,68,0.3)]' :
+							domain === 'Calm' ? 'border-blue-500/80 bg-blue-500/10 shadow-[0_0_12px_rgba(59,130,246,0.3)]' :
+							domain === 'Mind' ? 'border-purple-500/80 bg-purple-500/10 shadow-[0_0_12px_rgba(168,85,247,0.3)]' :
+							domain === 'Body' ? 'border-green-500/80 bg-green-500/10 shadow-[0_0_12px_rgba(34,197,94,0.3)]' :
+							domain === 'Chaos' ? 'border-orange-500/80 bg-orange-500/10 shadow-[0_0_12px_rgba(249,115,22,0.3)]' :
+							domain === 'Order' ? 'border-yellow-500/80 bg-yellow-500/10 shadow-[0_0_12px_rgba(234,179,8,0.3)]' :
+							'border-cyan-500/80 bg-cyan-500/10 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+						}
+						<button
+							type="button"
+							class="group relative flex h-9 w-9 items-center justify-center rounded-full border transition-all active:scale-[0.9] cursor-pointer
+							{active
+								? glowClass
+								: 'border-white/5 bg-slate-950/40 opacity-40 grayscale hover:opacity-85 hover:grayscale-[50%] hover:scale-105'}
+							{isBattlefieldType ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}"
+							disabled={isBattlefieldType}
+							onclick={() => toggleDomain(domain)}
+							title={domain}
 						>
-							<button
-								type="button"
-								class="flex min-h-11 w-full items-center justify-between rounded-xl px-3 text-left text-xs font-black tracking-widest uppercase transition {selectedDomains.length ===
-								0
-									? 'bg-cyan-400 text-slate-950'
-									: 'text-slate-300 hover:bg-white/5 hover:text-cyan-300'}"
-								role="option"
-								aria-selected={selectedDomains.length === 0}
-								onclick={clearDomains}
-							>
-								<span>All Domains</span>
-								{#if selectedDomains.length === 0}
-									<span>✓</span>
-								{/if}
-							</button>
-							{#each domainOptions as domain}
-								{@const icon = getDomainIcon(domain)}
-								{@const selected = selectedDomains.includes(domain)}
-								<button
-									type="button"
-									class="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-xs font-black tracking-widest uppercase transition {selected
-										? 'bg-cyan-400 text-slate-950'
-										: 'text-slate-300 hover:bg-white/5 hover:text-cyan-300'}"
-									role="option"
-									aria-selected={selected}
-									onclick={() => toggleDomain(domain)}
-								>
-									<span class="flex h-6 w-10 shrink-0 items-center gap-1">
-										{#if icon}
-											<img src={icon} class="h-5 w-5 object-contain" alt="{domain} icon" />
-										{/if}
-									</span>
-									<span class="min-w-0 flex-1 truncate">{domain}</span>
-									<span
-										class="grid h-5 w-5 place-items-center rounded border {selected
-											? 'border-slate-950/30 bg-slate-950/15'
-											: 'border-white/15'}"
-									>
-										{#if selected}
-											<svg
-												class="h-3.5 w-3.5"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												stroke-width="4"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-											>
-												<path d="m5 12 4 4L19 6" />
-											</svg>
-										{/if}
-									</span>
-								</button>
-							{/each}
-						</div>
-					{/if}
+							{#if icon}
+								<img src={icon} class="h-5.5 w-5.5 object-contain transition group-hover:scale-110" alt={domain} />
+							{/if}
+						</button>
+					{/each}
 				</div>
+			</div>
 
-				{#if activeFilterCount > 0}
+			<!-- Sets Filter Row -->
+			<div class="flex flex-col gap-2 lg:flex-row lg:items-center">
+				<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase lg:w-20 shrink-0">Sets</span>
+				<div class="flex flex-wrap gap-1.5">
+					{#each sets as set}
+						{@const active = selectedSet === set}
+						{@const icon = getSetIcon(set)}
+						<button
+							type="button"
+							class="flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-black tracking-wider uppercase transition-all active:scale-[0.97] cursor-pointer
+							{active
+								? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-200 shadow-[0_0_12px_rgba(83,234,253,0.15)]'
+								: 'border-white/5 bg-slate-950/40 text-slate-400 hover:border-white/15 hover:text-white'}"
+							onclick={() => (selectedSet = set)}
+						>
+							{#if icon}
+								<img src={icon} class="h-4 w-4 object-contain" alt="" />
+							{/if}
+							<span>{set === 'All' ? 'All Sets' : set}</span>
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Energy Filter Row -->
+			<div class="flex flex-col gap-2 lg:flex-row lg:items-center">
+				<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase lg:w-20 shrink-0">Energy</span>
+				<div class="flex flex-wrap gap-1.5">
 					<button
 						type="button"
-						class="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-rose-500/25 bg-rose-500/10 text-xs font-black uppercase tracking-widest text-rose-300 transition-all hover:bg-rose-500/20 active:scale-95 sm:py-5"
+						class="flex h-9 items-center justify-center rounded-lg border px-3 text-xs font-black tracking-wider uppercase transition-all active:scale-[0.97] cursor-pointer
+						{selectedEnergy === null
+							? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-200 shadow-[0_0_12px_rgba(83,234,253,0.15)]'
+							: 'border-white/5 bg-slate-950/40 text-slate-400 hover:border-white/15 hover:text-white'}"
+						onclick={() => (selectedEnergy = null)}
+					>
+						All
+					</button>
+
+					{#each [0, 1, 2, 3, 4, 5, 6, 7] as cost}
+						{@const active = selectedEnergy === cost}
+						<button
+							type="button"
+							class="flex h-9 w-9 items-center justify-center rounded-full border text-xs font-bold transition-all active:scale-[0.9] cursor-pointer
+							{active
+								? 'border-cyan-300/60 bg-cyan-300/15 text-cyan-200 shadow-[0_0_12px_rgba(83,234,253,0.25)]'
+								: 'border-white/5 bg-slate-950/40 text-slate-400 hover:border-white/15 hover:text-white'}"
+							onclick={() => (selectedEnergy = active ? null : cost)}
+						>
+							{cost === 7 ? '7+' : cost}
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Might Filter Row -->
+			<div class="flex flex-col gap-2 lg:flex-row lg:items-center">
+				<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase lg:w-20 shrink-0">Might</span>
+				<div class="flex flex-wrap gap-1.5">
+					<button
+						type="button"
+						class="flex h-9 items-center justify-center rounded-lg border px-3 text-xs font-black tracking-wider uppercase transition-all active:scale-[0.97] cursor-pointer
+						{selectedMight === null
+							? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-200 shadow-[0_0_12px_rgba(83,234,253,0.15)]'
+							: 'border-white/5 bg-slate-950/40 text-slate-400 hover:border-white/15 hover:text-white'}"
+						onclick={() => (selectedMight = null)}
+					>
+						All
+					</button>
+
+					{#each [0, 1, 2, 3, 4, 5, 6, 7] as powerValue}
+						{@const active = selectedMight === powerValue}
+						<button
+							type="button"
+							class="flex h-9 w-9 items-center justify-center rounded-full border text-xs font-bold transition-all active:scale-[0.9] cursor-pointer
+							{active
+								? 'border-cyan-300/60 bg-cyan-300/15 text-cyan-200 shadow-[0_0_12px_rgba(83,234,253,0.25)]'
+								: 'border-white/5 bg-slate-950/40 text-slate-400 hover:border-white/15 hover:text-white'}"
+							onclick={() => (selectedMight = active ? null : powerValue)}
+						>
+							{powerValue === 7 ? '7+' : powerValue}
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Reset Button Row -->
+			{#if activeFilterCount > 0}
+				<div class="flex justify-end pt-2 border-t border-white/5">
+					<button
+						type="button"
+						class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-rose-500/25 bg-rose-500/10 px-4 text-xs font-black uppercase tracking-widest text-rose-300 transition-all hover:bg-rose-500/20 active:scale-95 cursor-pointer"
 						onclick={resetFilters}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
 							<path fill-rule="evenodd" d="M8.75 1a7.75 7.75 0 0 0-7.75 7.75 7.75 7.75 0 0 0 13.897 4.705l3.966 3.965a.75.75 0 1 0 1.06-1.06l-3.965-3.966A7.75 7.75 0 0 0 8.75 1Zm-6.25 7.75a6.25 6.25 0 1 1 10.89 4.079.75.75 0 0 1-.14.453 6.25 6.25 0 0 1-10.75-4.532Zm9.124-2.828a.75.75 0 0 0-1.06 0L8.75 7.69 6.936 5.876a.75.75 0 0 0-1.06 1.06L7.69 8.75l-1.814 1.814a.75.75 0 0 0 1.06 1.06L8.75 9.81l1.814 1.814a.75.75 0 0 0 1.06-1.06L9.81 8.75l1.814-1.814a.75.75 0 0 0 0-1.06Z" clip-rule="evenodd" />
 						</svg>
-						Clear Filters / ล้างตัวกรอง
+						Clear Filters
 					</button>
-				{/if}
-			</div>
-		{/if}
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>

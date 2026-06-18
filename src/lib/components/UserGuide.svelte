@@ -160,7 +160,7 @@
 		onclick={installPwa}
 		aria-label="Install App"
 	>
-		<svg class="h-4.5 w-4.5 animate-bounce text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+		<svg class="h-[18px] w-[18px] animate-bounce text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
 			<path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
 		</svg>
 		Install / ติดตั้งแอป

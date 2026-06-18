@@ -26,6 +26,7 @@
 		type StoredDeck
 	} from '$lib/utils/deck';
 
+
 	let { data } = $props();
 	let cards = $derived((data.cards as Card[]) || []);
 	let deckId = $derived(data.deckId ?? '');
@@ -36,6 +37,7 @@
 	let userCardCollection = $state<Record<string, number>>({});
 	let selectedPopupCard = $state<Card | null>(null);
 	let currentUser = $state<{ id: string; email: string; displayName: string; isAdmin: boolean } | null>(null);
+
 
 	function openCardPopup(card: Card) {
 		selectedPopupCard = card;
@@ -282,7 +284,7 @@
 							{#if isLocal && (selectedDeck.source !== 'online' || !selectedDeck.onlineId)}
 								<div class="mt-4 rounded-lg border border-amber-300/20 bg-amber-400/5 p-3.5 text-xs text-amber-200">
 									<div class="flex items-start gap-2.5">
-										<svg class="h-4.5 w-4.5 shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+										<svg class="h-[18px] w-[18px] shrink-0 text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 											<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 										</svg>
 										<div>
@@ -332,6 +334,13 @@
 								>
 									Playtest
 								</button>
+								<a
+									href="/playground?id={selectedDeck.id}"
+									class="inline-flex min-h-11 items-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 text-xs font-black tracking-widest text-emerald-100 uppercase transition hover:bg-emerald-500/20 hover:text-white"
+								>
+									Playground
+								</a>
+
 							{/if}
 							{#if isLocal}
 								<a href="/deck/{selectedDeck.id}/edit" class="rt-action">Edit Deck</a>
@@ -545,8 +554,8 @@
 		class={horizontal
 			? 'grid gap-3 sm:grid-cols-2'
 			: isLegend
-				? 'grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5'
-				: 'grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10'}
+				? 'grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-4'
+				: 'grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-8'}
 	>
 		{#each items as item}
 			{@const owned = userCardCollection[item.card.code] ?? 0}
@@ -633,3 +642,4 @@
 {#if selectedPopupCard}
 	<CardModal card={selectedPopupCard} closePopup={closeCardPopup} canEdit={false} />
 {/if}
+

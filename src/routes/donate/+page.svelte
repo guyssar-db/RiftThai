@@ -62,17 +62,6 @@
 					<p class="rt-copy mt-3 max-w-2xl text-sm sm:text-base">
 						ถ้าเว็บนี้ช่วยให้ค้นหาการ์ด อ่านคำแปลไทย หรือจัดเด็คได้ง่ายขึ้น สามารถสนับสนุนค่าใช้จ่ายของเว็บได้จาก QR ด้านล่าง
 					</p>
-					<div class="mt-5 flex flex-wrap gap-2">
-						<span class="rounded-full border border-cyan-300/20 bg-cyan-300/8 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
-							PromptPay
-						</span>
-						<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-slate-300">
-							Manual Support
-						</span>
-						<span class="rounded-full border border-orange-300/20 bg-orange-300/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-orange-100">
-							No Login Required
-						</span>
-					</div>
 				</div>
 
 				<div class="rounded-xl border border-white/10 bg-black/25 p-4">

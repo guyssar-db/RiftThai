@@ -6,7 +6,7 @@
 		href: string;
 		external?: boolean;
 		active?: boolean;
-		icon: 'domains' | 'qa' | 'deck' | 'donate' | 'official' | 'collection';
+		icon: 'domains' | 'qa' | 'deck' | 'donate' | 'official' | 'collection' | 'rules';
 	};
 
 	type AuthSession = {
@@ -20,13 +20,14 @@
 		} | null;
 	};
 
-	let { active = '' } = $props<{ active?: 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | '' }>();
+	let { active = '' } = $props<{ active?: 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '' }>();
 	let isOpen = $state(false);
 	let accountOpen = $state(false);
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
 
 	let menuItems = $derived<MenuItem[]>([
+		{ label: 'Rules', href: '/rules', active: active === 'rules', icon: 'rules' },
 		{ label: 'Domains', href: '/domains', active: active === 'domains', icon: 'domains' },
 		{ label: 'Q&A', href: '/qa', active: active === 'qa', icon: 'qa' },
 		{ label: 'Deck', href: '/deck', active: active === 'deck', icon: 'deck' },

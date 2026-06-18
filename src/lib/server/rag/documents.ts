@@ -160,6 +160,12 @@ function coreRuleDocuments(): RagDocument[] {
 function localKnowledgeDocuments(): RagDocument[] {
 	const knowledgeFiles = [
 		{
+			file: 'docs/how-to-play.md',
+			source: 'doc:how-to-play',
+			source_type: 'rule',
+			title: 'Riftbound How to Play Guide'
+		},
+		{
 			file: 'docs/domains.md',
 			source: 'doc:domains',
 			source_type: 'domain_guide',

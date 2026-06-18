@@ -24,6 +24,11 @@
 			title: defaultTitle,
 			description: defaultDescription
 		},
+		'/rules': {
+			title: 'Riftbound Rules - วิธีเล่นและกติกาภาษาไทย - RiftThai',
+			description:
+				'คู่มือการเล่นวิธีเล่นและกติกาแบบละเอียดสำหรับ Riftbound TCG ภาษาไทย อธิบายโครงสร้างเทิร์น เฟสต่าง ๆ และลำดับการต่อสู้ (Combat Timeline)'
+		},
 		'/qa': {
 			title: 'RiftThai Q&A - คำถามกฎ Riftbound ภาษาไทย',
 			description:
@@ -56,20 +61,22 @@
 	let canonicalPath = $derived(publicPages[pathname] ? pathname : '/');
 	let canonicalUrl = $derived(`${siteUrl}${canonicalPath === '/' ? '/' : canonicalPath}`);
 	let robots = $derived(publicPages[pathname] ? 'index, follow' : 'noindex, nofollow');
-	let sideNavActive: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | '' = $derived(
+	let sideNavActive: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '' = $derived(
 		pathname === '/'
 			? 'cards'
-			: pathname.startsWith('/domains')
-				? 'domains'
-				: pathname.startsWith('/qa')
-					? 'qa'
-					: pathname.startsWith('/deck')
-						? 'deck'
-						: pathname.startsWith('/donate')
-							? 'donate'
-							: pathname.startsWith('/collection')
-								? 'collection'
-								: ''
+			: pathname.startsWith('/rules')
+				? 'rules'
+				: pathname.startsWith('/domains')
+					? 'domains'
+					: pathname.startsWith('/qa')
+						? 'qa'
+						: pathname.startsWith('/deck')
+							? 'deck'
+							: pathname.startsWith('/donate')
+								? 'donate'
+								: pathname.startsWith('/collection')
+									? 'collection'
+									: ''
 	);
 	let cookieChoice = $state<'accepted' | 'declined' | null>(null);
 	let isHydrated = $state(false);

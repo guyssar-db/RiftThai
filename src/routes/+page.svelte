@@ -17,20 +17,39 @@
 	import { buildDeckCards, getDeckZones, getChampionCard, type StoredDeck } from '$lib/utils/deck';
 
 	let { data } = $props();
+	const initialData = data;
 
 	let cards = $derived((data.cards as Card[]) || []);
-	let searchTerm = $state(data.searchTerm ?? '');
-	let loadedSearchTerm = $state<string | null>(data.searchTerm ?? null);
-	let selectedSet = $state(data.selectedSet ?? 'All');
-	let selectedType = $state(data.selectedType ?? 'All');
-	let selectedDomains = $state<string[]>(data.selectedDomains ?? []);
-	let viewMode = $state<'gallery' | 'keywords' | 'phases'>((data.viewMode as any) ?? 'gallery');
+	let searchTerm = $state(initialData.searchTerm ?? '');
+	let loadedSearchTerm = $state<string | null>(initialData.searchTerm ?? null);
+	let selectedSet = $state(initialData.selectedSet ?? 'All');
+	let selectedType = $state(initialData.selectedType ?? 'All');
+	let selectedDomains = $state<string[]>(initialData.selectedDomains ?? []);
+	let selectedEnergy = $state<number | null>(initialData.selectedEnergy ?? null);
+	let selectedMight = $state<number | null>(initialData.selectedMight ?? null);
+	let viewMode = $state<'gallery' | 'keywords' | 'phases'>((initialData.viewMode as any) ?? 'gallery');
 	let currentPage = $state(1);
 	let selectedPopupCard = $state<Card | null>(null);
 	let isFiltering = $state(false);
 	let userCollection = $state<Record<string, number> | null>(null);
 	let trendingDecks = $state<StoredDeck[]>([]);
 	let loadingTrending = $state(false);
+
+	let collectionStats = $derived.by(() => {
+		if (!userCollection) return null;
+		let nonFoilCount = 0;
+		let foilCount = 0;
+		for (const [key, val] of Object.entries(userCollection)) {
+			if (typeof val === 'number' && val > 0) {
+				if (key.endsWith('_foil')) {
+					foilCount += val;
+				} else {
+					nonFoilCount += val;
+				}
+			}
+		}
+		return { nonFoilCount, foilCount };
+	});
 
 	async function loadTrendingDecks() {
 		loadingTrending = true;
@@ -93,6 +112,8 @@
 		setParam('type', selectedType === 'All' ? '' : selectedType);
 		setParam('domains', selectedDomains.join(','));
 		setParam('mode', viewMode === 'gallery' ? '' : viewMode);
+		setParam('energy', selectedEnergy === null ? '' : String(selectedEnergy));
+		setParam('might', selectedMight === null ? '' : String(selectedMight));
 
 		if (window.location.search !== currentUrl.search) {
 			window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search);
@@ -131,8 +152,19 @@
 			const matchesDomain =
 				selectedDomains.length === 0 ||
 				selectedDomains.some((domain) => (card.domains ?? []).includes(domain));
+			const matchesEnergy =
+				selectedEnergy === null ||
+				(selectedEnergy === 7
+					? (card.energy ?? 0) >= 7
+					: card.energy === selectedEnergy);
+			const matchesMight =
+				selectedMight === null ||
+				(card.power?.label === 'Might' &&
+					(selectedMight === 7
+						? (card.power?.value?.id ?? 0) >= 7
+						: card.power?.value?.id === selectedMight));
 
-			return matchesSearch && matchesSet && matchesType && matchesDomain;
+			return matchesSearch && matchesSet && matchesType && matchesDomain && matchesEnergy && matchesMight;
 		})
 	);
 
@@ -152,6 +184,11 @@
 	$effect(() => {
 		if (!browser) return;
 		void loadUserCollection();
+		const syncAuth = () => void loadUserCollection();
+		window.addEventListener('riftthai-auth-changed', syncAuth);
+		return () => {
+			window.removeEventListener('riftthai-auth-changed', syncAuth);
+		};
 	});
 
 	async function loadUserCollection() {
@@ -163,10 +200,15 @@
 				const colData = await colRes.json().catch(() => ({}));
 				if (colRes.ok) {
 					userCollection = colData.collection || {};
+				} else {
+					userCollection = null;
 				}
+			} else {
+				userCollection = null;
 			}
 		} catch (err) {
 			console.error('Failed to load user collection:', err);
+			userCollection = null;
 		}
 	}
 
@@ -175,6 +217,8 @@
 		selectedSet;
 		selectedType;
 		selectedDomains;
+		selectedEnergy;
+		selectedMight;
 		currentPage = 1;
 	});
 
@@ -183,6 +227,8 @@
 		selectedSet;
 		selectedType;
 		selectedDomains;
+		selectedEnergy;
+		selectedMight;
 		isFiltering = true;
 		const timer = setTimeout(() => (isFiltering = false), 220);
 		return () => clearTimeout(timer);
@@ -251,19 +297,10 @@
 						ค้นการ์ด, อ่านคำแปลไทย, กรองตาม set, type และ domain ได้จากหน้าเดียว พร้อมข้อมูล keyword
 						และลำดับ phase สำหรับใช้เตรียมเล่น
 					</p>
-					<div class="mt-6 flex flex-wrap gap-2">
-						<span class="rt-chip">Thai Translation</span>
-						<span class="rt-chip">Rules Notes</span>
-						<span class="rt-chip">Deck Prep</span>
-					</div>
+
 				</div>
 
 				<div class="relative border-t border-white/10 bg-slate-950/32 p-4 lg:border-t-0 lg:border-l">
-					<div
-						class="mb-3 hidden rounded-lg border border-white/10 bg-black/20 p-3 text-[10px] font-black tracking-widest text-slate-400 uppercase lg:block"
-					>
-						Index Telemetry
-					</div>
 					<div class="grid h-full grid-cols-3 gap-2 text-center lg:h-auto lg:grid-cols-1">
 						<div
 							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-cyan-300/15 bg-black/20 p-2.5 shadow-inner shadow-cyan-300/5 sm:p-3 lg:flex-row lg:justify-between"
@@ -290,6 +327,8 @@
 							<div class="text-base font-black text-white sm:text-xl">{domains.length - 2}</div>
 						</div>
 					</div>
+
+
 				</div>
 			</header>
 
@@ -356,7 +395,7 @@
 														{#if getDomainIcon(dom.label)}
 															<img
 																src={getDomainIcon(dom.label)}
-																class="h-4.5 w-4.5 object-contain rounded-full bg-slate-950 ring-1 ring-white/10"
+																class="h-[18px] w-[18px] object-contain rounded-full bg-slate-950 ring-1 ring-white/10"
 																alt={dom.label}
 																title={dom.label}
 															/>
@@ -366,7 +405,7 @@
 											{:else if getDomainIcon(summary.primaryDomain)}
 												<img
 													src={getDomainIcon(summary.primaryDomain)}
-													class="h-4.5 w-4.5 object-contain"
+													class="h-[18px] w-[18px] object-contain"
 													alt={summary.primaryDomain}
 													title={summary.primaryDomain}
 												/>
@@ -395,6 +434,8 @@
 				bind:selectedSet
 				bind:selectedType
 				bind:selectedDomains
+				bind:selectedEnergy
+				bind:selectedMight
 				{sets}
 				{types}
 				{domains}

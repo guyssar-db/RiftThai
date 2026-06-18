@@ -30,7 +30,7 @@ export const keywords: Keyword[] = [
     { id: 'weaponmaster', name_en: 'Weaponmaster', name_th: 'Weaponmaster', description_th: 'ผู้ชำนาญอาวุธ: มักมีความสามารถพิเศษเมื่อติดตั้งอุปกรณ์ (Equip) หรือสามารถจ่ายค่าร่ายพิเศษเพื่อขโมยหรือสวมใส่อุปกรณ์จากสนามได้ทันที', color: '#717171' },
     { id: 'equip', name_en: 'Equip', name_th: 'Equip', description_th: 'การติดตั้งการ์ดประเภท Gear (อาวุธ/ชุดเกราะ) เข้ากับยูนิตเพื่อเพิ่มค่าพลังหรือความสามารถ', color: '#717171' },
     { id: 'add', name_en: 'Add', name_th: 'Add', description_th: 'คำสั่งเพิ่มทรัพยากร (เช่น \'ADD 1\') หมายถึงการได้รับ 1 Energy เข้ามาใน Pool ทันทีโดยที่คู่แข่งห้าม Reaction สวน', color: '#717171' },
-    { id: 'stun', name_en: 'Stun', name_th: 'Stun', description_th: 'สถานะมึนงง: ยูนิตไม่สามารถโจมตี, เคลื่อนที่ หรือกดใช้สกิลได้ (หายเองเมื่อเริ่มเทิร์นเจ้าของยูนิต)', color: '#717171' },
+    { id: 'stun', name_en: 'Stun', name_th: 'Stun', description_th: 'ยูนิตไม่สามารถสร้างความเสียหายได้ในเทิร์นนี้', color: '#717171' },
     { id: 'buff', name_en: 'Buff', name_th: 'Buff', description_th: 'การเพิ่มค่าพลัง (Might) หรือความสามารถให้ยูนิต (อาจเป็นชั่วคราวในเทิร์นนี้ หรือถาวร)', color: '#717171' },
     { id: 'predict', name_en: 'Predict', name_th: 'ทำนาย', description_th: 'ดูการ์ดจากใบบนสุดของกองการ์ดตามจำนวนที่กำหนด เลือก Recycle ใบที่ไม่ต้องการโดยส่งกลับเข้าใต้กองได้ และเรียงใบที่เหลือกลับไว้บนกอง', color: '#717171' },
 

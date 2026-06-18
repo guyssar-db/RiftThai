@@ -2,6 +2,7 @@ import { redirect } from '@sveltejs/kit';
 
 import { getAuthenticatedUser } from '$lib/server/auth';
 import { listCardReports } from '$lib/server/card-reports';
+import cards from '$lib/data/riftbound_cards_all.json';
 
 export const load = async ({ cookies }) => {
 	const user = await getAuthenticatedUser(cookies);
@@ -10,6 +11,7 @@ export const load = async ({ cookies }) => {
 
 	return {
 		user,
-		reports: await listCardReports()
+		reports: await listCardReports(),
+		cards
 	};
 };

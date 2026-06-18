@@ -14,9 +14,61 @@
     --color-cyan-500: #25D4EA;
     --color-amber-100: #B9F7FF;
     --color-amber-200: #53EAFD;
+
+    /* Shadcn variables mapped to Tailwind v4 */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    /* Fonts */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'Rajdhani', monospace;
 }
 
 :root {
+    /* Shadcn CSS variables mapped to RiftThai neon theme */
+    --background: #070a12;
+    --foreground: #f8fafc;
+    --card: rgba(12, 18, 28, 0.92);
+    --card-foreground: #f8fafc;
+    --popover: rgba(12, 18, 28, 0.96);
+    --popover-foreground: #f8fafc;
+    --primary: #53EAFD;
+    --primary-foreground: #020617;
+    --secondary: rgba(17, 25, 38, 0.82);
+    --secondary-foreground: #d6e3ee;
+    --muted: #0d1624;
+    --muted-foreground: #93a4b8;
+    --accent: rgba(83, 234, 253, 0.12);
+    --accent-foreground: #53EAFD;
+    --destructive: #f43f5e;
+    --destructive-foreground: #ffffff;
+    --border: rgba(118, 210, 255, 0.18);
+    --input: rgba(118, 210, 255, 0.18);
+    --ring: #53EAFD;
+    --radius: 0.5rem;
+
     --page-bg: #070a12;
     --surface-1: rgba(12, 18, 28, 0.92);
     --surface-2: rgba(17, 25, 38, 0.82);
@@ -37,8 +89,13 @@ body {
     background-color: var(--page-bg);
     color: #f1f5f9;
     overflow-x: hidden;
+    font-family: var(--font-sans);
     font-feature-settings: "kern";
     text-rendering: optimizeLegibility;
+}
+
+button, input, select, textarea {
+    font-family: inherit;
 }
 
 button {
@@ -77,20 +134,27 @@ body::after {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #080b12;
+    background: rgba(7, 10, 18, 0.6);
+    backdrop-filter: blur(4px);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #2b3846;
-    border-radius: 8px;
+    background: rgba(83, 234, 253, 0.15);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 9999px;
+    transition: background-color 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: rgba(83, 234, 253, 0.4);
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 
 .mesh-gradient {
@@ -286,6 +350,7 @@ body::after {
     background: linear-gradient(135deg, rgba(83, 234, 253, 0.12), rgba(255, 184, 107, 0.07));
     padding: 0.45rem 0.7rem;
     color: #53EAFD;
+    font-family: var(--font-mono);
     font-size: 0.68rem;
     font-weight: 900;
     text-transform: uppercase;
@@ -294,6 +359,7 @@ body::after {
 
 .rt-kicker {
     color: #53EAFD;
+    font-family: var(--font-mono);
     font-size: 0.68rem;
     font-weight: 900;
     text-transform: uppercase;
@@ -302,6 +368,7 @@ body::after {
 
 .rt-heading {
     color: #ffffff;
+    font-family: var(--font-display);
     font-weight: 950;
     letter-spacing: 0;
     line-height: 0.95;
@@ -324,6 +391,7 @@ body::after {
     background: linear-gradient(135deg, #53EAFD, #B9F7FF);
     padding-inline: 1.05rem;
     color: #03111f;
+    font-family: var(--font-display);
     font-size: 0.75rem;
     font-weight: 950;
     text-transform: uppercase;

@@ -331,11 +331,113 @@ export function parseAnswerText(text: string) {
 		);
 	});
 
+	// Inline Markdown (Bold, Italic, Code, Links)
+	processed = processed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-white">$1</strong>');
+	processed = processed.replace(/\*(.*?)\*/g, '<em class="italic text-slate-200">$1</em>');
+	processed = processed.replace(/`([^`]+)`/g, '<code class="bg-slate-900 border border-white/10 text-pink-400 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>');
+	processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-bold">$1</a>');
+
+	// Block-level Markdown (Headers, lists, paragraphs)
+	const blocks = processed.split(/\n\n+/);
+	const parsedBlocks = blocks.map((block) => {
+		block = block.trim();
+		if (!block) return '';
+
+		// 1. Headers
+		if (block.startsWith('#### ')) {
+			return `<h4 class="text-xs font-black text-violet-300 mt-4 mb-1.5 uppercase tracking-wider">${block.slice(5)}</h4>`;
+		}
+		if (block.startsWith('### ')) {
+			return `<h3 class="text-sm font-black text-violet-300 mt-5 mb-2 uppercase tracking-wide flex items-center gap-1.5">${block.slice(4)}</h3>`;
+		}
+		if (block.startsWith('## ')) {
+			return `<h2 class="text-base font-black text-violet-200 mt-6 mb-3 pb-1 border-b border-white/10 flex items-center gap-2">${block.slice(3)}</h2>`;
+		}
+		if (block.startsWith('# ')) {
+			return `<h1 class="text-lg font-black text-violet-100 mt-6 mb-4 pb-2 border-b-2 border-violet-500/20">${block.slice(2)}</h1>`;
+		}
+
+		// 2. Line-by-line list processing inside block
+		const lines = block.split('\n');
+		let html = '';
+		let inUl = false;
+		let inOl = false;
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			const trimmed = line.trim();
+
+			if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+				if (inOl) {
+					html += '</ol>\n';
+					inOl = false;
+				}
+				if (!inUl) {
+					html += '<ul class="space-y-1 my-2 list-inside">\n';
+					inUl = true;
+				}
+				const content = trimmed.slice(2);
+				html += `<li class="ml-4 list-disc pl-1 py-0.5 text-slate-300 leading-relaxed">${content}</li>\n`;
+			} else {
+				const olMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+				if (olMatch) {
+					if (inUl) {
+						html += '</ul>\n';
+						inUl = false;
+					}
+					if (!inOl) {
+						html += '<ol class="space-y-1 my-2 list-inside">\n';
+						inOl = true;
+					}
+					const num = olMatch[1];
+					const content = olMatch[2];
+					html += `<li class="ml-4 list-decimal pl-1 py-0.5 text-slate-300 leading-relaxed"><span class="font-bold text-violet-400 mr-1">${num}.</span>${content}</li>\n`;
+				} else {
+					if (inUl) {
+						html += '</ul>\n';
+						inUl = false;
+					}
+					if (inOl) {
+						html += '</ol>\n';
+						inOl = false;
+					}
+					if (trimmed) {
+						// Group consecutive plain lines to form one paragraph block
+						let pContent = trimmed;
+						while (i + 1 < lines.length) {
+							const nextTrimmed = lines[i + 1].trim();
+							if (
+								nextTrimmed &&
+								!nextTrimmed.startsWith('- ') &&
+								!nextTrimmed.startsWith('* ') &&
+								!/^\d+\.\s+/.test(nextTrimmed)
+							) {
+								pContent += ' ' + nextTrimmed;
+								i++;
+							} else {
+								break;
+							}
+						}
+						html += `<p class="mb-2 leading-relaxed text-slate-300">${pContent}</p>\n`;
+					}
+				}
+			}
+		}
+
+		if (inUl) html += '</ul>\n';
+		if (inOl) html += '</ol>\n';
+
+		return html;
+	});
+
+	processed = parsedBlocks.filter(Boolean).join('\n');
+
+	// Restore placeholders
 	Object.entries(placeholders).forEach(([id, html]) => {
 		processed = processed.replaceAll(id, html);
 	});
 
-	return processed.replace(/\n/g, '<br />');
+	return processed;
 }
 
 export function getTokens(value: string) {

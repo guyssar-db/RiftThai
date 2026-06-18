@@ -5,6 +5,7 @@
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
 	import PlaytestModal from '$lib/components/PlaytestModal.svelte';
+	import CardModal from '$lib/components/CardModal.svelte';
 	import { getDomainIcon } from '$lib/data/domainIcons';
 	import { getTypeIcons } from '$lib/data/typeIcons';
 	import type { Card } from '$lib/types/card';
@@ -44,6 +45,7 @@
 	let exportMode = $state<'preview' | 'download' | ''>('');
 	let exportError = $state('');
 	let isPlaytestOpen = $state(false);
+	let selectedPopupCard = $state<Card | null>(null);
 
 	function openPlaytest() {
 		isPlaytestOpen = true;
@@ -1191,7 +1193,7 @@
 			roundRectPath(context, x, y, width, height, radius);
 			context.clip();
 			context.translate(x + width / 2, y + height / 2);
-			context.rotate(Math.PI / 2);
+			context.rotate(-Math.PI / 2);
 			context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
 			context.restore();
 			return;
@@ -1959,6 +1961,12 @@
 								>
 									Playtest
 								</button>
+								<a
+									href="/playground?id={selectedDeck.id}"
+									class="inline-flex min-h-11 items-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 text-xs font-black tracking-widest text-emerald-100 uppercase transition hover:bg-emerald-500/20 hover:text-white"
+								>
+									Playground
+								</a>
 							{/if}
 							<button
 								type="button"
@@ -2220,6 +2228,14 @@
 		/>
 	{/if}
 
+	{#if selectedPopupCard}
+		<CardModal
+			card={selectedPopupCard}
+			closePopup={() => selectedPopupCard = null}
+			canEdit={false}
+		/>
+	{/if}
+
 	{#if deleteConfirmDeck}
 		<div class="fixed inset-0 z-[980] grid place-items-center bg-slate-950/82 p-4 backdrop-blur-sm">
 			<div
@@ -2356,19 +2372,22 @@
 			: 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}
 	>
 		{#each items as item}
+			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<article
 				class={horizontal
-					? 'group grid min-h-32 grid-cols-[8.5rem_1fr] gap-3 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35 sm:grid-cols-[10.5rem_1fr]'
-					: 'group min-w-0 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35'}
+					? 'group grid min-h-32 grid-cols-[8.5rem_1fr] gap-3 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35 sm:grid-cols-[10.5rem_1fr] cursor-pointer hover:scale-[1.01]'
+					: 'group min-w-0 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35 cursor-pointer hover:scale-[1.01]'}
+				onclick={() => selectedPopupCard = item.card}
 			>
 				<div class="relative overflow-hidden rounded-md bg-slate-950">
 					<img
 						src={getCardImageUrl(item.card.image_url, 260, 'webp')}
 						class={horizontal
-							? 'aspect-[1039/744] h-full w-full object-cover'
-							: 'aspect-[744/1039] w-full object-cover'}
-						style={!horizontal && item.card.name_en === 'Baron Pit'
-							? 'transform: rotate(90deg) scale(1.4);'
+							? `aspect-[1039/744] h-full w-full ${item.card.name_en === 'Baron Pit' || item.card.name_en === 'Brush' ? 'object-contain' : 'object-cover'}`
+							: `aspect-[744/1039] w-full ${item.card.name_en === 'Baron Pit' || item.card.name_en === 'Brush' ? 'object-contain' : 'object-cover'}`}
+						style={!horizontal && (item.card.name_en === 'Baron Pit' || item.card.name_en === 'Brush')
+							? 'transform: rotate(-90deg) scale(1.4);'
 							: ''}
 						alt={item.card.name_en}
 						loading="lazy"
