@@ -71,14 +71,9 @@
 <aside
 	class="sticky top-0 z-[250] hidden h-dvh min-h-dvh flex-col border-r border-cyan-300/10 bg-[#07111f]/92 px-3 py-6 shadow-2xl shadow-black/25 backdrop-blur-xl lg:flex"
 >
-	<!-- Brand Logo -->
-	<div class="mb-8 px-2">
-		<a href="/" class="flex items-center gap-2 border-l-2 border-cyan-300/60 pl-3 text-lg font-black uppercase italic tracking-wider text-white xl:text-xl font-display">
-			Rift<span class="text-cyan-300">Thai</span>
-		</a>
-	</div>
 
-	<nav class="flex flex-1 flex-col gap-1.5" aria-label="Desktop navigation">
+
+	<nav class="flex flex-1 flex-col gap-1.5 pt-12" aria-label="Desktop navigation">
 		{#each menuItems as item}
 			<a
 				href={item.href}
