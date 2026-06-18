@@ -1025,7 +1025,7 @@
 			roundRectPath(context, x, y, width, height, radius);
 			context.clip();
 			context.translate(x + width / 2, y + height / 2);
-			context.rotate(Math.PI / 2);
+			context.rotate(-Math.PI / 2);
 			context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
 			context.restore();
 			return;

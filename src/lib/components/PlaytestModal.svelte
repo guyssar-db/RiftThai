@@ -178,7 +178,7 @@
 				<!-- Instructions -->
 				{#if !hasMulliganed}
 					<div class="mb-5 rounded-lg border border-amber-300/20 bg-amber-400/5 p-3 text-xs text-amber-200">
-						💡 <strong>กติกามัลลิแกน (Mulligan):</strong> จั่ว 4 ใบแรก เลือกการ์ดบนมือไม่เกิน 2 ใบเพื่อเปลี่ยนคืนเด็คแล้วสับจั่วชดเชยใหม่ (คลิกที่การ์ดเพื่อเลือก)
+						<strong>กติกามัลลิแกน (Mulligan):</strong> จั่ว 4 ใบแรก เลือกการ์ดบนมือไม่เกิน 2 ใบเพื่อเปลี่ยนคืนเด็คแล้วสับจั่วชดเชยใหม่ (คลิกที่การ์ดเพื่อเลือก)
 					</div>
 				{/if}
 
@@ -216,10 +216,11 @@
 										<!-- Mulligan Selection Overlay -->
 										{#if isSelected}
 											<div class="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-2 bg-amber-950/20 text-center">
-												<div class="rounded-full bg-amber-400 p-1.5 text-slate-950">
-													<svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5">
-														<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 6H16" />
-													</svg>
+												<div class="rounded-full h-[30px] w-[30px] bg-amber-400 p-1.5 text-slate-950">
+													<svg class="w-5 -translate-x-[1px]  h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+														<path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+													  </svg>
+													  
 												</div>
 												<span class="text-[10px] font-black uppercase tracking-wider text-amber-200 bg-black/80 px-2 py-0.5 rounded">เปลี่ยน (Replace)</span>
 											</div>

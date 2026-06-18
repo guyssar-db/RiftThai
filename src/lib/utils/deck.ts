@@ -86,7 +86,8 @@ const tokenCardNames = new Set([
 	'Sand Soldier',
 	'Sprite',
 	'Gold',
-	'Baron Pit'
+	'Baron Pit',
+	'Brush'
 ]);
 
 export function normalizeDeck(entries: DeckEntry[]) {

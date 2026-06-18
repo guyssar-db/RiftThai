@@ -1,13 +1,17 @@
 <script lang="ts">
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
+	import CardModal from '$lib/components/CardModal.svelte';
+	import { getCardImageUrl } from '$lib/utils/cardImages';
+	import type { Card } from '$lib/types/card';
 	import type { CardReport, CardReportStatus } from '$lib/types/cardReport';
 
-	let { data } = $props<{ data: { reports: CardReport[] } }>();
+	let { data } = $props<{ data: { reports: CardReport[]; cards: Card[] } }>();
 	let reports = $state<CardReport[]>([]);
 	let statusFilter = $state<CardReportStatus | 'all'>('all');
 	let updatingId = $state('');
 	let errorMessage = $state('');
 	let didHydrate = $state(false);
+	let selectedPopupCard = $state<Card | null>(null);
 
 	let filteredReports = $derived(
 		statusFilter === 'all' ? reports : reports.filter((report) => report.status === statusFilter)
@@ -18,6 +22,10 @@
 		reports = data.reports ?? [];
 		didHydrate = true;
 	});
+
+	function findCardByCode(code: string): Card | undefined {
+		return data.cards?.find((c: Card) => c.code === code);
+	}
 
 	async function updateReport(report: CardReport, status: CardReportStatus) {
 		updatingId = report.id;
@@ -87,40 +95,76 @@
 
 		<section class="grid gap-4">
 			{#each filteredReports as report}
+				{@const card = findCardByCode(report.card_code)}
 				<article class="rt-panel rounded-xl p-4 sm:p-5">
-					<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-						<div class="min-w-0">
-							<div class="flex flex-wrap items-center gap-2">
-								<span
-									class="rounded-md border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-black tracking-widest text-cyan-100 uppercase"
+					<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between w-full">
+						<div class="flex flex-col sm:flex-row gap-4 min-w-0 flex-1">
+							{#if card}
+								<button
+									type="button"
+									onclick={() => selectedPopupCard = card}
+									class="group relative w-20 sm:w-24 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-slate-950 transition hover:border-cyan-300/50 self-start {card.type === 'Battlefield' ? 'aspect-[184/132]' : 'aspect-[132/184]'}"
 								>
-									{report.report_type.replace('_', ' ')}
-								</span>
-								<span
-									class="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] font-black tracking-widest text-slate-300 uppercase"
+									{#if card.image_url}
+										<img
+											src={getCardImageUrl(card.image_url, 140, 'webp')}
+											alt={card.name_en}
+											class="h-full w-full {card.name_en === 'Baron Pit' || card.name_en === 'Brush' ? 'object-contain' : 'object-cover'} transition duration-300 group-hover:scale-105"
+										/>
+									{:else}
+										<div class="p-1 h-full flex items-center justify-center text-[8px] font-black uppercase text-slate-400 text-center">
+											{card.name_en}
+										</div>
+									{/if}
+									<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-black uppercase tracking-wider text-white transition">
+										View
+									</div>
+								</button>
+							{/if}
+
+							<div class="min-w-0 flex-1">
+								<div class="flex flex-wrap items-center gap-2">
+									<span
+										class="rounded-md border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-black tracking-widest text-cyan-100 uppercase"
+									>
+										{report.report_type.replace('_', ' ')}
+									</span>
+									<span
+										class="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] font-black tracking-widest text-slate-300 uppercase"
+									>
+										{report.status}
+									</span>
+									<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+										{new Date(report.created_at).toLocaleString()}
+									</span>
+								</div>
+								<h2 class="mt-3 text-xl font-black text-white uppercase italic flex flex-wrap items-center gap-2">
+									<span>{report.card_name}</span>
+									{#if card}
+										<button 
+											type="button" 
+											onclick={() => selectedPopupCard = card} 
+											class="text-[9px] normal-case not-italic font-bold px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 hover:bg-cyan-500/20 transition cursor-pointer flex items-center gap-1"
+										>
+											View Card
+										</button>
+									{/if}
+								</h2>
+								<p class="mt-1 text-xs font-black tracking-widest text-slate-500 uppercase">
+									{report.card_code}
+								</p>
+								<p
+									class="mt-4 text-sm leading-relaxed font-semibold whitespace-pre-wrap text-slate-300"
 								>
-									{report.status}
-								</span>
-								<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
-									{new Date(report.created_at).toLocaleString()}
-								</span>
+									{report.message}
+								</p>
+								<p class="mt-3 text-xs font-bold text-slate-500">
+									From: {report.app_users?.display_name || report.app_users?.email?.split('@')[0] || 'Anonymous'}
+								</p>
 							</div>
-							<h2 class="mt-3 text-xl font-black text-white uppercase italic">
-								{report.card_name}
-							</h2>
-							<p class="mt-1 text-xs font-black tracking-widest text-slate-500 uppercase">
-								{report.card_code}
-							</p>
-							<p
-								class="mt-4 text-sm leading-relaxed font-semibold whitespace-pre-wrap text-slate-300"
-							>
-								{report.message}
-							</p>
-							<p class="mt-3 text-xs font-bold text-slate-500">
-								From: {report.app_users?.display_name || report.app_users?.email?.split('@')[0] || 'Anonymous'}
-							</p>
 						</div>
-						<div class="grid min-w-48 gap-2">
+						
+						<div class="grid min-w-48 gap-2 shrink-0">
 							{#each ['open', 'reviewing', 'resolved', 'dismissed'] as nextStatus}
 								<button
 									type="button"
@@ -147,4 +191,12 @@
 			{/each}
 		</section>
 	</main>
+
+	{#if selectedPopupCard}
+		<CardModal
+			card={selectedPopupCard}
+			closePopup={() => selectedPopupCard = null}
+			canEdit={false}
+		/>
+	{/if}
 </div>

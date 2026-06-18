@@ -83,21 +83,20 @@
 						{card.code}
 					</div>
 
-					{#if userCollection && Object.keys(userCollection).length > 0}
+					{#if userCollection}
 						{@const ownedNormal = userCollection[card.code] ?? 0}
 						{@const ownedFoil = userCollection[card.code + '_foil'] ?? 0}
 						{@const owned = ownedNormal + ownedFoil}
 						<div
-							class="absolute left-3 bottom-3 rounded-md px-1.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase shadow-md backdrop-blur border z-10 flex gap-1 items-center
+							class="absolute left-3 bottom-3 rounded-md px-1.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase shadow-md backdrop-blur border z-10 flex gap-1.5 items-center
 							{owned > 0
-								? 'bg-cyan-500/80 border-cyan-400 text-white shadow-[0_0_8px_rgba(34,211,238,0.4)]'
+								? 'bg-slate-950/92 border-cyan-400/45 text-white shadow-[0_0_8px_rgba(34,211,238,0.2)]'
 								: 'bg-slate-950/90 border-white/5 text-slate-500'}"
 							title="Owned: {ownedNormal} Normal, {ownedFoil} Foil"
 						>
-							<span>Own: {owned}</span>
-							{#if ownedFoil > 0}
-								<span class="rounded bg-pink-500 text-white text-[8px] px-0.5 font-black uppercase">F</span>
-							{/if}
+							<span class={ownedNormal > 0 ? 'text-cyan-300' : ''}>Non-F: {ownedNormal}</span>
+							<span class="text-white/20">|</span>
+							<span class={ownedFoil > 0 ? 'text-pink-400 font-extrabold' : ''}>F: {ownedFoil}</span>
 						</div>
 					{/if}
 

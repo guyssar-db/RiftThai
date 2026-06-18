@@ -217,17 +217,50 @@ function sourceTypeBoost(question: string, sourceType: string) {
 
 async function mergeMatches(vectorMatchesPromise: Promise<RagMatch[]>, localMatches: RagMatch[]) {
 	const vectorMatches = await vectorMatchesPromise;
-	const byKey = new Map<string, RagMatch>();
+	const byKey = new Map<string, { match: RagMatch; vectorRank: number; localRank: number }>();
 
-	for (const match of [...localMatches, ...vectorMatches]) {
-		const key = `${match.source_type}:${match.source}:${match.content.slice(0, 80)}`;
+	const getKey = (m: RagMatch) => `${m.source_type}:${m.source}:${m.content.slice(0, 80)}`;
+
+	// Rank vector matches
+	vectorMatches.forEach((match, index) => {
+		const key = getKey(match);
+		byKey.set(key, { match, vectorRank: index + 1, localRank: Infinity });
+	});
+
+	// Rank local lexical matches
+	localMatches.forEach((match, index) => {
+		const key = getKey(match);
 		const existing = byKey.get(key);
-		if (!existing || match.similarity > existing.similarity) byKey.set(key, match);
-	}
+		if (existing) {
+			existing.localRank = index + 1;
+		} else {
+			byKey.set(key, { match, vectorRank: Infinity, localRank: index + 1 });
+		}
+	});
 
-	return [...byKey.values()]
-		.sort((a, b) => b.similarity - a.similarity)
-		.slice(0, 8);
+	const k = 60;
+	// Calculate RRF score for each item and normalize to similarity float
+	const scored = Array.from(byKey.values()).map(({ match, vectorRank, localRank }) => {
+		const vScore = vectorRank === Infinity ? 0 : 1 / (k + vectorRank);
+		const lScore = localRank === Infinity ? 0 : 1 / (k + localRank);
+		const rrfScore = vScore + lScore;
+		
+		// Normalize RRF score to [0, 1] range. Max theoretical RRF score is 2 / 61.
+		const normalizedSimilarity = rrfScore * (61 / 2);
+
+		return {
+			match: {
+				...match,
+				similarity: normalizedSimilarity
+			},
+			rrfScore
+		};
+	});
+
+	// Sort by RRF score descending
+	scored.sort((a, b) => b.rrfScore - a.rrfScore);
+
+	return scored.slice(0, 8).map((item) => item.match);
 }
 
 function dedupeSources(matches: RagMatch[]) {

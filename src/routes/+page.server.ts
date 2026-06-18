@@ -8,5 +8,12 @@ export const load = async ({ cookies, url }) => {
 	const selectedType = url.searchParams.get('type') ?? 'All';
 	const selectedDomains = url.searchParams.get('domains')?.split(',').filter(Boolean) ?? [];
 	const viewMode = url.searchParams.get('mode') ?? 'gallery';
-	return { canEdit, searchTerm, selectedSet, selectedType, selectedDomains, viewMode };
+
+	const energyParam = url.searchParams.get('energy');
+	const selectedEnergy = energyParam !== null && energyParam !== '' ? Number(energyParam) : null;
+
+	const mightParam = url.searchParams.get('might');
+	const selectedMight = mightParam !== null && mightParam !== '' ? Number(mightParam) : null;
+
+	return { canEdit, searchTerm, selectedSet, selectedType, selectedDomains, viewMode, selectedEnergy, selectedMight };
 };

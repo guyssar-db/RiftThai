@@ -734,9 +734,11 @@
 			</div>
 		</section>
 
-		<div class="sticky top-[4.75rem] z-30">
-			<DeckProgressStrip {stats} validation={deckValidation} />
-		</div>
+		{#if !deckValidation.isReady}
+			<div class="sticky top-[4.75rem] z-30">
+				<DeckProgressStrip {stats} validation={deckValidation} />
+			</div>
+		{/if}
 
 		<DeckValidationPanel validation={deckValidation} />
 
