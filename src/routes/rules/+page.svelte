@@ -496,11 +496,14 @@
 									<p class="text-xs text-slate-300 leading-relaxed">
 										นำค่า Might ของยูนิตทั้งหมดของแต่ละฝั่งที่อยู่ในเลนนั้นมารวมกันและปะทะพลังกันแบบพร้อมกัน (Simultaneous Damage) กฎการกระจายดาเมจมีดังนี้:
 									</p>
-									<ul class="space-y-1.5 text-xs text-slate-400 list-disc pl-5">
-										<li><strong class="text-slate-200">Tank First:</strong> ยูนิตที่มีความสามารถ Tank ต้องตกเป็นเป้าหมายและรับความเสียหายก่อนยูนิตอื่นๆ</li>
-										<li><strong class="text-slate-200">Backline Last:</strong> ยูนิตแนวหลังจะโดนดาเมจเป็นลำดับสุดท้ายหลังจากยูนิตตัวหน้าในเลนตายหมดแล้ว</li>
-										<li>ความเสียหายจะถูกบันทึกเป็นค่าบาดเจ็บสะสม (Damage Counters) บนตัวยูนิต</li>
-									</ul>
+									<ol class="space-y-1.5 text-xs text-slate-400 list-decimal pl-5">
+										<li><strong class="text-slate-200">Tank:</strong> ต้อง assign damage ให้ยูนิตที่มี Tank ก่อน</li>
+										<li><strong class="text-slate-200">Unit ปกติ:</strong> เมื่อจัดการ Tank ครบแล้ว จึง assign damage ให้ยูนิตที่ไม่มี Tank และไม่มี Backline</li>
+										<li><strong class="text-slate-200">Backline:</strong> assign damage เป็นลำดับสุดท้าย หลังจากไม่มี Tank หรือ Unit ปกติให้เลือกแล้ว</li>
+									</ol>
+									<p class="text-xs text-slate-300 leading-relaxed">
+										เมื่อเลือก assign damage ให้ยูนิตตัวใดแล้ว ต้องใส่ดาเมจให้ยูนิตตัวนั้นครบก่อน จึงจะเลือก assign damage ให้ยูนิตตัวถัดไปได้ ความเสียหายที่ได้รับจะถูกบันทึกเป็น Damage Counters บนยูนิต
+									</p>
 								</div>
 							{:else if activeCombatStep === 2}
 								<div class="space-y-2 animate-fadeIn">
