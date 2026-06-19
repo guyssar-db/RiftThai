@@ -1,4 +1,4 @@
-const CACHE_TTL_MS = 10_000;
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 let cachedSession: unknown;
 let cachedAt = 0;
