@@ -6,7 +6,8 @@ const CACHE = `cache-${version}`;
 
 const ASSETS = [
 	...build,
-	...files
+	// Card images are numerous and are cached on first use instead of during install.
+	...files.filter((path) => !path.replace(/^\//, '').startsWith('image/cards/'))
 ];
 
 self.addEventListener('install', (event: any) => {

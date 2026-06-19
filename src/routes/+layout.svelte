@@ -8,6 +8,7 @@
 	import FakeAiChat from '$lib/components/FakeAiChat.svelte';
 	import PcSideNav from '$lib/components/PcSideNav.svelte';
 	import UserGuide from '$lib/components/UserGuide.svelte';
+	import { getAuthSession } from '$lib/utils/authSession';
 
 	let { children } = $props();
 
@@ -138,15 +139,11 @@
 		}
 
 		void checkSessionBan();
-		window.addEventListener('riftthai-auth-changed', () => void checkSessionBan());
-
-		const interval = setInterval(() => {
-			void checkSessionBan();
-		}, 30000); // Check every 30 seconds
+		const syncAuth = () => void checkSessionBan(true);
+		window.addEventListener('riftthai-auth-changed', syncAuth);
 
 		return () => {
-			window.removeEventListener('riftthai-auth-changed', () => void checkSessionBan());
-			clearInterval(interval);
+			window.removeEventListener('riftthai-auth-changed', syncAuth);
 		};
 	});
 
@@ -158,12 +155,11 @@
 		}
 	});
 
-	async function checkSessionBan() {
+	async function checkSessionBan(forceRefresh = false) {
 		if (checkingSession) return;
 		checkingSession = true;
 		try {
-			const res = await fetch('/api/auth/session');
-			const data = await res.json().catch(() => ({}));
+			const data = await getAuthSession<{ user?: unknown; error?: string }>(forceRefresh);
 			
 			const isLoggedIn = !!data.user;
 

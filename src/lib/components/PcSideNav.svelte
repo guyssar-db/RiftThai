@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { getAuthSession, invalidateAuthSession } from '$lib/utils/authSession';
 
 	type MenuItem = {
 		label: string;
@@ -38,16 +39,15 @@
 
 	onMount(() => {
 		void loadSession();
-		const syncAuth = () => void loadSession();
+		const syncAuth = () => void loadSession(true);
 		window.addEventListener('riftthai-auth-changed', syncAuth);
 		return () => window.removeEventListener('riftthai-auth-changed', syncAuth);
 	});
 
-	async function loadSession() {
+	async function loadSession(forceRefresh = false) {
 		authLoading = true;
 		try {
-			const response = await fetch('/api/auth/session');
-			const data = (await response.json()) as AuthSession;
+			const data = await getAuthSession<AuthSession>(forceRefresh);
 			currentUser = data.user;
 		} catch {
 			currentUser = null;
@@ -62,6 +62,7 @@
 
 	async function logout() {
 		await fetch('/api/auth/logout', { method: 'POST' });
+		invalidateAuthSession();
 		currentUser = null;
 		accountOpen = false;
 		window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
