@@ -22,12 +22,35 @@
 	}
 </script>
 
-<div class="rt-page-shell px-4 py-6 text-slate-100 sm:py-8 lg:px-8">
+<div class="rt-page-shell pb-20 text-slate-100">
 	<div class="mesh-gradient"></div>
 
-	<div class="mx-auto max-w-7xl">
+	<nav class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/82 backdrop-blur-2xl">
+		<div class="rt-container flex items-center justify-between gap-4 py-3">
+			<div class="flex min-w-0 items-center gap-3">
+				<a
+					href="/"
+					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 sm:w-auto sm:px-4"
+					aria-label="Back to gallery"
+				>
+					<svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+						<path d="m15 18-6-6 6-6" />
+					</svg>
+					<span class="hidden text-xs font-black uppercase tracking-widest sm:ml-2 sm:block">Back</span>
+				</a>
+
+				<a href="/" class="min-w-0 shrink-0 text-xl font-black uppercase italic tracking-tight text-white sm:text-2xl">
+					Rift<span class="text-cyan-400">Thai</span>
+				</a>
+			</div>
+
+			<SiteMenu active="rules" />
+		</div>
+	</nav>
+
+	<main class="rt-container py-6 sm:py-10 lg:py-12">
 		<!-- Header -->
-		<header class="mb-8 flex flex-col justify-between gap-6 border-b border-white/10 pb-6 sm:flex-row sm:items-end">
+		<header class="mb-8 border-b border-white/10 pb-6">
 			<div>
 				<p class="rt-kicker text-cyan-300">How to Play</p>
 				<h1 class="rt-heading text-3xl uppercase italic sm:text-5xl lg:text-6xl">
@@ -36,9 +59,6 @@
 				<p class="rt-copy mt-3 max-w-2xl text-xs sm:text-sm text-slate-400">
 					สรุปกติกาการเล่นเบื้องต้นของ Riftbound TCG อธิบายโครงสร้างเทิร์น ลำดับเฟส และขั้นตอนการเปิดศึกชิงพื้นที่ในกระดานรบ
 				</p>
-			</div>
-			<div class="flex items-center gap-3">
-				<SiteMenu active="rules" />
 			</div>
 		</header>
 
@@ -435,7 +455,7 @@
 							<button 
 								type="button"
 								class="flex-1 p-3 rounded-lg border text-left md:text-center transition {activeCombatStep === 1 ? 'bg-cyan-500/10 border-cyan-400 text-cyan-300 shadow-lg' : 'bg-slate-900/30 border-white/5 text-slate-400 hover:text-slate-200'}"
-								onclick={() => activeCombatStep === 1}
+								onclick={() => activeCombatStep = 1}
 							>
 								<span class="block text-[9px] font-bold opacity-60">Step 2</span>
 								<span class="text-xs font-black">Assign Might Damage</span>
@@ -515,7 +535,7 @@
 				{/if}
 			</main>
 		</div>
-	</div>
+	</main>
 
 	<!-- Spacer & Footer -->
 	<div class="h-20"></div>

@@ -6,6 +6,7 @@
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
 	import type { Card } from '$lib/types/card';
+	import { getAuthSession, invalidateAuthSession } from '$lib/utils/authSession';
 	import {
 		parseAnswerText,
 		withAiDisclaimer,
@@ -87,7 +88,7 @@
 			registerSent = false;
 			authModalOpen = true;
 		};
-		const syncAuth = () => void loadSession();
+		const syncAuth = () => void loadSession(true);
 		window.addEventListener('riftthai-open-auth', openAuth);
 		window.addEventListener('riftthai-auth-changed', syncAuth);
 		return () => {
@@ -96,11 +97,10 @@
 		};
 	});
 
-	async function loadSession() {
+	async function loadSession(forceRefresh = false) {
 		authLoading = true;
 		try {
-			const response = await fetch('/api/auth/session');
-			const data = (await response.json()) as AuthSession;
+			const data = await getAuthSession<AuthSession>(forceRefresh);
 			currentUser = data.user;
 			if (!currentUser) isOpen = false;
 		} finally {
@@ -161,6 +161,7 @@
 
 	async function logout() {
 		await fetch('/api/auth/logout', { method: 'POST' });
+		invalidateAuthSession();
 		currentUser = null;
 		isOpen = false;
 		authModalOpen = false;
