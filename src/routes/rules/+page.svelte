@@ -519,10 +519,16 @@
 								<div class="space-y-2 animate-fadeIn">
 									<h3 class="text-sm font-black text-cyan-300">Step 4: Contested Result (เช็กการพิชิตสนามรบ)</h3>
 									<p class="text-xs text-slate-300 leading-relaxed">
-										เมื่อการต่อสู้จบสิ้นลงและบอร์ดฝั่งตรงข้ามในเลนรบนั้นว่างเปล่า (ไม่มีศัตรูเหลือรอด) ในขณะที่ยูนิตฝั่งผู้บุกยังมีชีวิตรอดอยู่ในเลนอย่างน้อย 1 ตัว จะนับว่าฝั่งบุกทำ **Conquer (ยึดครองสำเร็จ)** ได้รับคะแนน <strong>+1 แต้ม</strong> ทันที
+										หลัง Cleanup ให้ตรวจ Battlefield อีกครั้ง หากมียูนิตตัวใหม่ปรากฏจนทั้งสองฝ่ายยังอยู่ในสนามเดียวกัน ให้เริ่ม Showdown รอบใหม่ก่อนและยังไม่ตัดสิน Conquer
+									</p>
+									<p class="text-xs text-slate-300 leading-relaxed">
+										หากไม่มีศึกรอบใหม่และฝั่งตรงข้ามไม่มียูนิตเหลืออยู่ ขณะที่ฝั่งผู้บุกยังมียูนิตอย่างน้อย 1 ตัว จะถือว่าฝั่งบุกทำ <strong>Conquer</strong> สำเร็จและได้รับ <strong>+1 แต้ม</strong>
 									</p>
 									<p class="text-xs text-slate-500">
 										*หมายเหตุ:* ยูนิตที่พิชิตสำเร็จจะยังคงยืนตำแหน่งอยู่ที่ Battlefield เลนนั้นต่อเพื่อป้องกันศึกในรอบถัดไป
+									</p>
+									<p class="text-xs text-slate-300 leading-relaxed">
+										เมื่อ resolve Showdown ที่ staged ไว้ทั้งหมดและตัดสินผลเรียบร้อยแล้ว ให้ทำ <strong>Global Heal</strong> โดยนำ Damage Counters ทั้งหมดออกจากยูนิตที่รอดชีวิตบนกระดาน
 									</p>
 								</div>
 							{/if}
