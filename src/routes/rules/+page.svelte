@@ -395,7 +395,7 @@
 										</div>
 										<div class="p-3 bg-white/2 rounded-lg border border-white/5">
 											<span class="text-[10px] font-black text-slate-200">INITIATE SHOWDOWN (เปิดศึกตัดสิน)</span>
-											<p class="text-[11px] text-slate-400 mt-1">สั่งเหนื่อย (Exhaust) แชมเปี้ยน หรือยูนิตบางตัวเพื่อเริ่มประกาศชนเลนกับศัตรูทันที</p>
+											<p class="text-[11px] text-slate-400 mt-1">เลือก Move ยูนิตของคุณกี่ใบก็ได้ไปยัง Battlefield ที่คู่แข่งควบคุมอยู่ เมื่อยูนิตเข้าไป สนามนั้นจะกลายเป็น Contested และเริ่ม Showdown</p>
 										</div>
 									</div>
 									<div class="p-3 bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 rounded-lg text-xs">
@@ -438,7 +438,7 @@
 								ระบบการต่อสู้ (Combat Showdown)
 							</h2>
 							<p class="text-sm leading-relaxed text-slate-300">
-								เมื่อยูนิตใน Battlefield ปะทะกัน ลำดับการชนพลังโจมตีจะประมวลผลตามช่วงเวลาของ Showdown อย่างเคร่งครัด คลิกดูลำดับขั้นตอนตามสเต็ปด้านล่าง:
+								Showdown เริ่มเมื่อผู้เล่น Move ยูนิตกี่ใบก็ได้ไปยัง Battlefield ที่คู่แข่งควบคุมอยู่ ทำให้สนามนั้นกลายเป็น Contested จากนั้นจึงประมวลผลการต่อสู้ตามลำดับด้านล่าง:
 							</p>
 						</section>
 
