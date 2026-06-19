@@ -125,7 +125,7 @@
 							<div class="rt-panel p-5 bg-white/2">
 								<h3 class="text-xs font-black uppercase tracking-widest text-cyan-300 mb-2">พื้นที่บนกระดานรบ (The Board)</h3>
 								<ul class="space-y-2 text-xs text-slate-400 leading-relaxed list-disc pl-4">
-									<li><strong class="text-slate-200">Base (ฐาน):</strong> พื้นที่หลังสุดของผู้เล่นแต่ละฝั่ง ใช้สำหรับเสกรูน ติดตั้ง Gear หรือลงยูนิตตั้งต้น ยูนิตใน Base ไม่สามารถต่อสู้โดยตรงได้ ต้องสั่งเคลื่อนทัพออกไป</li>
+									<li><strong class="text-slate-200">Base (ฐาน):</strong> พื้นที่หลังสุดของผู้เล่นแต่ละฝั่ง ใช้สำหรับวาง Rune และลง Unit หรือ Gear โดย Gear ปกติจะลงมาในสภาพ Ready ยูนิตใน Base ไม่สามารถต่อสู้โดยตรงได้ ต้องสั่งเคลื่อนทัพออกไป</li>
 									<li><strong class="text-slate-200">Battlefields (สนามรบ):</strong> พื้นที่เลนต่อสู้ตรงกลางที่เป็นจุดชิงชัยระหว่างสองผู้เล่น ยูนิตในพื้นที่นี้จะปะทะกันในช่วง Showdown</li>
 								</ul>
 							</div>
@@ -277,9 +277,9 @@
 									<img src="/images/icons/gear.avif" alt="Gear" class="h-7 w-7 object-contain" />
 								</div>
 								<div>
-									<h3 class="text-xs font-black uppercase text-white tracking-wider">Gear (การ์ดอุปกรณ์ติดตั้ง)</h3>
+									<h3 class="text-xs font-black uppercase text-white tracking-wider">Gear (การ์ดถาวรประเภทเกียร์)</h3>
 									<p class="text-xs text-slate-400 leading-relaxed mt-1">
-										การ์ดสวมใส่และของประดับตกแต่ง โดยทั่วไปจะร่ายเพื่อติดตั้ง (Equip) ให้กับยูนิตบนสนามเพื่อบวกพลัง Might เพิ่มเติม หรือให้ความสามารถพิเศษเชิงยุทธวิธี
+										Gear เป็นการ์ดถาวรที่ปกติจะลงในสภาพ Ready ที่ Base และทำงานตามข้อความบนการ์ด เฉพาะ Gear ที่เป็น <strong>Equipment</strong> และมีความสามารถ <strong>Equip</strong> เท่านั้นที่สามารถจ่ายค่าความสามารถเพื่อติดกับ Unit ได้ ส่วน Gear อื่นจะอยู่บนบอร์ดและทำงานโดยไม่ต้องติดกับ Unit
 									</p>
 								</div>
 							</div>
@@ -383,7 +383,7 @@
 									<div class="grid gap-3 sm:grid-cols-2">
 										<div class="p-3 bg-white/2 rounded-lg border border-white/5">
 											<span class="text-[10px] font-black text-slate-200">PLAY A CARD (ร่ายการ์ด)</span>
-											<p class="text-[11px] text-slate-400 mt-1">ร่ายยูนิตลงในโซนฐาน (Base) หรือติดตั้งเกียร์ หรือร่ายสเปลเพื่อใช้งานเอฟเฟกต์ทันที</p>
+											<p class="text-[11px] text-slate-400 mt-1">เล่น Unit หรือ Gear ลงใน Base หรือร่าย Spell เพื่อใช้งานเอฟเฟกต์ โดย Equipment สามารถใช้ Equip เพื่อติดกับ Unit ได้ตามข้อความบนการ์ด</p>
 										</div>
 										<div class="p-3 bg-white/2 rounded-lg border border-white/5">
 											<span class="text-[10px] font-black text-slate-200">MOVE UNIT (สั่งเคลื่อนทัพ)</span>
