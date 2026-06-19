@@ -222,7 +222,7 @@
 								<div class="p-4 bg-slate-900/60 rounded-lg border border-white/5">
 									<h4 class="text-xs font-black text-white uppercase">ผู้เล่นคนแรก (First Player)</h4>
 									<p class="text-[11px] text-slate-400 leading-relaxed mt-1">
-										เริ่มต้น Action Phase แรกทันที โดยในเทิร์นแรกสุดของเกม **จะไม่ได้จั่วการ์ด** และจะทำการอัญเชิญรูน (Channel Rune) ได้ **2 ใบ**พอดี
+										เริ่มเทิร์นแรกด้วย Start of Turn ตามลำดับ A–D: Awaken, Beginning, Channel Rune 2 ใบ และจั่วการ์ด 1 ใบใน Draw Step จากนั้นจึงเข้าสู่ Action Phase
 									</p>
 								</div>
 								<div class="p-4 bg-slate-900/60 rounded-lg border border-white/5">
@@ -351,20 +351,20 @@
 									</p>
 									<div class="space-y-3 pl-4 border-l-2 border-cyan-500/30">
 										<div>
-											<span class="text-[10px] font-black text-cyan-400 uppercase">1. Awaken Step (คืนสภาพ):</span>
+											<span class="text-[10px] font-black text-cyan-400 uppercase">A. Awaken Step (คืนสภาพ):</span>
 											<p class="text-xs text-slate-300 mt-0.5">การ์ดทั้งหมดบนบอร์ดฝั่งเรา และการ์ดรูนใน Rune Pool ที่นอนตะแคง (Exhausted) จะเปลี่ยนสถานะกลับมาตั้งตรง (Ready) เพื่อพร้อมทำงานอีกครั้ง</p>
 										</div>
 										<div>
-											<span class="text-[10px] font-black text-cyan-400 uppercase">2. Beginning Step (นับแต้มคุมพื้นที่):</span>
+											<span class="text-[10px] font-black text-cyan-400 uppercase">B. Beginning Step (นับแต้มคุมพื้นที่):</span>
 											<p class="text-xs text-slate-300 mt-0.5">ตรวจเช็กบอร์ด หากเรามียูนิตที่ Active ใน Battlefield เลนนั้นมากกว่าฝ่ายตรงข้าม จะถือว่าเราคุมพื้นที่เลนนั้นได้สำเร็จ และได้รับ <strong>1 แต้ม (Hold Score)</strong> ทันที</p>
 										</div>
 										<div>
-											<span class="text-[10px] font-black text-cyan-400 uppercase">3. Channel Step (เปิดรูนใหม่):</span>
+											<span class="text-[10px] font-black text-cyan-400 uppercase">C. Channel Step (เปิดรูนใหม่):</span>
 											<p class="text-xs text-slate-300 mt-0.5">จั่วรูน 2 ใบแรกจากกองรูน (Rune Deck) หงายหน้าขึ้นสนามเพื่อรับทรัพยากรมาใช้จ่ายร่ายเวทมนตร์และยูนิตในเทิร์นนี้</p>
 										</div>
 										<div>
-											<span class="text-[10px] font-black text-cyan-400 uppercase">4. Draw Step (จั่วการ์ดขึ้นมือ):</span>
-											<p class="text-xs text-slate-300 mt-0.5">จั่วการ์ด 1 ใบจาก Main Deck ขึ้นสู่มือ (หมายเหตุ: ในเทิร์นแรกสุดของเกม ผู้เล่นเริ่มก่อนจะข้ามขั้นตอนนี้เพื่อความยุติธรรม)</p>
+											<span class="text-[10px] font-black text-cyan-400 uppercase">D. Draw Step (จั่วการ์ดขึ้นมือ):</span>
+											<p class="text-xs text-slate-300 mt-0.5">จั่วการ์ด 1 ใบจาก Main Deck ขึ้นสู่มือ รวมถึงผู้เล่นคนแรกในเทิร์นแรกสุดของเกม</p>
 										</div>
 									</div>
 									<div class="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-lg text-xs">
