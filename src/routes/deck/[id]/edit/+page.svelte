@@ -50,6 +50,8 @@
 		type DeckCollection,
 		type DeckEntry
 	} from '$lib/utils/deck';
+	import { getAuthSession } from '$lib/utils/authSession';
+	import { getUserCollection } from '$lib/utils/collectionCache';
 
 	let { data } = $props();
 	let cards = $derived((data.cards as Card[]) || []);
@@ -87,14 +89,9 @@
 
 	async function loadUserCollection() {
 		try {
-			const res = await fetch('/api/auth/session');
-			const session = await res.json().catch(() => ({}));
+			const session = await getAuthSession<{ user?: unknown }>();
 			if (session.user) {
-				const colRes = await fetch('/api/collection');
-				const colData = await colRes.json().catch(() => ({}));
-				if (colRes.ok) {
-					userCardCollection = colData.collection || {};
-				}
+				userCardCollection = await getUserCollection();
 			}
 		} catch (err) {
 			console.error('Failed to load user collection:', err);

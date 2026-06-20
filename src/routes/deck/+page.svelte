@@ -34,6 +34,7 @@
 		type DeckEntry,
 		type StoredDeck
 	} from '$lib/utils/deck';
+	import { getAuthSession } from '$lib/utils/authSession';
 
 	let { data } = $props();
 	let cards = $derived((data.cards as Card[]) || []);
@@ -161,9 +162,8 @@
 
 	async function loadPreferredDeckSettings() {
 		try {
-			const response = await fetch('/api/auth/session');
-			const payload = await response.json().catch(() => ({}));
-			const layout = payload.user?.settings?.defaultExportLayout;
+			const session = await getAuthSession<{ user?: { settings?: { defaultExportLayout?: string } } }>();
+			const layout = session.user?.settings?.defaultExportLayout;
 			if (layout === 'portrait' || layout === 'landscape') exportLayout = layout;
 		} catch {
 			// Deck exports keep the built-in portrait default if account settings are unavailable.
