@@ -9,6 +9,9 @@
 	import PcSideNav from '$lib/components/PcSideNav.svelte';
 	import UserGuide from '$lib/components/UserGuide.svelte';
 	import { getAuthSession } from '$lib/utils/authSession';
+	import { dev } from '$app/environment';
+	import { inject } from '@vercel/analytics';
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 
 	let { children } = $props();
 
@@ -125,6 +128,10 @@
 	let lastUserStatus: boolean | null = null;
 
 	onMount(() => {
+		if (!dev) {
+			inject();
+			injectSpeedInsights();
+		}
 		const savedChoice = localStorage.getItem('riftthai_cookie_choice');
 		if (savedChoice === 'accepted' || savedChoice === 'declined') {
 			cookieChoice = savedChoice;
