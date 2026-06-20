@@ -45,7 +45,7 @@
 	}
 
 	async function refreshConversations(selectFirst = false) {
-		if (conversationsLoading) return;
+		if (conversationsLoading || (!selectFirst && typeof document !== 'undefined' && document.hidden)) return;
 		conversationsLoading = true;
 		error = '';
 		try {
@@ -76,7 +76,7 @@
 	}
 
 	async function refreshSelectedMessages() {
-		if (!selectedId) return;
+		if (!selectedId || (typeof document !== 'undefined' && document.hidden)) return;
 		const response = await fetch(`/api/admin-chat/conversations/${selectedId}`);
 		const data = await response.json();
 		if (!response.ok) return;

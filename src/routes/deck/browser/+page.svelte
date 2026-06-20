@@ -1047,7 +1047,9 @@
 	}
 
 	function getCanvasImageUrl(imageUrl: string) {
-		return `/api/card-image?url=${encodeURIComponent(getCardImageUrl(imageUrl, 320, 'webp'))}`;
+		const cardUrl = getCardImageUrl(imageUrl, 320, 'webp');
+		if (cardUrl.startsWith('/')) return cardUrl;
+		return `/api/card-image?url=${encodeURIComponent(cardUrl)}`;
 	}
 
 	function getDomainIconUrl(label: string) {

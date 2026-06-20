@@ -41,7 +41,7 @@
 	}
 
 	async function refreshMessages() {
-		if (loading) return;
+		if (loading || (typeof document !== 'undefined' && document.hidden)) return;
 		try {
 			const nextMessages = await fetchMessages();
 			if (nextMessages.length !== messages.length) messages = nextMessages;
