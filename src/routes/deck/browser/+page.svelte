@@ -25,6 +25,8 @@
 		type DeckCard
 	} from '$lib/utils/deck';
 	import { getTypeIcons } from '$lib/data/typeIcons';
+	import { getAuthSession } from '$lib/utils/authSession';
+	import { getUserCollection } from '$lib/utils/collectionCache';
 
 	let { data } = $props();
 	let cards = $derived((data.cards as Card[]) || []);
@@ -200,14 +202,9 @@
 
 	async function loadUserCollection() {
 		try {
-			const res = await fetch('/api/auth/session');
-			const session = await res.json().catch(() => ({}));
+			const session = await getAuthSession<{ user?: unknown }>();
 			if (session.user) {
-				const colRes = await fetch('/api/collection');
-				const colData = await colRes.json().catch(() => ({}));
-				if (colRes.ok) {
-					userCollection = colData.collection || {};
-				}
+				userCollection = await getUserCollection();
 			}
 		} catch (err) {
 			console.error('Failed to load user collection:', err);
@@ -1220,10 +1217,9 @@
 
 	async function loadPreferredDeckSettings() {
 		try {
-			const response = await fetch('/api/auth/session');
-			const payload = await response.json().catch(() => ({}));
-			currentUser = payload.user || null;
-			const layout = payload.user?.settings?.defaultExportLayout;
+			const session = await getAuthSession<{ user?: { id: string; settings?: { defaultExportLayout?: string } } }>();
+			currentUser = session.user || null;
+			const layout = session.user?.settings?.defaultExportLayout;
 			if (layout === 'portrait' || layout === 'landscape') exportLayout = layout;
 		} catch {
 			// Deck exports keep the built-in portrait default if account settings are unavailable.

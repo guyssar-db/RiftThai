@@ -10,6 +10,8 @@
 	import { isRuneCard, isLegendCard, isBattlefieldCard, isMainDeckCard } from '$lib/utils/deck';
 	import Toast from '$lib/components/ui/Toast.svelte';
 	import ConfirmModal from '$lib/components/ui/ConfirmModal.svelte';
+	import { getAuthSession } from '$lib/utils/authSession';
+	import { getUserCollection, invalidateCollectionCache } from '$lib/utils/collectionCache';
 
 	let { data } = $props();
 	let cards = $derived((data.cards as Card[]) || []);
@@ -107,6 +109,7 @@
 			}
 			
 			collection = { ...collection };
+			invalidateCollectionCache();
 			showActionNotice(`นำเข้าข้อมูลสำเร็จ (${updates.length} รายการ)`, 'success');
 			backupText = '';
 		} catch (error) {
@@ -129,9 +132,8 @@
 	async function loadSession() {
 		authLoading = true;
 		try {
-			const response = await fetch('/api/auth/session');
-			const payload = await response.json().catch(() => ({}));
-			currentUser = payload.user || null;
+			const session = await getAuthSession<{ user?: { id: string; profileHandle: string } }>();
+			currentUser = session.user || null;
 			if (currentUser) {
 				void loadCollection();
 			}
@@ -145,11 +147,7 @@
 	async function loadCollection() {
 		collectionLoading = true;
 		try {
-			const response = await fetch('/api/collection');
-			const payload = await response.json().catch(() => ({}));
-			if (response.ok) {
-				collection = payload.collection || {};
-			}
+			collection = await getUserCollection();
 		} catch (error) {
 			console.error('Failed to load collection:', error);
 		} finally {
@@ -298,6 +296,7 @@
 			if (!response.ok) {
 				throw new Error(payload.error || 'Failed to update quantity');
 			}
+			invalidateCollectionCache();
 		} catch (error) {
 			// Rollback on error
 			collection = { ...collection, [cardCode]: previousQty };
@@ -358,6 +357,7 @@
 			}
 
 			collection = nextCollection;
+			invalidateCollectionCache();
 			const successMsg = isAll 
 				? 'ตั้งค่า Playset สำหรับการ์ดทั้งหมดสำเร็จ' 
 				: `ตั้งค่า Playset สำหรับการ์ดในชุด ${selectedSet} สำเร็จ`;
@@ -414,6 +414,7 @@
 				collection = nextCollection;
 			}
 
+			invalidateCollectionCache();
 			const successMsg = isAll 
 				? 'ล้างข้อมูลการ์ดสะสมทั้งหมดสำเร็จ' 
 				: `ล้างข้อมูลการ์ดสะสมในชุด ${selectedSet} สำเร็จ`;

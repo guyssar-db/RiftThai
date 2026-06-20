@@ -25,6 +25,8 @@
 		type DeckCollection,
 		type StoredDeck
 	} from '$lib/utils/deck';
+	import { getAuthSession } from '$lib/utils/authSession';
+	import { getUserCollection } from '$lib/utils/collectionCache';
 
 
 	let { data } = $props();
@@ -54,15 +56,10 @@
 
 	async function loadUserCollection() {
 		try {
-			const res = await fetch('/api/auth/session');
-			const session = await res.json().catch(() => ({}));
+			const session = await getAuthSession<{ user?: { id: string; email: string; displayName: string; isAdmin: boolean } }>();
 			currentUser = session.user || null;
 			if (session.user) {
-				const colRes = await fetch('/api/collection');
-				const colData = await colRes.json().catch(() => ({}));
-				if (colRes.ok) {
-					userCardCollection = colData.collection || {};
-				}
+				userCardCollection = await getUserCollection();
 			}
 		} catch (err) {
 			console.error('Failed to load user collection:', err);

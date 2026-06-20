@@ -15,6 +15,8 @@
 	import { getCardImageUrl } from '$lib/utils/cardImages';
 	import { getDomainIcon } from '$lib/data/domainIcons';
 	import { buildDeckCards, getDeckZones, getChampionCard, type StoredDeck } from '$lib/utils/deck';
+	import { getAuthSession } from '$lib/utils/authSession';
+	import { getUserCollection } from '$lib/utils/collectionCache';
 
 	let { data } = $props();
 	const initialData = data;
@@ -193,16 +195,9 @@
 
 	async function loadUserCollection() {
 		try {
-			const res = await fetch('/api/auth/session');
-			const session = await res.json().catch(() => ({}));
+			const session = await getAuthSession<{ user?: unknown }>();
 			if (session.user) {
-				const colRes = await fetch('/api/collection');
-				const colData = await colRes.json().catch(() => ({}));
-				if (colRes.ok) {
-					userCollection = colData.collection || {};
-				} else {
-					userCollection = null;
-				}
+				userCollection = await getUserCollection();
 			} else {
 				userCollection = null;
 			}
