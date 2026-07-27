@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 
 import { loginUser, setSessionCookie } from '$lib/server/auth';
-import { getChatUsage } from '$lib/server/rag/supabase';
 import { getRagConfig } from '$lib/server/rag/config';
 import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/security';
 
@@ -35,7 +34,6 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 		const config = getRagConfig();
 		const userEmail = session.user.email;
 		const isAdmin = config.adminEmails.includes(userEmail.toLowerCase());
-		const used = !isAdmin ? await getChatUsage(session.user.id) : 0;
 
 		return json({
 			user: {
@@ -50,8 +48,8 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 				createdAt: session.user.createdAt,
 				settings: session.user.settings,
 				usage: {
-					used,
-					limit: config.dailyChatLimit
+					used: 0,
+					limit: 0
 				}
 			}
 		});

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vendetta Translation Preview</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      body { margin: 0; background: #08111f; color: #e8f0fa; }
+      header { position: sticky; top: 0; z-index: 2; padding: 20px clamp(16px, 4vw, 48px); background: rgba(8,17,31,.94); border-bottom: 1px solid #20334d; backdrop-filter: blur(14px); }
+      h1 { margin: 0 0 6px; font-size: clamp(1.35rem, 3vw, 2rem); }
+      p { margin: 0; color: #91a6bf; }
+      .tools { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+      input, select { min-width: min(220px, 100%); flex: 1; padding: 11px 13px; border: 1px solid #2b4463; border-radius: 10px; background: #0d1b2e; color: inherit; outline: none; }
+      input:focus, select:focus { border-color: #62d6c9; }
+      button { cursor: pointer; padding: 10px 12px; border: 1px solid #2b5670; border-radius: 10px; background: #123044; color: #dffcf8; font-weight: 700; }
+      button:hover { border-color: #62d6c9; background: #16445a; }
+      main { padding: 24px clamp(16px, 4vw, 48px) 48px; }
+      #status { margin-bottom: 16px; color: #62d6c9; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+      article { overflow: hidden; border: 1px solid #213852; border-radius: 14px; background: #0d1b2e; box-shadow: 0 12px 30px rgba(0,0,0,.18); }
+      .card-image { display: block; width: 100%; aspect-ratio: 744 / 1039; object-fit: contain; background: #050b14; }
+      .content { padding: 14px; }
+      .code { margin-bottom: 10px; color: #62d6c9; font: 700 .75rem ui-monospace, monospace; letter-spacing: .06em; }
+      .card-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 10px; }
+      .meta-badge { font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em; }
+      .meta-badge.tag { background: rgba(34, 211, 238, 0.1); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.2); }
+      .domain-fury { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+      .domain-calm { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.25); }
+      .domain-mind { background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.25); }
+      .domain-body { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+      .domain-chaos { background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.25); }
+      .domain-order { background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.25); }
+      .domain-colorless { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); }
+      .keywords { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+      .keyword { padding: 4px 8px; border: 1px solid #2b5670; border-radius: 999px; background: #102b3b; color: #9fe8df; font-size: .72rem; }
+      .label { margin: 12px 0 5px; color: #91a6bf; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+      .ability { white-space: pre-line; line-height: 1.55; }
+      textarea { box-sizing: border-box; width: 100%; min-height: 120px; resize: vertical; padding: 10px; border: 1px solid #2b5670; border-radius: 10px; background: #08111f; color: inherit; font: inherit; line-height: 1.55; }
+      .review { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+      .review button { font-size: .78rem; }
+      .status-badge { padding: 4px 8px; border-radius: 999px; background: #26364c; color: #b9c9dc; font-size: .7rem; }
+      .status-badge.confirmed { background: #124d43; color: #9ff3df; }
+      .status-badge.edited { background: #59441c; color: #ffe2a1; }
+      .export { flex: 0 0 auto; }
+      .error { color: #ff9d9d; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Riftbound Translation Preview</h1>
+      <p>แสดงรูปการ์ดและความสามารถ EN / TH</p>
+      <div class="tools">
+        <select id="source-select" aria-label="เลือกแหล่งข้อมูล JSON">
+          <option value="server">Default Server (cards.json)</option>
+          <option value="upload">📂 อัปโหลดไฟล์ JSON เอง...</option>
+        </select>
+        <input type="file" id="file-input" accept=".json" style="display: none;" />
+
+        <select id="set-filter" aria-label="กรองตาม Set">
+          <option value="">ทุก Set</option>
+        </select>
+        <select id="review-filter" aria-label="กรองตามสถานะคำแปล">
+          <option value="">ทุกสถานะ</option>
+          <option value="unreviewed">ยังไม่ตรวจ</option>
+          <option value="confirmed">ยืนยันแล้ว</option>
+          <option value="edited">แก้ไขแล้ว</option>
+        </select>
+        <input id="search" type="search" placeholder="ค้นหาชื่อหรือรหัสการ์ด..." />
+        <button id="export" class="export" type="button">Export review JSON</button>
+      </div>
+    </header>
+    <main>
+      <div id="status">กำลังโหลดข้อมูล...</div>
+      <section id="grid" class="grid" aria-live="polite"></section>
+    </main>
+    <script>
+      const status = document.querySelector('#status');
+      const grid = document.querySelector('#grid');
+      const search = document.querySelector('#search');
+      const setFilter = document.querySelector('#set-filter');
+      const reviewFilter = document.querySelector('#review-filter');
+      const exportButton = document.querySelector('#export');
+      const sourceSelect = document.querySelector('#source-select');
+      const fileInput = document.querySelector('#file-input');
+      const reviewStorageKey = 'riftthai.translation-review.v1';
+      let cards = [];
+      let keywords = [];
+      let reviews = loadReviews();
+      let currentSourceLabel = 'cards.json';
+
+      function loadReviews() {
+        try { return JSON.parse(localStorage.getItem(reviewStorageKey) || '{}'); }
+        catch { return {}; }
+      }
+
+      function saveReview(card, status, thaiText) {
+        const targetName = (card.fullName || card.name || '').trim().toLowerCase();
+        if (targetName) {
+          const matchingCards = cards.filter(c => {
+            const cName = (c.fullName || c.name || '').trim().toLowerCase();
+            return cName === targetName;
+          });
+          for (const c of matchingCards) {
+            reviews[c.cardCode] = {
+              cardCode: c.cardCode,
+              name: c.fullName || c.name || '',
+              set: c.cardSet || '',
+              status,
+              abilityEffectiveThai: thaiText,
+              updatedAt: new Date().toISOString()
+            };
+          }
+        } else {
+          reviews[card.cardCode] = {
+            cardCode: card.cardCode,
+            name: card.fullName || card.name || '',
+            set: card.cardSet || '',
+            status,
+            abilityEffectiveThai: thaiText,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        localStorage.setItem(reviewStorageKey, JSON.stringify(reviews));
+        render();
+      }
+
+      function reviewFor(card) { return reviews[card.cardCode] || null; }
+
+      function render() {
+        const query = search.value.trim().toLowerCase();
+        const selectedSet = setFilter.value;
+        const visible = cards.filter((card) => {
+          const text = `${card.fullName || card.name || ''} ${card.cardCode || ''}`.toLowerCase();
+          const review = reviewFor(card);
+          const status = review?.status || 'unreviewed';
+          return (!selectedSet || card.cardSet === selectedSet) &&
+            (!reviewFilter.value || status === reviewFilter.value) &&
+            (!query || text.includes(query));
+        });
+        grid.replaceChildren();
+        for (const card of visible) {
+          const article = document.createElement('article');
+          const image = document.createElement('img');
+          image.className = 'card-image';
+          image.loading = 'lazy';
+          image.alt = card.fullName || card.name || card.cardCode;
+          image.src = card.imageUrl || '';
+          const content = document.createElement('div');
+          content.className = 'content';
+          const code = document.createElement('div');
+          code.className = 'code';
+          code.textContent = `${card.cardCode || ''} · ${card.fullName || card.name || ''}`;
+
+          const metaRow = document.createElement('div');
+          metaRow.className = 'card-meta';
+          
+          const domains = card.domains || (card.domain ? [card.domain] : []);
+          for (const d of domains) {
+            const badge = document.createElement('span');
+            badge.className = `meta-badge domain-${d.toLowerCase()}`;
+            badge.textContent = d;
+            metaRow.append(badge);
+          }
+          
+          const tags = card.tags || [];
+          for (const t of tags) {
+            const badge = document.createElement('span');
+            badge.className = 'meta-badge tag';
+            badge.textContent = `#${t}`;
+            metaRow.append(badge);
+          }
+
+          const keywordNames = keywords.filter((keyword) => {
+            const pattern = new RegExp(`\\b${keyword.name_en.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\b`, 'i');
+            return pattern.test(card.abilityEffective || '') || pattern.test(card.abilityEffectiveThai || '');
+          });
+          if (keywordNames.length) {
+            const keywordList = document.createElement('div');
+            keywordList.className = 'keywords';
+            for (const keyword of keywordNames) {
+              const chip = document.createElement('span');
+              chip.className = 'keyword';
+              chip.textContent = `${keyword.name_en} · ${keyword.name_th}`;
+              keywordList.append(chip);
+            }
+            content.append(code, metaRow, keywordList);
+          } else {
+            content.append(code, metaRow);
+          }
+          const enLabel = document.createElement('div');
+          enLabel.className = 'label';
+          enLabel.textContent = 'Ability · English';
+          const en = document.createElement('div');
+          en.className = 'ability';
+          en.textContent = card.abilityEffective || '—';
+          const thLabel = document.createElement('div');
+          thLabel.className = 'label';
+          thLabel.textContent = 'Ability · Thai';
+          const th = document.createElement('div');
+          th.className = 'ability';
+          const review = reviewFor(card);
+          const thaiText = review?.abilityEffectiveThai ?? card.abilityEffectiveThai ?? '';
+          th.textContent = thaiText || 'ยังไม่มีคำแปล';
+          const reviewBox = document.createElement('div');
+          reviewBox.className = 'review';
+          const badge = document.createElement('span');
+          badge.className = `status-badge ${review?.status || ''}`;
+          badge.textContent = review?.status === 'confirmed' ? 'ยืนยันแล้ว' : review?.status === 'edited' ? 'แก้ไขแล้ว' : 'ยังไม่ตรวจ';
+          const confirm = document.createElement('button');
+          confirm.type = 'button';
+          confirm.textContent = 'ยืนยันคำแปล';
+          confirm.addEventListener('click', () => saveReview(card, 'confirmed', thaiText));
+          const edit = document.createElement('button');
+          edit.type = 'button';
+          edit.textContent = 'แก้คำแปล';
+          edit.addEventListener('click', () => {
+            const editor = document.createElement('textarea');
+            editor.value = thaiText;
+            const save = document.createElement('button');
+            save.type = 'button';
+            save.textContent = 'บันทึกคำแปล';
+            save.addEventListener('click', () => saveReview(card, 'edited', editor.value));
+            th.replaceWith(editor);
+            edit.replaceWith(save);
+          });
+          reviewBox.append(badge, confirm, edit);
+          content.append(enLabel, en, thLabel, th, reviewBox);
+          article.append(image, content);
+          grid.append(article);
+        }
+        status.textContent = `แสดง ${visible.length} / ${cards.length} ใบ · ${selectedSet || 'ทุก Set'} [ไฟล์: ${currentSourceLabel}]`;
+      }
+
+      function updateSetFilter() {
+        setFilter.replaceChildren(setFilter.firstElementChild);
+        const sets = [...new Set(cards.map((card) => card.cardSet).filter(Boolean))].sort();
+        for (const set of sets) {
+          const option = document.createElement('option');
+          option.value = set;
+          option.textContent = set;
+          setFilter.append(option);
+        }
+      }
+
+      search.addEventListener('input', render);
+      setFilter.addEventListener('change', render);
+      reviewFilter.addEventListener('change', render);
+      
+      sourceSelect.addEventListener('change', async (e) => {
+        if (e.target.value === 'server') {
+          status.className = '';
+          status.textContent = 'กำลังโหลดข้อมูลจาก server...';
+          try {
+            const res = await fetch('cards.json');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            cards = await res.json();
+            currentSourceLabel = 'cards.json';
+            updateSetFilter();
+            render();
+          } catch (err) {
+            status.className = 'error';
+            status.textContent = `โหลดไม่สำเร็จ: ${err.message}`;
+          }
+        } else if (e.target.value === 'upload') {
+          fileInput.click();
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+          sourceSelect.value = 'server';
+          return;
+        }
+        
+        status.className = '';
+        status.textContent = `กำลังอ่านไฟล์: ${file.name}...`;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const parsed = JSON.parse(event.target.result);
+            if (!Array.isArray(parsed)) {
+              throw new Error("โครงสร้างข้อมูลในไฟล์ JSON ต้องเป็น Array ของการ์ด");
+            }
+            cards = parsed;
+            currentSourceLabel = file.name;
+            status.className = '';
+            updateSetFilter();
+            render();
+          } catch (err) {
+            status.className = 'error';
+            status.textContent = `ไฟล์ไม่ถูกต้อง: ${err.message}`;
+            sourceSelect.value = 'server';
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      exportButton.addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(reviews, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'riftthai-translation-review.json';
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+
+      Promise.all([
+        fetch('cards.json').then((response) => {
+          if (!response.ok) throw new Error(`cards.json HTTP ${response.status}`);
+          return response.json();
+        }),
+        fetch('keywords.json').then((response) => {
+          if (!response.ok) throw new Error(`keywords.json HTTP ${response.status}`);
+          return response.json();
+        })
+      ])
+        .then(([data, keywordData]) => {
+          cards = data;
+          keywords = keywordData;
+          updateSetFilter();
+          render();
+        })
+        .catch((error) => {
+          status.className = 'error';
+          status.textContent = `โหลดข้อมูลไม่สำเร็จ: กรุณาเปิดผ่านเว็บเซิร์ฟเวอร์ เช่น http://localhost:5173/vendetta-preview.html (${error.message})`;
+        });
+    </script>
+  </body>
+</html>

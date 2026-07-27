@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="สรุป Senior Code Review สำหรับ RiftThai ก่อน deploy จริง">
+  <title>RiftThai — Senior Code Review</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071019;
+      --panel: rgba(15, 29, 43, .86);
+      --panel-2: #102234;
+      --line: rgba(148, 193, 219, .18);
+      --text: #edf7ff;
+      --muted: #9bb2c4;
+      --cyan: #67e8f9;
+      --amber: #fbbf24;
+      --rose: #fb7185;
+      --green: #6ee7b7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: radial-gradient(circle at 15% 0%, #15314a 0, transparent 35%), var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.65;
+    }
+    a { color: var(--cyan); }
+    .wrap { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 72px 0 42px; }
+    .eyebrow { color: var(--cyan); font-size: .78rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { max-width: 780px; margin: 10px 0 14px; font-size: clamp(2.2rem, 6vw, 4.8rem); line-height: 1.02; letter-spacing: -.055em; }
+    h2 { margin: 0 0 16px; font-size: 1.35rem; }
+    h3 { margin: 0 0 7px; font-size: 1rem; }
+    p { margin: 0 0 12px; }
+    .lead { max-width: 760px; color: var(--muted); font-size: 1.08rem; }
+    .panel { padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); box-shadow: 0 18px 60px rgba(0,0,0,.18); }
+    .grid { display: grid; gap: 16px; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    section { margin: 20px 0; }
+    .stat { min-height: 132px; }
+    .stat strong { display: block; margin: 8px 0 2px; font-size: 2rem; color: var(--cyan); }
+    .muted { color: var(--muted); }
+    .badge { display: inline-flex; padding: 3px 9px; border-radius: 999px; font-size: .74rem; font-weight: 800; letter-spacing: .05em; }
+    .p0 { color: #ffd9df; background: rgba(251,113,133,.16); border: 1px solid rgba(251,113,133,.32); }
+    .p1 { color: #ffe8a3; background: rgba(251,191,36,.14); border: 1px solid rgba(251,191,36,.3); }
+    .p2 { color: #b8f9df; background: rgba(110,231,183,.12); border: 1px solid rgba(110,231,183,.28); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 14px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { color: var(--cyan); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+    ul, ol { margin: 8px 0 0; padding-left: 21px; }
+    li { margin: 6px 0; }
+    code { padding: 2px 6px; border-radius: 5px; color: #c9f8ff; background: #071923; font-size: .9em; }
+    .callout { border-left: 3px solid var(--cyan); }
+    .checklist { list-style: none; padding-left: 0; }
+    .checklist li::before { content: "□"; display: inline-block; width: 25px; color: var(--cyan); font-size: 1.2rem; vertical-align: -1px; }
+    footer { padding: 28px 0 50px; color: var(--muted); font-size: .85rem; }
+    @media (max-width: 760px) {
+      header { padding-top: 42px; }
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .panel { padding: 18px; }
+      table { display: block; overflow-x: auto; white-space: normal; }
+      th, td { min-width: 180px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="eyebrow">RiftThai / Senior Code Review</div>
+      <h1>สรุปก่อน deploy จริง</h1>
+      <p class="lead">ภาพรวมโปรเจกต์ดีและใช้งานได้แล้ว แต่ควรปิดความเสี่ยงด้าน Server API และลดภาระของหน้า Design ก่อนเปิดใช้งานจริงใน production</p>
+    </header>
+
+    <section class="grid grid-3">
+      <article class="panel stat"><span class="badge p0">P0 · เร่งด่วน</span><strong>Security</strong><span class="muted">ตรวจสิทธิ์และ validate input ทุก mutation</span></article>
+      <article class="panel stat"><span class="badge p1">P1 · สำคัญ</span><strong>Performance</strong><span class="muted">ลดการคำนวณซ้ำและขนาด card catalog</span></article>
+      <article class="panel stat"><span class="badge p2">P2 · ปรับปรุง</span><strong>Maintainability</strong><span class="muted">แยกไฟล์ Svelte ขนาดใหญ่เป็น component</span></article>
+    </section>
+
+    <section class="panel">
+      <h2>ภาพรวมผลรีวิว</h2>
+      <p>โครงสร้างมี auth, rate limit, security headers และการ normalize data แล้ว จุดที่ต้องให้ความสำคัญคือ API ที่ใช้ service role, validation ของ payload และหน้า Design ที่โหลดข้อมูล/คำนวณจำนวนมากบน client</p>
+      <div class="callout panel" style="margin-top:16px; background:rgba(103,232,249,.05)">
+        <strong>ข้อสรุป:</strong> แก้ P0 ให้ครบก่อน deploy, ทำ P1 ใน release เดียวกัน และเก็บ P2 เป็น refactor หลังระบบนิ่ง
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Priority ที่ต้องแก้</h2>
+      <table>
+        <thead><tr><th>ระดับ</th><th>ประเด็น</th><th>ผลกระทบ</th><th>แนวทางแก้</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge p0">P0</span></td><td>Server API ใช้ service role และรับ input กว้าง</td><td>ข้อมูลผิด, ยิงโหลดสูง หรือเข้าถึงข้อมูลเกินสิทธิ์</td><td>ตรวจ ownership ใน service layer, validate schema, จำกัดขนาด payload</td></tr>
+          <tr><td><span class="badge p0">P0</span></td><td>ส่ง database error กลับ client</td><td>เผยชื่อ table, column และรายละเอียดภายใน</td><td>log ฝั่ง server และตอบข้อความกลาง เช่น <code>Internal server error</code></td></tr>
+          <tr><td><span class="badge p1">P1</span></td><td>หน้า Design filter card ทั้งชุดซ้ำหลายรอบ</td><td>CPU สูงและ mobile interaction ช้า</td><td>ทำ search index ล่วงหน้า, ลด derived computation, ใช้ virtual list เมื่อข้อมูลโต</td></tr>
+          <tr><td><span class="badge p1">P1</span></td><td>โหลด card JSON ทั้งชุดในหลายหน้า</td><td>bundle ใหญ่และ initial load ช้า</td><td>lazy load/catalog API/server load และ cache</td></tr>
+          <tr><td><span class="badge p2">P2</span></td><td>ไฟล์ Svelte ขนาดใหญ่</td><td>แก้ไขยากและเพิ่ม regression risk</td><td>แยก CardGrid, CardTile, FilterBar, Modal และ DeckSidebar</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="grid grid-2">
+      <article class="panel">
+        <h2>Performance หน้า Design</h2>
+        <ul>
+          <li>สร้าง normalized search index ครั้งเดียว ไม่ normalize ทุก card ทุกครั้ง</li>
+          <li>เก็บ <code>hasCollection</code> เป็น derived value แทน <code>Object.keys(...)</code> ต่อ card</li>
+          <li>เพิ่ม <code>decoding="async"</code> และ responsive image</li>
+          <li>แยก card grid และใช้ virtualization เมื่อจำนวน card สูงขึ้น</li>
+          <li>โหลด card catalog แบบ lazy หรือผ่าน server API หากไม่ต้องใช้ทั้งหมดทันที</li>
+        </ul>
+        <p class="muted" style="margin-top:14px">จุดอ้างอิง: <code>src/routes/deck/[id]/edit/+page.svelte</code> มีประมาณ 1,490 บรรทัด</p>
+      </article>
+      <article class="panel">
+        <h2>Performance หน้าอื่น</h2>
+        <ul>
+          <li><code>deck/+page.svelte</code> ประมาณ 2,439 บรรทัด</li>
+          <li><code>deck/browser/+page.svelte</code> ประมาณ 1,791 บรรทัด</li>
+          <li><code>playground/+page.svelte</code> ประมาณ 2,830 บรรทัด</li>
+          <li>แยก modal/export/playtest และ dynamic import feature ที่เปิดภายหลัง</li>
+          <li>ทำ server pagination และวัด Core Web Vitals บน mobile</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Security ของ Server Actions / API</h2>
+      <ol>
+        <li><strong>Ownership:</strong> ทุก query ต้อง filter ด้วย <code>user_id</code> จาก session เท่านั้น ห้ามเชื่อ <code>user_id</code> จาก client</li>
+        <li><strong>Validation:</strong> ตรวจ type, จำนวนรายการ, quantity สูงสุด, card code และ enum ด้วย schema เช่น Zod</li>
+        <li><strong>Admin:</strong> รวม logic เป็น <code>requireAdmin(user)</code> และตรวจซ้ำใน service layer</li>
+        <li><strong>CSRF:</strong> endpoint ที่ใช้ cookie และเปลี่ยนข้อมูลควรตรวจ Origin/Referer หรือใช้ CSRF token</li>
+        <li><strong>Rate limit:</strong> in-memory Map ใช้ได้แค่ single instance; production หลาย instance ควรใช้ Redis/Upstash</li>
+        <li><strong>RLS:</strong> เปิด Row Level Security ใน Supabase เป็น defense-in-depth แม้ server จะตรวจสิทธิ์แล้ว</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2>Checklist ก่อน deploy</h2>
+      <ul class="checklist">
+        <li>ทดสอบ User A แก้/ลบ deck ของ User B ไม่ได้</li>
+        <li>ทดสอบ user ปกติเรียก admin endpoint ไม่ได้</li>
+        <li>reject quantity ติดลบ, Infinity, string และ object</li>
+        <li>จำกัด batch collection ไม่เกินจำนวนที่กำหนด</li>
+        <li>ไม่ส่ง database error หรือ stack trace กลับ client</li>
+        <li>ตรวจ session หมดอายุและ banned user กับทุก mutation</li>
+        <li>เพิ่ม audit log สำหรับ ban, delete, update card และ admin actions</li>
+        <li>รัน type-check, lint, build และทดสอบบน mobile viewport</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>สถานะการตรวจในรอบนี้</h2>
+      <p>จาก static code review พบประเด็นตามรายการข้างต้น ส่วน <code>npm run check</code> ยังยืนยันผลไม่ได้ใน environment นี้ เนื่องจาก Node ติดข้อจำกัด <code>EPERM</code> ระหว่าง resolve path ใต้ <code>C:\Users\kkay1</code></p>
+    </section>
+
+    <footer>RiftThai · Senior Code Review Summary · เตรียมแก้ P0 ก่อน production deploy</footer>
+  </main>
+</body>
+</html>

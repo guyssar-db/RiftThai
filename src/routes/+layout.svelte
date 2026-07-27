@@ -7,7 +7,6 @@
 	import './layout.css';
 	import FakeAiChat from '$lib/components/FakeAiChat.svelte';
 	import PcSideNav from '$lib/components/PcSideNav.svelte';
-	import UserGuide from '$lib/components/UserGuide.svelte';
 	import { getAuthSession } from '$lib/utils/authSession';
 	import { dev } from '$app/environment';
 	import { inject } from '@vercel/analytics';
@@ -138,12 +137,7 @@
 		}
 		isHydrated = true;
 
-		// Register Service Worker for PWA (offline capability)
-		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.register('/service-worker.js', { type: 'module' }).catch((error) => {
-				console.error('Service worker registration failed:', error);
-			});
-		}
+		void removeLegacyOfflineWorker();
 
 		void checkSessionBan();
 		const syncAuth = () => void checkSessionBan(true);
@@ -201,6 +195,19 @@
 		cookieChoice = choice;
 		localStorage.setItem('riftthai_cookie_choice', choice);
 	}
+
+	async function removeLegacyOfflineWorker() {
+		if (!('serviceWorker' in navigator)) return;
+		try {
+			const registrations = await navigator.serviceWorker.getRegistrations();
+			await Promise.all(registrations.map((registration) => registration.unregister()));
+			if ('caches' in window) {
+				await Promise.all((await caches.keys()).map((key) => caches.delete(key)));
+			}
+		} catch (error) {
+			console.warn('Could not remove legacy offline cache:', error);
+		}
+	}
 </script>
 
 <svelte:head>
@@ -213,7 +220,6 @@
 	<meta name="robots" content={robots} />
 	<link rel="canonical" href={canonicalUrl} />
 	<link rel="icon" type="image/png" href={logoPath} />
-	<link rel="apple-touch-icon" href={logoPath} />
 	<meta property="og:site_name" content={siteName} />
 	<meta property="og:type" content="website" />
 	<meta property="og:locale" content="th_TH" />
@@ -304,7 +310,6 @@
 {/if}
 
 <FakeAiChat />
-<UserGuide />
 
 <style>
 	@keyframes global-loading-bar {

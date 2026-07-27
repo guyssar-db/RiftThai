@@ -61,17 +61,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 					headers: { 'Retry-After': '60' }
 				});
 			}
-		} else if (path === '/api/rag/chat') {
-			let ip = 'unknown';
-			try {
-				ip = event.getClientAddress();
-			} catch {}
-			if (isRateLimited(ip, path, 15, 60_000)) {
-				return new Response('Too Many Requests. Please wait a minute before chatting again.', {
-					status: 429,
-					headers: { 'Retry-After': '60' }
-				});
-			}
 		}
 	}
 

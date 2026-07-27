@@ -41,7 +41,7 @@ export async function POST({ request, cookies, getClientAddress }) {
 			return json({ success: false, message: 'Invalid card update payload' }, { status: 400 });
 		}
 
-		const filePath = path.join(process.cwd(), 'src/lib/data/riftbound_cards_all.json');
+		const filePath = path.join(process.cwd(), 'src/lib/data/cards.json');
 		const fileContent = fs.readFileSync(filePath, 'utf-8');
 		const cards = JSON.parse(fileContent) as CardRecord[];
 
@@ -64,6 +64,25 @@ export async function POST({ request, cookies, getClientAddress }) {
 		});
 
 		fs.writeFileSync(filePath, JSON.stringify(cards, null, 4));
+
+		const staticFilePath = path.join(process.cwd(), 'static/cards.json');
+		if (fs.existsSync(staticFilePath)) {
+			try {
+				const staticContent = fs.readFileSync(staticFilePath, 'utf-8');
+				const staticCards = JSON.parse(staticContent);
+				staticCards.forEach((c: Record<string, unknown>) => {
+					if (c.name === cardName || c.fullName === cardName || c.name_en === cardName) {
+						c.abilityEffective = ability_en;
+						c.abilityEffectiveThai = ability_th;
+						if (c.ability_en !== undefined) c.ability_en = ability_en;
+						if (c.ability_th !== undefined) c.ability_th = ability_th;
+					}
+				});
+				fs.writeFileSync(staticFilePath, JSON.stringify(staticCards, null, 2));
+			} catch (e) {
+				console.error('Error updating static/cards.json:', e);
+			}
+		}
 
 		return json({ success: true });
 	} catch (error) {

@@ -25,7 +25,7 @@ export async function updateUserCollectionQuantity(
 	quantity: number
 ): Promise<void> {
 	const cleanCode = String(cardCode ?? '').trim();
-	if (!cleanCode) throw new Error('cardCode is required');
+	if (!cleanCode || cleanCode.length > 80) throw new Error('invalid cardCode');
 
 	const qty = Math.max(0, Math.floor(Number(quantity) || 0));
 
@@ -73,16 +73,25 @@ export async function batchUpsertUserCollection(
 	userId: string,
 	entries: { cardCode: string; quantity: number }[]
 ): Promise<void> {
-	if (entries.length === 0) return;
+	if (entries.length === 0 || entries.length > 500) throw new Error('invalid collection batch');
+	const validEntries = entries.filter(
+		(entry) =>
+			typeof entry.cardCode === 'string' &&
+			entry.cardCode.trim().length <= 80 &&
+			Number.isInteger(entry.quantity) &&
+			entry.quantity >= 0 &&
+			entry.quantity <= 999
+	);
+	if (validEntries.length !== entries.length) throw new Error('invalid collection entry');
 
-	const upserts = entries.filter((e) => e.quantity > 0).map((entry) => ({
+	const upserts = validEntries.filter((e) => e.quantity > 0).map((entry) => ({
 		user_id: userId,
 		card_code: entry.cardCode.toUpperCase(),
 		quantity: entry.quantity,
 		updated_at: new Date().toISOString()
 	}));
 
-	const deletes = entries.filter((e) => e.quantity === 0).map((entry) => entry.cardCode.toUpperCase());
+	const deletes = validEntries.filter((e) => e.quantity === 0).map((entry) => entry.cardCode.trim().toUpperCase());
 
 	if (deletes.length > 0) {
 		const formattedCodes = deletes.map((c) => `"${c}"`).join(',');

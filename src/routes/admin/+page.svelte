@@ -71,9 +71,7 @@
 		didHydrate = true;
 	});
 
-	// RAG System health check state
-	let ragHealth = $state<any>(null);
-	let ragLoading = $state(false);
+
 
 	// Ban/Unban processing state
 	let processingUserId = $state('');
@@ -153,21 +151,7 @@
 		}
 	}
 
-	async function fetchRagHealth() {
-		ragLoading = true;
-		try {
-			const res = await fetch('/api/rag/health');
-			ragHealth = await res.json();
-		} catch (err) {
-			console.error('RAG health check failed:', err);
-		} finally {
-			ragLoading = false;
-		}
-	}
 
-	onMount(() => {
-		fetchRagHealth();
-	});
 </script>
 
 <div class="rt-page-shell min-h-dvh pb-16 text-slate-100">
@@ -453,52 +437,26 @@
 		{:else if activeTab === 'system'}
 			<section class="grid gap-6 lg:grid-cols-2">
 				<article class="rt-panel rounded-xl p-5 sm:p-6">
-					<h3 class="text-lg font-black text-white uppercase italic mb-4">RAG / AI Health Check</h3>
+					<h3 class="text-lg font-black text-white uppercase italic mb-4">AI System Status</h3>
 					
-					{#if ragLoading}
-						<div class="py-8 text-center">
-							<div class="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"></div>
-							<p class="mt-4 text-xs text-slate-400">กำลังตรวจสอบข้อมูลระบบ...</p>
+					<div class="space-y-4 text-sm font-semibold">
+						<div class="flex justify-between border-b border-white/5 pb-2">
+							<span class="text-slate-400">Gemini API Status</span>
+							<span class={data.aiConfig?.geminiConfigured ? 'text-emerald-300' : 'text-rose-300'}>
+								{data.aiConfig?.geminiConfigured ? 'Connected & Configured' : 'Offline'}
+							</span>
 						</div>
-					{:else if ragHealth}
-						<div class="space-y-4 text-sm font-semibold">
-							<div class="flex justify-between border-b border-white/5 pb-2">
-								<span class="text-slate-400">Gemini API Connection</span>
-								<span class={ragHealth.geminiConfigured ? 'text-emerald-300' : 'text-rose-300'}>
-									{ragHealth.geminiConfigured ? 'Connected & Configured' : 'Offline'}
-								</span>
-							</div>
-							<div class="flex justify-between border-b border-white/5 pb-2">
-								<span class="text-slate-400">Supabase API Connection</span>
-								<span class={ragHealth.supabaseConfigured && !ragHealth.supabaseError ? 'text-emerald-300' : 'text-rose-300'}>
-									{ragHealth.supabaseConfigured && !ragHealth.supabaseError ? 'Connected & Configured' : 'Error'}
-								</span>
-							</div>
-							<div class="flex justify-between border-b border-white/5 pb-2">
-								<span class="text-slate-400">RAG Chunk Count (database)</span>
-								<span class="text-white font-black">{ragHealth.chunkCount ?? 0} chunks</span>
-							</div>
-							<div class="flex justify-between border-b border-white/5 pb-2">
-								<span class="text-slate-400">Gemini LLM Model</span>
-								<span class="text-white font-black">{ragHealth.geminiModel}</span>
-							</div>
-							<div class="flex justify-between border-b border-white/5 pb-2">
-								<span class="text-slate-400">Daily Chat Limit / User</span>
-								<span class="text-white font-black">{ragHealth.dailyChatLimit} messages</span>
-							</div>
-							<div class="flex justify-between border-b border-white/5 pb-2">
-								<span class="text-slate-400">Current Usage Date</span>
-								<span class="text-white font-black">{ragHealth.currentUsageDate}</span>
-							</div>
-							{#if ragHealth.supabaseError}
-								<div class="rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-xs text-rose-300">
-									<strong>Database Error:</strong> {ragHealth.supabaseError}
-								</div>
-							{/if}
+						<div class="flex justify-between border-b border-white/5 pb-2">
+							<span class="text-slate-400">Gemini LLM Model</span>
+							<span class="text-white font-black">{data.aiConfig?.geminiModel || 'N/A'}</span>
 						</div>
-					{:else}
-						<p class="text-xs text-slate-500">ไม่มีข้อมูลระบบ</p>
-					{/if}
+						<div class="flex justify-between border-b border-white/5 pb-2">
+							<span class="text-slate-400">AI Deck Critique</span>
+							<span class={data.aiConfig?.geminiConfigured ? 'text-emerald-300' : 'text-rose-300'}>
+								{data.aiConfig?.geminiConfigured ? 'Ready' : 'Not Ready'}
+							</span>
+						</div>
+					</div>
 				</article>
 
 				<article class="rt-panel rounded-xl p-5 sm:p-6">

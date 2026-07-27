@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { tick } from 'svelte';
 
 	interface Props {
 		open?: boolean;
@@ -17,6 +18,62 @@
 		children
 	}: Props = $props();
 
+	let modalEl = $state<HTMLDivElement | null>(null);
+	let previousActiveElement: HTMLElement | null = null;
+
+	$effect(() => {
+		if (open) {
+			if (typeof document !== 'undefined') {
+				previousActiveElement = document.activeElement as HTMLElement;
+			}
+			void tick().then(() => {
+				if (modalEl) {
+					const focusables = getFocusableElements();
+					if (focusables.length > 0) {
+						focusables[0].focus();
+					} else {
+						modalEl.focus();
+					}
+				}
+			});
+		} else {
+			if (previousActiveElement) {
+				previousActiveElement.focus();
+				previousActiveElement = null;
+			}
+		}
+	});
+
+	function getFocusableElements(): HTMLElement[] {
+		if (!modalEl) return [];
+		return Array.from(
+			modalEl.querySelectorAll(
+				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+			)
+		) as HTMLElement[];
+	}
+
+	function handleTab(event: KeyboardEvent) {
+		const focusables = getFocusableElements();
+		if (focusables.length === 0) {
+			event.preventDefault();
+			return;
+		}
+		const first = focusables[0];
+		const last = focusables[focusables.length - 1];
+		if (event.shiftKey) {
+			if (document.activeElement === first) {
+				last.focus();
+				event.preventDefault();
+			}
+		} else {
+			if (document.activeElement === last) {
+				first.focus();
+				event.preventDefault();
+			}
+		}
+	}
+
 	function close() {
 		open = false;
 		if (onclose) onclose();
@@ -25,11 +82,22 @@
 
 {#if open}
 	<div class="fixed inset-0 z-[950] grid place-items-center bg-black/75 p-4 backdrop-blur-sm">
-		<div class="rt-panel w-full max-w-sm overflow-hidden rounded-xl shadow-2xl shadow-black/50">
+		<div
+			bind:this={modalEl}
+			tabindex="-1"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby={title ? 'modal-title' : undefined}
+			onkeydown={(e) => {
+				if (e.key === 'Escape') close();
+				if (e.key === 'Tab') handleTab(e);
+			}}
+			class="rt-panel w-full max-w-sm overflow-hidden rounded-xl shadow-2xl shadow-black/50 focus:outline-none"
+		>
 			<div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
 				<div>
 					{#if title}
-						<div class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">{title}</div>
+						<div id="modal-title" class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">{title}</div>
 					{/if}
 					{#if subtitle}
 						<div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">{subtitle}</div>

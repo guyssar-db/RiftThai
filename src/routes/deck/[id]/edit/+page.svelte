@@ -81,6 +81,7 @@
 	let undoSnapshot = $state<DeckCollection | null>(null);
 	let undoMessage = $state('');
 	let userCardCollection = $state<Record<string, number>>({});
+	let hasCollection = $derived(Object.keys(userCardCollection).length > 0);
 
 	$effect(() => {
 		if (!browser) return;
@@ -162,9 +163,24 @@
 				: []
 		}))
 	);
+	let indexedCards = $derived(
+		cards.map((card) => ({
+			card,
+			searchable: normalize([
+				card.name_en,
+				card.name_th,
+				card.code,
+				card.type,
+				card.rarity,
+				card.set_name,
+				...(card.domains ?? []),
+				...(card.tags ?? [])
+			])
+		}))
+	);
 	let filteredCards = $derived(
-		cards
-			.filter((card) => {
+		indexedCards
+			.filter(({ card }) => {
 				if (!selectedLegend && !isLegendCard(card)) return false;
 				if (selectedLegend && isLegendCard(card)) return false;
 				if (selectedLegend && !isCardAllowedForLegend(card, selectedLegend)) return false;
@@ -188,21 +204,13 @@
 				// ) return false;
 				return true;
 			})
-			.filter((card) => {
+			.map(({ card, searchable }) => ({ card, searchable }))
+			.filter(({ searchable }) => {
 				const query = normalize(searchTerm);
 				if (!query) return true;
-				const searchable = normalize([
-					card.name_en,
-					card.name_th,
-					card.code,
-					card.type,
-					card.rarity,
-					card.set_name,
-					...(card.domains ?? []),
-					...(card.tags ?? [])
-				]);
 				return query.split(' ').every((token) => searchable.includes(token));
 			})
+			.map(({ card }) => card)
 	);
 	let totalCardPages = $derived(Math.max(1, Math.ceil(filteredCards.length / cardsPerPage)));
 	let paginatedCards = $derived(
@@ -612,7 +620,7 @@
 <div class="rt-page-shell min-h-dvh pb-16 text-slate-100">
 	<div class="mesh-gradient"></div>
 
-	<nav class="sticky top-0 z-50 border-b border-amber-200/10 bg-[#0a0e15]/90 backdrop-blur-xl">
+	<nav class="design-nav sticky top-0 z-50 border-b border-amber-200/10 bg-[#0a0e15]/90 backdrop-blur-xl">
 		<div class="rt-container flex items-center justify-between gap-4 py-3">
 			<a
 				href="/"
@@ -625,7 +633,7 @@
 	</nav>
 
 	<main class="rt-container py-6 sm:py-10">
-		<header class="rt-panel rt-topline mb-6 overflow-hidden rounded-xl">
+		<header class="design-hero rt-panel rt-topline mb-6 overflow-hidden rounded-2xl">
 			<div class="rt-rule-line p-5 pl-7 sm:p-7 sm:pl-9">
 				<p class="rt-kicker mb-3">Deck Editor</p>
 				<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -900,7 +908,7 @@
 								? getCardQuantity(sideboardEntries, card.code)
 								: getCardQuantity(entries, card.code)}
 							{@const owned = (userCardCollection[card.code] ?? 0) + (userCardCollection[card.code + '_foil'] ?? 0)}
-							{@const isMissing = Object.keys(userCardCollection).length > 0 && quantity > 0 && owned < quantity}
+							{@const isMissing = hasCollection && quantity > 0 && owned < quantity}
 							<article
 								class="group overflow-hidden rounded-xl border transition hover:-translate-y-1 hover:border-cyan-300/35 hover:shadow-[0_0_36px_rgba(45,212,191,0.10)]
 								{isMissing ? 'border-amber-500/30 bg-[#120b05]/10' : 'border-white/10 bg-black/20'}"
@@ -960,7 +968,7 @@
 										</div>
 									{/if}
 
-									{#if Object.keys(userCardCollection).length > 0}
+									{#if hasCollection}
 										<div
 											class="absolute bottom-2 left-2 rounded-md px-1.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase shadow-md backdrop-blur border z-10
 											{quantity > 0
@@ -1201,7 +1209,7 @@
 					>
 						{#each (isEditingSideboard ? sideboardCards : deckCards).filter((item) => !isLegendCard(item.card)) as item}
 							{@const owned = (userCardCollection[item.card.code] ?? 0) + (userCardCollection[item.card.code + '_foil'] ?? 0)}
-							{@const isMissing = Object.keys(userCardCollection).length > 0 && owned < item.quantity}
+							{@const isMissing = hasCollection && owned < item.quantity}
 							<div
 								class="relative overflow-hidden rounded-lg border bg-black/20 {isMissing ? 'border-amber-500/30' : 'border-white/10'} {item
 									.card.type === 'Battlefield'
@@ -1234,7 +1242,7 @@
 										<div class="truncate text-sm font-black text-white drop-shadow">
 											{item.card.name_en}
 										</div>
-										{#if Object.keys(userCardCollection).length > 0}
+									{#if hasCollection}
 											<div class="mt-0.5 text-[9px] font-black uppercase tracking-widest {owned >= item.quantity ? 'text-emerald-400' : 'text-amber-400'}">
 												มีอยู่: {owned} / ต้องการ: {item.quantity}
 											</div>

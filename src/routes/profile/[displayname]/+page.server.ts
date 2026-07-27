@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 
-import cards from '$lib/data/riftbound_cards_all.json';
+import cards from '$lib/data/cards.json';
 import { getAuthenticatedUser, getPublicUserProfileBySlug } from '$lib/server/auth';
 import { listPublicDecksByUser } from '$lib/server/decks';
 

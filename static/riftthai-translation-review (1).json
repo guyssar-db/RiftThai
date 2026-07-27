@@ -1,0 +1,938 @@
+{
+  "ven-r02": {
+    "cardCode": "ven-r02",
+    "name": "Calm Rune",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:13.414Z"
+  },
+  "ven-r01": {
+    "cardCode": "ven-r01",
+    "name": "Fury Rune",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:25.211Z"
+  },
+  "ven-r03": {
+    "cardCode": "ven-r03",
+    "name": "Mind Rune",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:26.635Z"
+  },
+  "ven-r04": {
+    "cardCode": "ven-r04",
+    "name": "Body Rune",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:31.859Z"
+  },
+  "ven-r05": {
+    "cardCode": "ven-r05",
+    "name": "Chaos Rune",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:39.298Z"
+  },
+  "ven-r06": {
+    "cardCode": "ven-r06",
+    "name": "Order Rune",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:39.786Z"
+  },
+  "ogn-007a-298": {
+    "cardCode": "ogn-007a-298",
+    "name": "Fury Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:40.106Z"
+  },
+  "ogn-007-298": {
+    "cardCode": "ogn-007-298",
+    "name": "Fury Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:40.298Z"
+  },
+  "ogn-042a-298": {
+    "cardCode": "ogn-042a-298",
+    "name": "Calm Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:40.474Z"
+  },
+  "ogn-042-298": {
+    "cardCode": "ogn-042-298",
+    "name": "Calm Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:40.635Z"
+  },
+  "ogn-089-298": {
+    "cardCode": "ogn-089-298",
+    "name": "Mind Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:42.330Z"
+  },
+  "ogn-089a-298": {
+    "cardCode": "ogn-089a-298",
+    "name": "Mind Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:43.202Z"
+  },
+  "ogn-126a-298": {
+    "cardCode": "ogn-126a-298",
+    "name": "Body Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:43.586Z"
+  },
+  "ogn-126-298": {
+    "cardCode": "ogn-126-298",
+    "name": "Body Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:43.978Z"
+  },
+  "ogn-166a-298": {
+    "cardCode": "ogn-166a-298",
+    "name": "Chaos Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:44.322Z"
+  },
+  "ogn-166-298": {
+    "cardCode": "ogn-166-298",
+    "name": "Chaos Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:44.674Z"
+  },
+  "ogn-214a-298": {
+    "cardCode": "ogn-214a-298",
+    "name": "Order Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:45.018Z"
+  },
+  "ogn-214-298": {
+    "cardCode": "ogn-214-298",
+    "name": "Order Rune",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:25:45.474Z"
+  },
+  "ogn-050-298": {
+    "cardCode": "ogn-050-298",
+    "name": "Rune Prison",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown) \nStun ยูนิต 1 ใบ (มันจะไม่สามารถทำความเสียหายในการต่อสู้ได้ในเทิร์นนี้)",
+    "updatedAt": "2026-07-20T09:39:55.163Z"
+  },
+  "ven-t04": {
+    "cardCode": "ven-t04",
+    "name": "Recruit (NX)",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:26:53.210Z"
+  },
+  "ogn-271-298": {
+    "cardCode": "ogn-271-298",
+    "name": "Recruit (DE)",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:26:53.818Z"
+  },
+  "ogn-272-298": {
+    "cardCode": "ogn-272-298",
+    "name": "Recruit (NX)",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:26:54.266Z"
+  },
+  "ogn-273-298": {
+    "cardCode": "ogn-273-298",
+    "name": "Recruit (ZN)",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-20T09:26:54.794Z"
+  },
+  "ven-004-166": {
+    "cardCode": "ven-004-166",
+    "name": "Dune Surfer",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "การ์ดใบนี้ไม่สนใจ [Tank] ขณะเลือกทำความเสียหายจากการต่อสู้ที่นี่",
+    "updatedAt": "2026-07-20T09:39:53.131Z"
+  },
+  "ven-sp1-006": {
+    "cardCode": "ven-sp1-006",
+    "name": "Kai'Sa, Survivor",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Accelerate] (คุณสามารถจ่าย :rb_energy_1::rb_rune_fury: เป็นค่าร่ายเพิ่มเติมเพื่อให้การ์ดใบนี้ลงสนามในสภาพ Ready) เมื่อการ์ดใบนี้ Conquer ให้จั่ว 1 ใบ",
+    "updatedAt": "2026-07-20T09:30:13.978Z"
+  },
+  "ven-sp2-006": {
+    "cardCode": "ven-sp2-006",
+    "name": "Sona, Harmonious",
+    "set": "Vendetta",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อตอนจบเทิร์นของคุณ, หากการ์ดใบนี้อยู่ที่ Battlefield, ให้ Ready รูนฝั่งเราที่ exhaust สูงสุด 4 ใบ",
+    "updatedAt": "2026-07-22T11:24:49.187Z"
+  },
+  "ven-sp3-006": {
+    "cardCode": "ven-sp3-006",
+    "name": "Ahri, Inquisitive",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อการ์ดใบนี้โจมตีหรือป้องกัน, ยูนิตศัตรู 1 ใบได้รับ -2 :rb_might: ในเทิร์นนี้, โดยลดลงได้ไม่ต่ำกว่า 1 :rb_might:",
+    "updatedAt": "2026-07-20T09:31:03.242Z"
+  },
+  "ven-003-166": {
+    "cardCode": "ven-003-166",
+    "name": "Brittle Steel",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "ทำลาย Gear 1 ใบ.\n[Flow] [4][C] (คุณสามารถ เล่นการ์ดใบนี้จาก Trash ของคุณ โดยจ่ายคอสต์ของ Flow. จากนั้น Banish มัน.)",
+    "updatedAt": "2026-07-20T09:31:50.475Z"
+  },
+  "ven-002-166": {
+    "cardCode": "ven-002-166",
+    "name": "Blade Twirler",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "ครั้งแรกที่การ์ดใบนี้เคลื่อนที่ในแต่ละเทิร์น, เลือกผู้เล่น 1 คน ผู้เล่นคนนั้น [Burn 1] (ผู้เล่นคนนั้นนำการ์ดใบบนสุดของ Main Deck ลง Trash ของตนเอง)",
+    "updatedAt": "2026-07-20T09:32:37.923Z"
+  },
+  "ven-sp5-006": {
+    "cardCode": "ven-sp5-006",
+    "name": "Ezreal, Prodigy",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อคุณเล่นการ์ดใบนี้ ทิ้งการ์ด 1 ใบ จากนั้นจั่ว 2 ใบ \nค่าร่ายเพิ่มเติมที่เป็นทางเลือกที่คุณต้องจ่าย จะมีค่าร่ายลดลง :rb_energy_1: หรือลดลง :rb_rune_rainbow: แต้ม",
+    "updatedAt": "2026-07-20T09:39:54.282Z"
+  },
+  "ven-020-166": {
+    "cardCode": "ven-020-166",
+    "name": "Twilight Reveler",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อการ์ดใบนี้โจมตี, ให้ Ready ยูนิตฝ่ายเราอีก 1 ใบ",
+    "updatedAt": "2026-07-20T09:40:23.699Z"
+  },
+  "ven-sp6-006": {
+    "cardCode": "ven-sp6-006",
+    "name": "Lux, Crownguard",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": ":rb_exhaust:: [Reaction] — [Add] :rb_energy_2: ใช้ได้เฉพาะการเล่นเวทมนตร์เท่านั้น (ความสามารถที่เพิ่มทรัพยากรไม่สามารถร่ายสวนกลับได้)",
+    "updatedAt": "2026-07-22T09:02:25.411Z"
+  },
+  "ven-005-166": {
+    "cardCode": "ven-005-166",
+    "name": "Forsaken Baccai",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "ถ้าคุณควบคุม Rune น้อยกว่าคู่แข่งในตอนเริ่ม Beginning Phase ของคุณ, มอบพลังให้การ์ดใบนี้ +1 [S] ในเทิร์นนี้",
+    "updatedAt": "2026-07-20T10:20:42.546Z"
+  },
+  "ven-007-166": {
+    "cardCode": "ven-007-166",
+    "name": "Punching Poro",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Empower] — ทิ้งการ์ด 1 ใบ (จ่ายค่าร่ายนี้เพื่อ Empower การ์ดใบนี้. ใช้ได้เมื่อการ์ดใบนี้ยังไม่ Empowered เท่านั้น.)\n[Empowered][>] การ์ดใบนี้มี +1 [S].",
+    "updatedAt": "2026-07-20T10:20:50.202Z"
+  },
+  "ven-010-166": {
+    "cardCode": "ven-010-166",
+    "name": "Consuming Curse",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง Showdown.)\nทำความเสียหาย 2 แก่ ยูนิต 1 ใบที่อยู่ใน 1 Battlefield. ความเสียหายนี้เพิ่ม 1 ต่อการ์ดที่มีชื่อเดียวกันกับการ์ดนี้ใน Trash ของคุณ",
+    "updatedAt": "2026-07-20T10:24:46.610Z"
+  },
+  "ven-011-166": {
+    "cardCode": "ven-011-166",
+    "name": "Pendulum Blade",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Equip] [C] ([C]: ติดตั้งมันให้กับยูนิต 1 ใบที่คุณควบคุมอยู่.)",
+    "updatedAt": "2026-07-20T10:24:47.545Z"
+  },
+  "ven-001-166": {
+    "cardCode": "ven-001-166",
+    "name": "Baccai Sandspinner",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Empower] [5]. ความสามารถนี้มีค่าร่ายถูกลง [3] ถ้าคุณควบคุม Rune ไม่เกิน 4 ใบ. (จ่ายค่าร่ายนี้เพื่อ Empower การ์ดใบนี้. ใช้ได้เมื่อการ์ดใบนี้ยังไม่ Empowered เท่านั้น.)\n[Empowered][>] การ์ดใบนี้มี [Deflect] และ [Assault 2]. (คู่แข่งต้องจ่าย [A] เพื่อเลือกการ์ดใบนี้ด้วยเวทมนตร์หรือความสามารถ. +2 [S] ขณะที่การ์ดใบนี้เป็นผู้โจมตี.)",
+    "updatedAt": "2026-07-20T10:24:43.769Z"
+  },
+  "ven-sp4-006": {
+    "cardCode": "ven-sp4-006",
+    "name": "Sett, Brawler",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อการ์ดใบนี้ถูกเล่นหรือเมื่อการ์ดใบนี้ Conquer, มอบ Buff ให้การ์ดใบนี้ (ถ้าการ์ดใบนี้ไม่มี Buff การ์ดใบนี้จะได้รับ Buff +1 :rb_might:) สละ Buff ของการ์ดใบนี้: มอบพลังให้การ์ดใบนี้ +4 :rb_might: ในเทิร์นนี้",
+    "updatedAt": "2026-07-20T10:24:44.753Z"
+  },
+  "ven-013-166": {
+    "cardCode": "ven-013-166",
+    "name": "Shadow Assassin",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "การ์ดใบนี้ลงสนามในสภาพ Ready ถ้าคุณมีการ์ดที่มีชื่อเดียวกับการ์ดใบนี้อยู่ใน Trash ของคุณ",
+    "updatedAt": "2026-07-20T10:25:44.610Z"
+  },
+  "ven-015-166": {
+    "cardCode": "ven-015-166",
+    "name": "Decree of Rage",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง Showdown.)\nสิ่งนี้ไม่สามารถถูก Counter ได้.\nทำความเสียหาย 4 แก่ ศัตรู Calm ([G]) ยูนิต.",
+    "updatedAt": "2026-07-20T10:26:18.970Z"
+  },
+  "ven-016-166": {
+    "cardCode": "ven-016-166",
+    "name": "Eclipse Dragon",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Accelerate] (คุณสามารถ จ่าย [1][C] เป็นค่าร่ายเพิ่มเติม เพื่อให้การ์ดใบนี้ลงสนามในสภาพ Ready.)\nเมื่อการ์ดใบนี้ Move , ถ้าคุณควบคุม Rune ไม่เกิน 4 ใบ, จั่วการ์ด 1 ใบ.",
+    "updatedAt": "2026-07-22T08:29:58.052Z"
+  },
+  "ven-018-166": {
+    "cardCode": "ven-018-166",
+    "name": "Rage Amplifier",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Empower] [6][C] ([6][C]: Empower การ์ดใบนี้. ใช้ได้เมื่อการ์ดใบนี้ยังไม่ Empowered เท่านั้น.)\nยูนิตของคุณทุกใบ +1 [S]. ถ้าการ์ดใบนี้ [Empowered], พวกมัน +2 [S] แทน.",
+    "updatedAt": "2026-07-22T08:29:58.676Z"
+  },
+  "ogn-022-298": {
+    "cardCode": "ogn-022-298",
+    "name": "Thermo Beam",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown)\nทำลาย Gear ทั้งหมด",
+    "updatedAt": "2026-07-20T12:44:50.193Z"
+  },
+  "ven-006-166": {
+    "cardCode": "ven-006-166",
+    "name": "Oasis Raider",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "ถ้าคุณควบคุม Rune น้อยกว่าคู่แข่ง ในตอนเริ่ม Beginning Phase ของคุณ, มอบพลังให้การ์ดใบนี้ +2 [S] และ [Ganking] ในเทิร์นนี้. (การ์ดใบนี้สามารถเคลื่อนที่จาก Battlefield หนึ่งไปยังอีก Battlefield หนึ่งได้.)",
+    "updatedAt": "2026-07-21T20:14:41.635Z"
+  },
+  "ven-008-166": {
+    "cardCode": "ven-008-166",
+    "name": "Ruthless Strike",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง Showdown.)\nจ่ายค่าร่ายเพิ่มเติม, คุณสามารถทิ้งการ์ด 1 ใบ.\nทำความเสียหาย 3 แก่ ยูนิต 1 ใบที่อยู่ที่ 1 Battlefield. ถ้าคุณจ่ายค่าร่ายเพิ่มเติม, ทำความเสียหาย 5 แก่ มันแทน.",
+    "updatedAt": "2026-07-22T08:29:57.195Z"
+  },
+  "ven-009-166": {
+    "cardCode": "ven-009-166",
+    "name": "Baccai Reaper",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อการ์ดใบนี้โจมตี , คุณสามารถ จ่าย [C] เพื่อ มอบพลังให้การ์ดใบนี้ [Assault 2] ในเทิร์นนี้. (+2 [S] ขณะที่การ์ดใบนี้เป็นผู้โจมตี.)",
+    "updatedAt": "2026-07-21T20:16:35.995Z"
+  },
+  "ven-102-166": {
+    "cardCode": "ven-102-166",
+    "name": "Ravenbloom Prefect",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อคู่แข่ง 1 คนเล่น Gear 1 ใบ, คุณสามารถ banish การ์ดใบนี้ เพื่อ banish มัน.",
+    "updatedAt": "2026-07-22T08:29:56.021Z"
+  },
+  "ven-118-166": {
+    "cardCode": "ven-118-166",
+    "name": "Horns of the Dragon",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Tank]",
+    "updatedAt": "2026-07-22T08:29:59.596Z"
+  },
+  "ven-121-166": {
+    "cardCode": "ven-121-166",
+    "name": "Reluctant Leader",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อคุณเล่นยูนิตอื่น, มอบพลังให้การ์ดใบนี้ +2 [S] ในเทิร์นนี้.",
+    "updatedAt": "2026-07-22T08:30:00.627Z"
+  },
+  "ven-131-166": {
+    "cardCode": "ven-131-166",
+    "name": "Decree of Unity",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "ทำลาย Chaos ([P]) ยูนิต หรือ Gear ของศัตรู.",
+    "updatedAt": "2026-07-22T08:30:05.412Z"
+  },
+  "ven-150-166": {
+    "cardCode": "ven-150-166",
+    "name": "Acceleration Gate",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "Ready ยูนิต, Gear, และ/หรือ Rune ไม่เกิน 4 ใบ.",
+    "updatedAt": "2026-07-22T08:30:08.573Z"
+  },
+  "ven-138-166": {
+    "cardCode": "ven-138-166",
+    "name": "Shen, Leader of the Kinkou Order",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Shield] (+1 [S] ขณะที่การ์ดใบนี้เป็นผู้ป้องกัน.)\nเมื่อการ์ดใบนี้ hold, ถ้าคุณมียูนิทเพียง 1 ใบในที่นี่(ไม่รวมการ์ดนี้), คุณจะได้รับ 1 คะแนน",
+    "updatedAt": "2026-07-22T08:30:07.371Z"
+  },
+  "ven-138a-166": {
+    "cardCode": "ven-138a-166",
+    "name": "Shen, Leader of the Kinkou Order",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Shield] (+1 [S] ขณะที่การ์ดใบนี้เป็นผู้ป้องกัน.)\nเมื่อการ์ดใบนี้ hold, ถ้าคุณมียูนิทเพียง 1 ใบในที่นี่(ไม่รวมการ์ดนี้), คุณจะได้รับ 1 คะแนน",
+    "updatedAt": "2026-07-22T08:30:07.371Z"
+  },
+  "ven-019-166": {
+    "cardCode": "ven-019-166",
+    "name": "Renekton, Rage Fueled",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Accelerate] (คุณสามารถ จ่าย [1][C] เป็นค่าร่ายเพิ่มเติม เพื่อให้การ์ดใบนี้ลงสนามในสภาพ Ready.)\nเมื่อการ์ดใบนี้โจมตี , ถ้าคุณควบคุม Rune ไม่เกิน 4 ใบ, ทำความเสียหาย 2 แก่ยูนิตศัตรูทั้งหมดที่นี่.",
+    "updatedAt": "2026-07-22T08:24:17.388Z"
+  },
+  "ven-019a-166": {
+    "cardCode": "ven-019a-166",
+    "name": "Renekton, Rage Fueled",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Accelerate]\nเมื่อการ์ดใบนี้โจมตี , ถ้าคุณควบคุม Rune ไม่เกิน 4 ใบ, ทำความเสียหาย 2 แก่ยูนิตศัตรูทั้งหมดที่นี่.",
+    "updatedAt": "2026-07-22T08:24:23.892Z"
+  },
+  "ven-021-166": {
+    "cardCode": "ven-021-166",
+    "name": "Akali, Deadly Weapon",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Empower] [2][C] ([2][C]: Empower การ์ดใบนี้. ใช้ได้เมื่อการ์ดใบนี้ยังไม่ Empowered เท่านั้น.)\nเมื่อการ์ดใบนี้ move , คุณสามารถ ทำความเสียหาย 1 แก่ ยูนิต 1 ใบที่อยู่ที่ 1 Battlefield ที่การ์ดใบนี้ move ไปหรือออกมา. ถ้าการ์ดใบนี้ [Empowered], ทำความเสียหาย 2 แทน.\n[Empowered][>] การ์ดใบนี้มี +1 [S].",
+    "updatedAt": "2026-07-22T08:29:54.460Z"
+  },
+  "ven-021a-166": {
+    "cardCode": "ven-021a-166",
+    "name": "Akali, Deadly Weapon",
+    "set": "Vendetta",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Empower] [2][C] ([2][C]: Empower การ์ดใบนี้. ใช้ได้เมื่อการ์ดใบนี้ยังไม่ Empowered เท่านั้น.)\nเมื่อการ์ดใบนี้ move , คุณสามารถ ทำความเสียหาย 1 แก่ ยูนิต 1 ใบที่อยู่ที่ 1 Battlefield ที่การ์ดใบนี้ move ไปหรือออกมา. ถ้าการ์ดใบนี้ [Empowered], ทำความเสียหาย 2 แทน.\n[Empowered][>] การ์ดใบนี้มี +1 [S].",
+    "updatedAt": "2026-07-22T08:29:54.460Z"
+  },
+  "ven-023a-166": {
+    "cardCode": "ven-023a-166",
+    "name": "Zed, From the Shadows",
+    "set": "Vendetta",
+    "status": "edited",
+    "abilityEffectiveThai": "คุณสามารถทิ้งการ์ด 1 ใบเป็นค่าร่ายเพิ่มเติมเพื่อเล่นการ์ดใบนี้.\nเมื่อคุณเล่นการ์ดใบนี้, ถ้าคุณจ่ายค่าร่ายเพิ่มเติม, เล่นโทเคนยูนิต Shadow Clone 0 [S] 1 ใบ.",
+    "updatedAt": "2026-07-22T08:31:21.373Z"
+  },
+  "ven-023-166": {
+    "cardCode": "ven-023-166",
+    "name": "Zed, From the Shadows",
+    "set": "Vendetta",
+    "status": "edited",
+    "abilityEffectiveThai": "คุณสามารถทิ้งการ์ด 1 ใบเป็นค่าร่ายเพิ่มเติมเพื่อเล่นการ์ดใบนี้.\nเมื่อคุณเล่นการ์ดใบนี้, ถ้าคุณจ่ายค่าร่ายเพิ่มเติม, เล่นโทเคนยูนิต Shadow Clone 0 [S] 1 ใบ.",
+    "updatedAt": "2026-07-22T08:31:21.373Z"
+  },
+  "ven-169-166": {
+    "cardCode": "ven-169-166",
+    "name": "Zed, From the Shadows",
+    "set": "Vendetta",
+    "status": "edited",
+    "abilityEffectiveThai": "คุณสามารถทิ้งการ์ด 1 ใบเป็นค่าร่ายเพิ่มเติมเพื่อเล่นการ์ดใบนี้.\nเมื่อคุณเล่นการ์ดใบนี้, ถ้าคุณจ่ายค่าร่ายเพิ่มเติม, เล่นโทเคนยูนิต Shadow Clone 0 [S] 1 ใบ.",
+    "updatedAt": "2026-07-22T08:31:21.373Z"
+  },
+  "ogs-011-024": {
+    "cardCode": "ogs-011-024",
+    "name": "Flash",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "[Reaction] (ร่ายตอนไหนก็ได้ แม้กระทั่งก่อนที่เวทมนตร์และความสามารถอื่นจะส่งผล)\nย้ายยูนิตฝั่งเราสูงสุด 2 ใบกลับไปที่ Base",
+    "updatedAt": "2026-07-22T08:34:41.484Z"
+  },
+  "ogs-023-024": {
+    "cardCode": "ogs-023-024",
+    "name": "Might of Demacia - Starter",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อคุณ Conquer, หากคุณมียูนิตตั้งแต่ 4 ใบขึ้นไปที่ Battlefield แห่งนั้น, ให้จั่ว 2 ใบ",
+    "updatedAt": "2026-07-22T08:35:25.668Z"
+  },
+  "ogs-018-024": {
+    "cardCode": "ogs-018-024",
+    "name": "Tibbers",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อคุณเล่นการ์ดใบนี้, ทำความเสียหาย 3 แต้มใส่ยูนิตทั้งหมดที่อยู่ใน Battlefield ทุกแห่ง",
+    "updatedAt": "2026-07-22T08:35:40.435Z"
+  },
+  "ogs-019-024": {
+    "cardCode": "ogs-019-024",
+    "name": "Wuju Bladesman - Starter",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "ตราบใดที่ยูนิตฝั่งเราทำหน้าที่ป้องกันอยู่ใบเดียว, มันได้รับ +2 :rb_might:",
+    "updatedAt": "2026-07-22T08:36:33.380Z"
+  },
+  "ogs-022-024": {
+    "cardCode": "ogs-022-024",
+    "name": "Final Spark",
+    "set": "Proving Grounds",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown)\nทำความเสียหาย 8 แต้มใส่ยูนิต 1 ใบ",
+    "updatedAt": "2026-07-22T08:38:36.699Z"
+  },
+  "ogs-021-024": {
+    "cardCode": "ogs-021-024",
+    "name": "Lady of Luminosity - Starter",
+    "set": "Proving Grounds",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อคุณร่ายเวทมนตร์ที่มีค่าร่าย Energy ตั้งแต่ :rb_energy_5: ขึ้นไป ให้จั่ว 1 ใบ",
+    "updatedAt": "2026-07-22T08:38:42.739Z"
+  },
+  "ogs-013-024": {
+    "cardCode": "ogs-013-024",
+    "name": "Garen, Commander",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "ยูนิตฝั่งเราใบอื่นทุกใบที่นี่ได้รับพลัง +1 :rb_might:",
+    "updatedAt": "2026-07-22T08:40:03.635Z"
+  },
+  "ogs-016-024": {
+    "cardCode": "ogs-016-024",
+    "name": "Vanguard Attendant",
+    "set": "Proving Grounds",
+    "status": "confirmed",
+    "abilityEffectiveThai": "การ์ดใบนี้ลงสนามในสภาพ Ready",
+    "updatedAt": "2026-07-22T08:40:16.892Z"
+  },
+  "ogs-017-024": {
+    "cardCode": "ogs-017-024",
+    "name": "Dark Child - Starter",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "จบเทิร์นของคุณ Ready รูนสูงสุด 2 ใบ",
+    "updatedAt": "2026-07-22T08:40:34.748Z"
+  },
+  "ogs-012-024": {
+    "cardCode": "ogs-012-024",
+    "name": "Blast of Power",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown)\nทำลายยูนิตใน Battlefield 1 ใบ",
+    "updatedAt": "2026-07-22T08:41:58.283Z"
+  },
+  "ogs-002-024": {
+    "cardCode": "ogs-002-024",
+    "name": "Firestorm",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "ทำความเสียหาย 3 แต้มใส่ยูนิตศัตรูทั้งหมดใน 1 Battlefield",
+    "updatedAt": "2026-07-22T08:42:24.075Z"
+  },
+  "ogs-009-024": {
+    "cardCode": "ogs-009-024",
+    "name": "Yi, Honed",
+    "set": "Proving Grounds",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Ganking] (การ์ดใบนี้สามารถเคลื่อนที่จาก Battlefield ไปยังอีก Battlefield ได้)\nการ์ดใบนี้ลงสนามในสภาพ Ready",
+    "updatedAt": "2026-07-22T09:01:39.563Z"
+  },
+  "ogs-010-024": {
+    "cardCode": "ogs-010-024",
+    "name": "Annie, Stubborn",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อคุณเล่นการ์ดใบนี้, นำการ์ดเวทมนตร์ 1 ใบจากกองทิ้งของคุณกลับขึ้นมือ",
+    "updatedAt": "2026-07-22T09:02:09.092Z"
+  },
+  "ogs-007-024": {
+    "cardCode": "ogs-007-024",
+    "name": "Garen, Rugged",
+    "set": "Proving Grounds",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Assault 2], [Shield 2] (+2 :rb_might: ตราบใดที่การ์ดใบนี้เป็นผู้โจมตีหรือผู้ป้องกัน)",
+    "updatedAt": "2026-07-22T09:02:13.275Z"
+  },
+  "ogs-014-024": {
+    "cardCode": "ogs-014-024",
+    "name": "Lux, Crownguard",
+    "set": "Proving Grounds",
+    "status": "confirmed",
+    "abilityEffectiveThai": ":rb_exhaust:: [Reaction] — [Add] :rb_energy_2: ใช้ได้เฉพาะการเล่นเวทมนตร์เท่านั้น (ความสามารถที่เพิ่มทรัพยากรไม่สามารถร่ายสวนกลับได้)",
+    "updatedAt": "2026-07-22T09:02:25.411Z"
+  },
+  "ogs-024-024": {
+    "cardCode": "ogs-024-024",
+    "name": "Decisive Strike",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown) \nมอบพลังให้ยูนิตฝั่งเราทั้งหมด +2 :rb_might:\nในเทิร์นนี้",
+    "updatedAt": "2026-07-22T09:02:51.931Z"
+  },
+  "ogs-006-024": {
+    "cardCode": "ogs-006-024",
+    "name": "Lux, Illuminated",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อคุณร่ายเวทมนตร์ที่มีค่าร่าย Energy ตั้งแต่ :rb_energy_5: ขึ้นไป มอบ +3 :rb_might: ให้การ์ดใบนี้ในเทิร์นนี้",
+    "updatedAt": "2026-07-22T09:03:27.348Z"
+  },
+  "ogs-005-024": {
+    "cardCode": "ogs-005-024",
+    "name": "Zephyr Sage",
+    "set": "Proving Grounds",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Shield] (+1 :rb_might: ตราบใดที่การ์ดใบนี้เป็นผู้ป้องกัน)",
+    "updatedAt": "2026-07-22T09:04:36.131Z"
+  },
+  "ogs-015-024": {
+    "cardCode": "ogs-015-024",
+    "name": "Recruit the Vanguard",
+    "set": "Proving Grounds",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown) เล่นยูนิต Recruit token 1 :rb_might:\nจำนวน 4 ใบ (พวกมันสามารถเล่นลงที่Baseของคุณ หรือลงใน Battlefield ที่คุณควบคุมอยู่ก็ได้)",
+    "updatedAt": "2026-07-22T09:24:56.467Z"
+  },
+  "ogs-003-024": {
+    "cardCode": "ogs-003-024",
+    "name": "Incinerate",
+    "set": "Proving Grounds",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown)\nทำความเสียหาย 2 แต้มใส่ยูนิตที่ Battlefield 1 ใบ",
+    "updatedAt": "2026-07-22T09:25:14.915Z"
+  },
+  "ogs-004-024": {
+    "cardCode": "ogs-004-024",
+    "name": "Yi, Meditative",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "ตราบใดที่คุณมี Rune ตั้งแต่ 8 ใบขึ้นไป, การ์ดใบนี้จะได้รับ +4 :rb_might:",
+    "updatedAt": "2026-07-22T09:35:10.596Z"
+  },
+  "ogs-001-024": {
+    "cardCode": "ogs-001-024",
+    "name": "Annie, Fiery",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "เวทมนตร์และความสามารถของคุณจะทำความเสียหายเพิ่มขึ้น 1",
+    "updatedAt": "2026-07-22T11:08:26.635Z"
+  },
+  "ogs-008-024": {
+    "cardCode": "ogs-008-024",
+    "name": "Gentlemen's Duel",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown) \nมอบ +3 :rb_might: ให้ยูนิตฝั่งเรา  1 ใบในเทิร์นนี้, จากนั้นเลือกยูนิตศัตรู 1 ใบ, พวกมันจะทำความเสียหายใส่กันและกันเท่ากับค่า Might ของแต่ละตัว",
+    "updatedAt": "2026-07-22T11:11:35.123Z"
+  },
+  "ogs-020-024": {
+    "cardCode": "ogs-020-024",
+    "name": "Highlander",
+    "set": "Proving Grounds",
+    "status": "edited",
+    "abilityEffectiveThai": "[Reaction] (ร่ายตอนไหนก็ได้ แม้กระทั่งก่อนที่เวทมนตร์และความสามารถอื่นจะส่งผล)\nเลือกยูนิตฝั่งเรา 1 ใบ ครั้งต่อไปที่มันจะตายในเทิร์นนี้, recall มันไปที่ Base แทน (ส่งมันกลับ Base. ผลนี้ไม่ใช่การเคลื่อนที่)",
+    "updatedAt": "2026-07-22T11:13:24.931Z"
+  },
+  "ogn-004-298": {
+    "cardCode": "ogn-004-298",
+    "name": "Cleave",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown) \nมอบ [Assault 3] ให้ยูนิต 1 ใบในเทิร์นนี้ (+3 :rb_might:\nตราบใดที่มันเป็นผู้โจมตี)",
+    "updatedAt": "2026-07-22T11:15:18.267Z"
+  },
+  "ogn-001-298": {
+    "cardCode": "ogn-001-298",
+    "name": "Blazing Scorcher",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Accelerate] (คุณสามารถจ่าย :rb_energy_1::rb_rune_fury: เป็นค่าร่ายเพิ่มเติมเพื่อให้การ์ดใบนี้ลงสนามในสภาพ Ready)",
+    "updatedAt": "2026-07-22T11:15:34.947Z"
+  },
+  "ogn-002-298": {
+    "cardCode": "ogn-002-298",
+    "name": "Brazen Buccaneer",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อจะคุณเล่นการ์ดใบนี้, คุณสามารถทิ้งการ์ด 1 ใบเป็นค่าร่ายเพิ่มเติม, ถ้าทำ, จะลดค่าร่ายของการ์ดใบนี้ลง :rb_energy_2:",
+    "updatedAt": "2026-07-22T11:16:23.167Z"
+  },
+  "ogn-003-298": {
+    "cardCode": "ogn-003-298",
+    "name": "Chemtech Enforcer",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Assault 2] (+2 :rb_might: ตราบใดที่การ์ดใบนี้เป็นผู้โจมตี)\nเมื่อคุณเล่นการ์ดใบนี้ ทิ้งการ์ด 1 ใบ",
+    "updatedAt": "2026-07-22T11:16:37.939Z"
+  },
+  "ogn-005-298": {
+    "cardCode": "ogn-005-298",
+    "name": "Disintegrate",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown)\nทำความเสียหาย 3 แต้มใส่ยูนิตที่ Battlefield 1 ใบ หากความสามารถนี้ฆ่ามันได้ ให้จั่ว 1 ใบ",
+    "updatedAt": "2026-07-22T11:16:55.867Z"
+  },
+  "ogn-006-298": {
+    "cardCode": "ogn-006-298",
+    "name": "Flame Chompers",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อคุณทิ้งการ์ดใบนี้ คุณสามารถจ่าย :rb_rune_fury: เพื่อเล่นการ์ดใบนี้",
+    "updatedAt": "2026-07-22T11:17:15.675Z"
+  },
+  "ogn-008-298": {
+    "cardCode": "ogn-008-298",
+    "name": "Get Excited!",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown)\nทิ้งการ์ด 1 ใบ ทำความเสียหายเท่ากับ Energy ของการ์ดที่ทิ้้งใส่ยูนิตใน Battlefield 1 ใบ (ไม่สนค่า  Power ของมัน)",
+    "updatedAt": "2026-07-22T11:18:37.235Z"
+  },
+  "ogn-009-298": {
+    "cardCode": "ogn-009-298",
+    "name": "Hextech Ray",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "[Action] (เล่นในเทิร์นของคุณหรือในช่วง showdown)\nทำความเสียหาย 3 แต้มใส่ยูนิตใน Battlefield 1 ใบ",
+    "updatedAt": "2026-07-22T11:18:47.603Z"
+  },
+  "ogn-010-298": {
+    "cardCode": "ogn-010-298",
+    "name": "Legion Rearguard",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Accelerate] (คุณสามารถจ่าย :rb_energy_1::rb_rune_fury: เป็นค่าร่ายเพิ่มเติมเพื่อให้การ์ดใบนี้ลงสนามในสภาพ Ready)",
+    "updatedAt": "2026-07-22T11:18:50.659Z"
+  },
+  "ogn-011-298": {
+    "cardCode": "ogn-011-298",
+    "name": "Magma Wurm",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "ยูนิตฝ่ายเราตัวอื่นเข้าสู่สนามในสภาพ ready",
+    "updatedAt": "2026-07-22T11:19:07.011Z"
+  },
+  "ogn-012-298": {
+    "cardCode": "ogn-012-298",
+    "name": "Noxus Hopeful",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Legion] — การ์ดใบนี้มีค่าร่ายลดลง :rb_energy_2: (ได้รับผลนี้หากคุณเคยเล่นการ์ดใบอื่นไปแล้วในเทิร์นนี้)",
+    "updatedAt": "2026-07-22T11:19:29.803Z"
+  },
+  "unl-220-219": {
+    "cardCode": "unl-220-219",
+    "name": "Pouty Poro",
+    "set": "Unleashed",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Deflect] (คู่แข่งต้องจ่าย :rb_rune_rainbow: หากต้องการเลือกการ์ดใบนี้ด้วยเวทมนตร์หรือความสามารถ)",
+    "updatedAt": "2026-07-22T11:19:37.595Z"
+  },
+  "ogn-013-298": {
+    "cardCode": "ogn-013-298",
+    "name": "Pouty Poro",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Deflect] (คู่แข่งต้องจ่าย :rb_rune_rainbow: หากต้องการเลือกการ์ดใบนี้ด้วยเวทมนตร์หรือความสามารถ)",
+    "updatedAt": "2026-07-22T11:19:37.595Z"
+  },
+  "ogn-027a-298": {
+    "cardCode": "ogn-027a-298",
+    "name": "Darius, Trifarian",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อคุณเล่นการ์ดใบที่สองในเทิร์นนี้, มอบ +2 :rb_might: ให้การ์ดใบนี้ในเทิร์นนี้ และ Ready การ์ดใบนี้",
+    "updatedAt": "2026-07-22T11:20:40.771Z"
+  },
+  "ogn-027-298": {
+    "cardCode": "ogn-027-298",
+    "name": "Darius, Trifarian",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อคุณเล่นการ์ดใบที่สองในเทิร์นนี้, มอบ +2 :rb_might: ให้การ์ดใบนี้ในเทิร์นนี้ และ Ready การ์ดใบนี้",
+    "updatedAt": "2026-07-22T11:20:40.771Z"
+  },
+  "sfd-222-221": {
+    "cardCode": "sfd-222-221",
+    "name": "Seal of Rage",
+    "set": "Spiritforged",
+    "status": "confirmed",
+    "abilityEffectiveThai": ":rb_exhaust:: [Reaction] — [Add] :rb_rune_fury: (ความสามารถที่เพิ่มทรัพยากรไม่สามารถร่ายสวนกลับได้)",
+    "updatedAt": "2026-07-22T11:20:53.347Z"
+  },
+  "ogn-040-298": {
+    "cardCode": "ogn-040-298",
+    "name": "Seal of Rage",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": ":rb_exhaust:: [Reaction] — [Add] :rb_rune_fury: (ความสามารถที่เพิ่มทรัพยากรไม่สามารถร่ายสวนกลับได้)",
+    "updatedAt": "2026-07-22T11:20:53.347Z"
+  },
+  "ogn-043-298": {
+    "cardCode": "ogn-043-298",
+    "name": "Charm",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "ย้ายยูนิตศัตรู 1 ใบ",
+    "updatedAt": "2026-07-22T11:20:59.475Z"
+  },
+  "ogn-044-298": {
+    "cardCode": "ogn-044-298",
+    "name": "Clockwork Keeper",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "คุณสามารถจ่าย :rb_rune_calm:\nเป็นค่าร่ายเพิ่มเติมเพื่อเล่นการ์ดใบนี้ เมื่อคุณเล่นการ์ดใบนี้ หากคุณจ่ายค่าร่ายเพิ่มเติม ให้จั่วการ์ด 1 ใบ",
+    "updatedAt": "2026-07-22T11:21:19.507Z"
+  },
+  "ogn-045-298": {
+    "cardCode": "ogn-045-298",
+    "name": "Defy",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "[Reaction] (ร่ายตอนไหนก็ได้ แม้กระทั่งก่อนที่เวทมนตร์และความสามารถอื่นจะส่งผล) \nยกเลิกเวทมนตร์ที่มีค่าร่าย Energy ไม่เกิน :rb_energy_4:\nและค่าร่าย Power ไม่เกิน :rb_rune_rainbow:",
+    "updatedAt": "2026-07-22T11:21:44.235Z"
+  },
+  "ogn-049-298": {
+    "cardCode": "ogn-049-298",
+    "name": "Playful Phantom",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "",
+    "updatedAt": "2026-07-22T11:21:51.779Z"
+  },
+  "ogn-055-298": {
+    "cardCode": "ogn-055-298",
+    "name": "Wielder of Water",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "ตราบใดที่การ์ดใบนี้โจมตีหรือป้องกันอยู่เพียงตัวเดียว, การ์ดใบนี้จะได้รับ +2 :rb_might:",
+    "updatedAt": "2026-07-22T11:22:28.011Z"
+  },
+  "ogn-054-298": {
+    "cardCode": "ogn-054-298",
+    "name": "Sunlit Guardian",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Shield] (+1 :rb_might: ตราบใดที่การ์ดใบนี้เป็นผู้ป้องกัน)\n[Tank] (การ์ดใบนี้ต้องเป็นตัวรับความเสียหายจากการต่อสู้ก่อน)",
+    "updatedAt": "2026-07-22T11:22:42.266Z"
+  },
+  "ogn-052-298": {
+    "cardCode": "ogn-052-298",
+    "name": "Stalwart Poro",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "[Shield] (+1 :rb_might: ตราบใดที่การ์ดใบนี้เป็นผู้ป้องกัน)",
+    "updatedAt": "2026-07-22T11:22:46.699Z"
+  },
+  "ogn-066a-298": {
+    "cardCode": "ogn-066a-298",
+    "name": "Ahri, Alluring",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อการ์ดใบนี้ Hold, คุณจะได้รับ 1 คะแนน",
+    "updatedAt": "2026-07-22T11:22:55.083Z"
+  },
+  "ogn-066-298": {
+    "cardCode": "ogn-066-298",
+    "name": "Ahri, Alluring",
+    "set": "Origins",
+    "status": "confirmed",
+    "abilityEffectiveThai": "เมื่อการ์ดใบนี้ Hold, คุณจะได้รับ 1 คะแนน",
+    "updatedAt": "2026-07-22T11:22:55.083Z"
+  },
+  "ogn-065-298": {
+    "cardCode": "ogn-065-298",
+    "name": "Wizened Elder",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "ตราบใดที่การ์ดใบนี้ได้รับ Buff, การ์ดใบนี้จะได้รับ +1 :rb_might:",
+    "updatedAt": "2026-07-22T11:23:23.595Z"
+  },
+  "ogn-072-298": {
+    "cardCode": "ogn-072-298",
+    "name": "Solari Shrine",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อคุณสังหารยูนิตศัตรูที่ติดสถานะ stun ได้, คุณสามารถ exhaust การ์ดนี้เพื่อจั่ว 1 ใบ",
+    "updatedAt": "2026-07-22T11:24:08.148Z"
+  },
+  "ogn-073-298": {
+    "cardCode": "ogn-073-298",
+    "name": "Sona, Harmonious",
+    "set": "Origins",
+    "status": "edited",
+    "abilityEffectiveThai": "เมื่อตอนจบเทิร์นของคุณ, หากการ์ดใบนี้อยู่ที่ Battlefield, ให้ Ready รูนฝั่งเราที่ exhaust สูงสุด 4 ใบ",
+    "updatedAt": "2026-07-22T11:24:49.187Z"
+  },
+  "ven-017-166": {
+    "cardCode": "ven-017-166",
+    "name": "Morgana, Vindictive",
+    "set": "Vendetta",
+    "status": "edited",
+    "abilityEffectiveThai": "[Ambush] (คุณสามารถเล่นการ์ดใบนี้เป็น [Reaction] ไปยัง 1 Battlefield ที่คุณมียูนิตอยู่)\nเมื่อคุณเล่นการ์ดใบนี้, ทำความเสียหายแก่ยูนิต 1 ใบเท่ากับความเสียหายที่ทำไว้บนมัน.(เช่น ใช้เวทยิง 2 ใส่ไว้แล้วลงการ์ดนี้ การ์ดที่โดนยิง 2 ไว้จะโดนยิงเพิ่มอีก 2 ตามที่โดนดาเมจไว้)(ถ้าการ์ดนั้นโดนฮีลแล้ว จะถือว่าไม่มีการทำดาเมจทิ้งไว้ ทำให้การ์ดนี้ทำดาเมจไม่ได้)",
+    "updatedAt": "2026-07-22T11:30:54.636Z"
+  },
+  "ven-012-166": {
+    "cardCode": "ven-012-166",
+    "name": "Perfect Execution",
+    "set": "Vendetta",
+    "status": "edited",
+    "abilityEffectiveThai": "Ready ยูนิต 1 ใบ และ มอบ [Assault 3] ให้มันในเทิร์นนี้. (+3 [S] ขณะที่มันเป็นผู้โจมตี.)\n[Flow] [3][C] (คุณสามารถเล่นการ์ดใบนี้จาก Trash ของคุณโดยจ่ายคอสต์ของ Flow. จากนั้น Banish มัน.)",
+    "updatedAt": "2026-07-22T11:31:47.459Z"
+  },
+  "ven-038a-166": {
+    "cardCode": "ven-038a-166",
+    "name": "Akali, Silent",
+    "set": "Vendetta",
+    "status": "edited",
+    "abilityEffectiveThai": "การ์ดนี้จะไม่ถูกเลือกโดยเวทมนตร์และความสามารถของศัตรู เว้นแต่ฉันจะอยู่ในระหว่างการต่อสู้.\nเมื่อการ์ดใบนี้ move เพื่อไปยัง Battlefield, มอบ +2 [S] ให้การ์ดใบนี้ในเทิร์นนี้.",
+    "updatedAt": "2026-07-22T11:33:24.435Z"
+  },
+  "ven-038-166": {
+    "cardCode": "ven-038-166",
+    "name": "Akali, Silent",
+    "set": "Vendetta",
+    "status": "edited",
+    "abilityEffectiveThai": "การ์ดนี้จะไม่ถูกเลือกโดยเวทมนตร์และความสามารถของศัตรู เว้นแต่ฉันจะอยู่ในระหว่างการต่อสู้.\nเมื่อการ์ดใบนี้ move เพื่อไปยัง Battlefield, มอบ +2 [S] ให้การ์ดใบนี้ในเทิร์นนี้.",
+    "updatedAt": "2026-07-22T11:33:24.435Z"
+  }
+}

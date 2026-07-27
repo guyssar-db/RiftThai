@@ -331,13 +331,6 @@
 								>
 									Playtest
 								</button>
-								<a
-									href="/playground?id={selectedDeck.id}"
-									class="inline-flex min-h-11 items-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 text-xs font-black tracking-widest text-emerald-100 uppercase transition hover:bg-emerald-500/20 hover:text-white"
-								>
-									Playground
-								</a>
-
 							{/if}
 							{#if isLocal}
 								<a href="/deck/{selectedDeck.id}/edit" class="rt-action">Edit Deck</a>

@@ -2,7 +2,6 @@ import { json } from '@sveltejs/kit';
 
 import { getAuthenticatedUser } from '$lib/server/auth';
 import { getRagConfig } from '$lib/server/rag/config';
-import { getChatUsage } from '$lib/server/rag/supabase';
 
 export const GET = async ({ cookies }) => {
 	const user = await getAuthenticatedUser(cookies);
@@ -16,7 +15,6 @@ export const GET = async ({ cookies }) => {
 	}
 
 	const config = getRagConfig();
-	const used = user.isAdmin ? 0 : await getChatUsage(user.id);
 
 	return json({
 		user: {
@@ -31,8 +29,8 @@ export const GET = async ({ cookies }) => {
 			createdAt: user.createdAt,
 			settings: user.settings,
 			usage: {
-				used,
-				limit: config.dailyChatLimit
+				used: 0,
+				limit: 0
 			}
 		}
 	});
