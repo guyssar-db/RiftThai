@@ -2,7 +2,8 @@ import { json } from '@sveltejs/kit';
 import { getAuthenticatedUser } from '$lib/server/auth';
 import { getRagConfig } from '$lib/server/rag/config';
 import { generateGeminiContent } from '$lib/server/rag/gemini';
-import cardsData from '$lib/data/riftbound_cards_all.json';
+import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/security';
+import cardsData from '$lib/data/cards.json';
 
 type Card = {
 	code: string;
@@ -16,7 +17,7 @@ type Card = {
 	ability_en?: string;
 };
 
-export const POST = async ({ cookies, request }) => {
+export const POST = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
 	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบเพื่อใช้งานระบบวิเคราะห์เด็คด้วย AI' }, { status: 401 });
 
@@ -25,12 +26,59 @@ export const POST = async ({ cookies, request }) => {
 		return json({ error: 'ระบบ AI ยังไม่ได้ตั้งค่า GEMINI_API_KEY บนเซิร์ฟเวอร์' }, { status: 503 });
 	}
 
+	// Rate Limiting (user and IP)
+	let ip = 'unknown';
+	try {
+		ip = getClientAddress();
+	} catch {}
+
+	const cleanIp = clientKey(ip);
+	const ipLimit = checkRateLimit(`deck-analyze:ip:${cleanIp}`, { windowMs: 120_000, max: 6 });
+	const userLimit = checkRateLimit(`deck-analyze:user:${user.id}`, { windowMs: 120_000, max: 3 });
+
+	const limited = ipLimit.limited ? ipLimit : userLimit;
+	if (limited.limited) {
+		return json(
+			{ error: 'คุณเรียกใช้งานวิเคราะห์เด็คถี่เกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง' },
+			{ status: 429, headers: rateLimitHeaders(limited.retryAfter) }
+		);
+	}
+
 	const body = await request.json().catch(() => null);
-	const entries = body?.entries as Array<{ code: string; quantity: number }> || [];
-	const championCode = body?.championCode as string || '';
+	if (!body) {
+		return json({ error: 'ข้อมูลคำขอไม่ถูกต้อง' }, { status: 400 });
+	}
+
+	const entries = body.entries as Array<{ code: string; quantity: number }> || [];
+	const championCode = body.championCode as string || '';
 
 	if (!entries.length && !championCode) {
 		return json({ error: 'ไม่พบข้อมูลการ์ดในเด็ค' }, { status: 400 });
+	}
+
+	// Limit entries length (distinct cards)
+	if (entries.length > 100) {
+		return json({ error: 'จำนวนการ์ดประเภทต่างๆ ในเด็คมากเกินไป' }, { status: 400 });
+	}
+
+	// Validate inputs
+	if (typeof championCode === 'string' && championCode.length > 100) {
+		return json({ error: 'ข้อมูล Champion ไม่ถูกต้อง' }, { status: 400 });
+	}
+
+	let totalQuantity = 0;
+	for (const entry of entries) {
+		if (typeof entry.code !== 'string' || entry.code.length > 100) {
+			return json({ error: 'รหัสการ์ดไม่ถูกต้อง' }, { status: 400 });
+		}
+		if (typeof entry.quantity !== 'number' || entry.quantity < 1 || entry.quantity > 10) {
+			return json({ error: 'จำนวนการ์ดต้องอยู่ระหว่าง 1 ถึง 10 ใบต่อหนึ่งประเภท' }, { status: 400 });
+		}
+		totalQuantity += entry.quantity;
+	}
+
+	if (totalQuantity > 150) {
+		return json({ error: 'จำนวนการ์ดทั้งหมดในเด็คต้องไม่เกิน 150 ใบ' }, { status: 400 });
 	}
 
 	const cards = cardsData as Card[];

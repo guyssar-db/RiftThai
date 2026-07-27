@@ -1,99 +1,78 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import { getAuthSession } from '$lib/utils/authSession';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Modal from '$lib/components/ui/Modal.svelte';
-	import type { Card } from '$lib/types/card';
-	import { getAuthSession, invalidateAuthSession } from '$lib/utils/authSession';
-	import {
-		parseAnswerText,
-		withAiDisclaimer,
-		getCanonicalQuickAnswer,
-		findCards,
-		formatFocusedCardAnswer,
-		formatCards,
-		buildAnswer
-	} from '$lib/utils/chatSearch';
 
 	type Message = {
-		role: 'bot' | 'user';
-		text: string;
-	};
-
-	type RagChatResponse = {
-		answer?: string;
-		mode?: 'rag' | 'local' | 'setup_required';
-		usage?: ChatUsage;
-		sources?: Array<{
-			source: string;
-			title: string;
-			source_type: string;
-			similarity?: number;
-		}>;
-		error?: string;
-	};
-
-	type ChatUsage = {
-		used: number;
-		limit: number;
-		isAdmin?: boolean;
+		id: string;
+		sender_role: 'user' | 'admin';
+		body: string;
+		created_at: string;
 	};
 
 	type AuthSession = {
 		user: {
+			id: string;
 			email: string;
-			isAdmin: boolean;
-			usage: ChatUsage;
+			displayName: string | null;
+			profileHandle: string | null;
 		} | null;
 		error?: string;
 	};
 
 	let pathname = $derived(page.url.pathname.replace(/\/$/, '') || '/');
 	let isHomePage = $derived(pathname === '/');
+	let isChatPage = $derived(pathname === '/chat');
 
-	let cachedLocalCards: Card[] | null = null;
 	let isOpen = $state(false);
+	let currentUser = $state<AuthSession['user']>(null);
+	
+	// Authentication modal state
 	let authModalOpen = $state(false);
-	let input = $state('');
-	let isSending = $state(false);
-	let authLoading = $state(true);
+	let authMode = $state<'login' | 'register'>('login');
 	let loginEmail = $state('');
 	let loginPassword = $state('');
 	let confirmPassword = $state('');
 	let loginDisplayName = $state('');
 	let loginError = $state('');
-	let authMode = $state<'login' | 'register'>('login');
 	let registerSent = $state(false);
 	let acceptedTerms = $state(false);
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
-	let currentUser = $state<AuthSession['user']>(null);
-	let messages = $state<Message[]>([
-		{
-			role: 'bot',
-			text: withAiDisclaimer(
-				'ถามกฎ, การ์ด, keyword, phase, Q&A หรือ domain มาได้เลย ผมจะตอบจากข้อมูลที่มีในเว็บและจะไม่เดาถ้าไม่มั่นใจ'
-			)
-		}
-	]);
+	let authLoading = $state(true);
+
+	// Chat support state
+	let messages = $state<Message[]>([]);
+	let body = $state('');
+	let error = $state('');
+	let loading = $state(false);
+	let sending = $state(false);
+	let pollInterval: number | null = null;
 
 	onMount(() => {
 		void loadSession();
-		const openAuth = (event: Event) => {
+		
+		const syncAuth = () => void loadSession(true);
+		
+		const openAuthEvent = (event: Event) => {
 			const detail = (event as CustomEvent<{ mode?: 'login' | 'register' }>).detail;
 			authMode = detail?.mode === 'register' ? 'register' : 'login';
 			loginError = '';
 			registerSent = false;
 			authModalOpen = true;
 		};
-		const syncAuth = () => void loadSession(true);
-		window.addEventListener('riftthai-open-auth', openAuth);
+
 		window.addEventListener('riftthai-auth-changed', syncAuth);
+		window.addEventListener('riftthai-open-auth', openAuthEvent);
+
 		return () => {
-			window.removeEventListener('riftthai-open-auth', openAuth);
 			window.removeEventListener('riftthai-auth-changed', syncAuth);
+			window.removeEventListener('riftthai-open-auth', openAuthEvent);
+			stopPolling();
 		};
 	});
 
@@ -102,7 +81,10 @@
 		try {
 			const data = await getAuthSession<AuthSession>(forceRefresh);
 			currentUser = data.user;
-			if (!currentUser) isOpen = false;
+			if (!currentUser) {
+				isOpen = false;
+				stopPolling();
+			}
 		} finally {
 			authLoading = false;
 		}
@@ -152,115 +134,94 @@
 			loginPassword = '';
 			confirmPassword = '';
 			loginDisplayName = '';
-		} catch (error) {
-			loginError = error instanceof Error ? error.message : 'Auth failed';
+		} catch (err) {
+			loginError = err instanceof Error ? err.message : 'Auth failed';
 		} finally {
 			authLoading = false;
 		}
 	}
 
-	async function logout() {
-		await fetch('/api/auth/logout', { method: 'POST' });
-		invalidateAuthSession();
-		currentUser = null;
-		isOpen = false;
-		authModalOpen = false;
-		window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
+	// Fetch messages from support API
+	async function fetchMessages() {
+		error = '';
+		const response = await fetch('/api/user-chat/messages');
+		const data = await response.json();
+		if (!response.ok) throw new Error(data.error || 'Could not load messages');
+		return data.messages ?? [];
 	}
 
-	async function getLocalCards() {
-		if (cachedLocalCards) return cachedLocalCards;
-		const module = await import('$lib/data/riftbound_cards_all.json');
-		cachedLocalCards = module.default as Card[];
-		return cachedLocalCards;
-	}
-
-	async function askRagApi(query: string) {
-		const quickAnswer = getCanonicalQuickAnswer(query);
-		if (quickAnswer) return quickAnswer;
-
-		const cards = await getLocalCards();
-		const localCardMatches = findCards(query, cards);
-		const focusedCardAnswer = formatFocusedCardAnswer(query, localCardMatches);
-		if (focusedCardAnswer) return focusedCardAnswer;
-
-		if (localCardMatches.length > 0 && localCardMatches[0].score >= 60) {
-			return `ผมเจอการ์ดในฐานข้อมูลเว็บ:\n${formatCards(localCardMatches)}`;
-		}
-
-		const response = await fetch('/api/rag/chat', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({ question: query })
-		});
-		const data = (await response.json()) as RagChatResponse;
-
-		if (response.status === 401) {
-			currentUser = null;
-			throw new Error('กรุณา login ก่อนใช้แชท');
-		}
-
-		if (data.usage && currentUser) {
-			currentUser = {
-				...currentUser,
-				usage: data.usage
-			};
-		}
-
-		if (response.status === 429) {
-			return await buildAnswer(query, cards);
-		}
-
-		if (!response.ok || data.mode === 'setup_required' || !data.answer) {
-			throw new Error(data.error || 'RAG API is not ready');
-		}
-
-		const alreadyHasSources =
-			data.answer.includes('อ้างอิง') || data.answer.includes('แหล่งข้อมูล');
-		const sources =
-			!alreadyHasSources && data.sources?.length
-				? `\n\nแหล่งข้อมูล:\n${data.sources.map((source) => `- ${source.title}`).join('\n')}`
-				: '';
-
-		return `${data.answer}${sources}`;
-	}
-
-	async function sendMessage(text = input) {
-		const query = text.trim();
-		if (!query || isSending) return;
-		if (!currentUser) {
-			loginError = 'กรุณา login ก่อนใช้แชท';
-			return;
-		}
-
-		input = '';
-		isSending = true;
-		messages = [
-			...messages,
-			{ role: 'user', text: query },
-			{ role: 'bot', text: 'กำลังค้นข้อมูล...' }
-		];
-
+	async function loadMessages() {
+		loading = true;
 		try {
-			const answer = await askRagApi(query);
-			messages = [...messages.slice(0, -1), { role: 'bot', text: withAiDisclaimer(answer) }];
-		} catch (error) {
-			const message = error instanceof Error ? error.message : '';
-			const cards = await getLocalCards();
-			const fallbackAnswer = message || (await buildAnswer(query, cards));
-			messages = [
-				...messages.slice(0, -1),
-				{ role: 'bot', text: withAiDisclaimer(fallbackAnswer) }
-			];
+			messages = await fetchMessages();
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Could not load messages';
 		} finally {
-			isSending = false;
+			loading = false;
+		}
+	}
+
+	async function refreshMessages() {
+		if (loading || sending || (typeof document !== 'undefined' && document.hidden)) return;
+		try {
+			const nextMessages = await fetchMessages();
+			if (nextMessages.length !== messages.length) messages = nextMessages;
+		} catch {
+			// Ignore background fail
+		}
+	}
+
+	function startPolling() {
+		stopPolling();
+		void loadMessages();
+		pollInterval = window.setInterval(() => {
+			void refreshMessages();
+		}, 5000);
+	}
+
+	function stopPolling() {
+		if (pollInterval) {
+			window.clearInterval(pollInterval);
+			pollInterval = null;
+		}
+	}
+
+	// Toggle Open/Close chat
+	function toggleChat() {
+		isOpen = !isOpen;
+		if (isOpen) {
+			startPolling();
+		} else {
+			stopPolling();
+		}
+	}
+
+	async function sendMessage() {
+		const text = body.trim();
+		if (!text || sending) return;
+
+		body = '';
+		sending = true;
+		try {
+			const response = await fetch('/api/user-chat/messages', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ body: text })
+			});
+			const data = await response.json();
+			if (!response.ok) throw new Error(data.error || 'Could not send message');
+			messages = [...messages, data.message];
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Could not send message';
+			body = text;
+		} finally {
+			sending = false;
 		}
 	}
 </script>
 
-<Modal bind:open={authModalOpen} title="Account" subtitle={authMode === 'login' ? 'Login to use RAG chat' : 'Create RiftThai account'}>
+<!-- Global authentication modal triggered by riftthai-open-auth events -->
+<Modal bind:open={authModalOpen} title="Account" subtitle={authMode === 'login' ? 'Login to RiftThai account' : 'Create RiftThai account'}>
 	<form
 		class="space-y-3"
 		onsubmit={(event) => {
@@ -278,9 +239,6 @@
 				onclick={() => {
 					authMode = 'login';
 					loginError = '';
-					registerSent = false;
-					confirmPassword = '';
-					loginDisplayName = '';
 				}}
 			>
 				Login
@@ -294,8 +252,6 @@
 				onclick={() => {
 					authMode = 'register';
 					loginError = '';
-					registerSent = false;
-					loginDisplayName = '';
 				}}
 			>
 				Register
@@ -448,89 +404,88 @@
 	</form>
 </Modal>
 
-<div
-	class="fixed z-[900] font-sans {isHomePage
-		? 'right-4 bottom-24 md:right-5 md:bottom-5'
-		: 'right-5 bottom-5'}"
->
-	{#if isOpen}
-		<div
-			class="rt-panel mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-xl"
-		>
-			<div class="flex items-center justify-between border-b border-white/10 px-4 py-3">
-				<div>
-					<div class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">RAG Chat</div>
-					<div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-						{currentUser
-							? currentUser.isAdmin
-								? 'Admin access'
-								: `${currentUser.usage.used}/${currentUser.usage.limit} today`
-							: 'Login required'}
-					</div>
-				</div>
-				<button
-					type="button"
-					class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5"
-					aria-label="Close chat"
-					onclick={() => (isOpen = false)}
-				>
-					<svg
-						class="h-4 w-4"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="3"
-						stroke-linecap="round"
-					>
-						<path d="M6 18 18 6" />
-						<path d="m6 6 12 12" />
-					</svg>
-				</button>
-			</div>
-
+{#if currentUser && !isChatPage}
+	<div
+		class="fixed z-[900] font-sans {isHomePage
+			? 'right-4 bottom-24 md:right-5 md:bottom-5'
+			: 'right-5 bottom-5'}"
+	>
+		{#if isOpen}
 			<div
-				class="border-b border-white/10 px-4 py-2 text-[11px] leading-relaxed font-medium text-slate-500"
+				class="rt-panel mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-xl animate-in fade-in zoom-in-95 duration-200"
 			>
-				ตอบจาก card data, keywords, phases, Q&A, domains และ rule summary ในเว็บ
-			</div>
-			<div
-				class="border-b border-amber-300/15 bg-amber-300/[0.07] px-4 py-2 text-[11px] leading-relaxed font-bold text-amber-100"
-			>
-				AI อาจตอบคลาดเคลื่อนได้ ควรตรวจสอบ Official Rules ที่ https://riftbound.com/
-				ก่อนใช้อ้างอิงจริง
-			</div>
-
-			{#if authLoading}
-				<div class="flex flex-1 items-center justify-center px-4 text-sm font-bold text-slate-500">
-					Loading...
-				</div>
-			{:else if !currentUser}
-				<div
-					class="flex flex-1 items-center justify-center px-4 text-center text-sm leading-relaxed font-bold text-slate-500"
-				>
-					Session ended. Use Login from the navigation to continue.
-				</div>
-			{:else}
-				<div class="flex-1 space-y-3 overflow-y-auto p-3">
-					{#each messages as message}
-						<div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-							<div
-								class="max-w-[86%] rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap {message.role ===
-								'user'
-									? 'bg-cyan-300 text-slate-950'
-									: 'border border-white/10 bg-white/7 text-slate-100'}"
-							>
-								{#if message.role === 'bot'}
-									{@html parseAnswerText(message.text)}
-								{:else}
-									{message.text}
-								{/if}
+				<!-- Header -->
+				<div class="flex items-center justify-between border-b border-white/10 bg-slate-950/55 px-4 py-3">
+					<div class="flex items-center gap-2">
+						<div class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950">
+							<svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+								<path d="M8 9h8" />
+								<path d="M8 13h5" />
+							</svg>
+						</div>
+						<div>
+							<div class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">Support</div>
+							<div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
+								Chat with admin
 							</div>
 						</div>
-					{/each}
+					</div>
+					<button
+						type="button"
+						class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5 cursor-pointer"
+						aria-label="Close chat"
+						onclick={toggleChat}
+					>
+						<svg
+							class="h-4 w-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="3"
+							stroke-linecap="round"
+						>
+							<path d="M6 18 18 6" />
+							<path d="m6 6 12 12" />
+						</svg>
+					</button>
 				</div>
 
-				<div class="border-t border-white/10 p-3">
+				<!-- Message List -->
+				<div class="flex-1 space-y-3 overflow-y-auto bg-slate-950/35 p-3">
+					{#if loading && messages.length === 0}
+						<div class="py-8 text-center text-xs text-slate-500">Loading conversation...</div>
+					{:else if error && messages.length === 0}
+						<div class="rounded-lg border border-red-400/20 bg-red-500/10 p-3 text-xs text-red-200">
+							{error}
+						</div>
+					{:else if messages.length === 0}
+						<div class="rounded-lg border border-white/5 bg-white/5 p-4 text-center">
+							<p class="text-xs font-bold text-white">ต้องการความช่วยเหลือ?</p>
+							<p class="mt-1 text-[11px] leading-relaxed text-slate-400">
+								พิมพ์ข้อความเพื่อติดต่อผู้ดูแลระบบได้ที่นี่ คำตอบจากแอดมินจะปรากฏขึ้นโดยอัตโนมัติ
+							</p>
+						</div>
+					{:else}
+						{#each messages as message}
+							<div class="flex {message.sender_role === 'user' ? 'justify-end' : 'justify-start'}">
+								<div
+									class="max-w-[86%] rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap {message.sender_role === 'user'
+										? 'bg-cyan-300 text-slate-950'
+										: 'border border-white/10 bg-slate-800 text-slate-100'}"
+								>
+									{message.body}
+									<div class="mt-1 text-[9px] opacity-60">
+										{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+									</div>
+								</div>
+							</div>
+						{/each}
+					{/if}
+				</div>
+
+				<!-- Input Form -->
+				<div class="border-t border-white/10 bg-slate-950/60 p-3">
 					<form
 						class="flex gap-2"
 						onsubmit={(event) => {
@@ -539,19 +494,19 @@
 						}}
 					>
 						<input
-							bind:value={input}
-							class="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
-							disabled={isSending}
-							placeholder="ถามการ์ด กฎ keyword phase..."
+							bind:value={body}
+							class="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-cyan-400/60 focus:outline-none"
+							disabled={sending}
+							placeholder="พิมพ์ข้อความคุยกับแอดมิน..."
 						/>
 						<button
 							type="submit"
-							class="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950 transition active:scale-95"
+							class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950 transition active:scale-95 cursor-pointer"
 							aria-label="Send"
-							disabled={isSending}
+							disabled={sending || !body.trim()}
 						>
 							<svg
-								class="h-5 w-5"
+								class="h-4.5 w-4.5"
 								viewBox="0 0 24 24"
 								fill="none"
 								stroke="currentColor"
@@ -565,17 +520,16 @@
 						</button>
 					</form>
 				</div>
-			{/if}
-		</div>
-	{/if}
+			</div>
+		{/if}
 
-	{#if currentUser}
+		<!-- Floating bubble button -->
 		<button
 			type="button"
-			class="ml-auto grid h-14 w-14 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300 text-slate-950 shadow-2xl shadow-cyan-950/40 transition hover:scale-105 active:scale-95"
-			aria-label="Open rule helper"
+			class="ml-auto grid h-14 w-14 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300 text-slate-950 shadow-2xl shadow-cyan-950/40 transition hover:scale-105 active:scale-95 cursor-pointer"
+			aria-label="Open support chat"
 			aria-expanded={isOpen}
-			onclick={() => (isOpen = !isOpen)}
+			onclick={toggleChat}
 		>
 			{#if isOpen}
 				<svg
@@ -605,64 +559,5 @@
 				</svg>
 			{/if}
 		</button>
-	{/if}
-</div>
-
-<style>
-	:global(.chat-inline-icon) {
-		position: relative;
-		top: -1px;
-		display: inline-block;
-		width: auto;
-		height: 1.2em;
-		margin: 0 2px;
-		vertical-align: middle;
-		filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.45));
-	}
-
-	:global(.chat-energy-circle) {
-		position: relative;
-		top: -1px;
-		display: inline-flex;
-		width: 1.25em;
-		height: 1.25em;
-		align-items: center;
-		justify-content: center;
-		margin: 0 2px;
-		border-radius: 999px;
-		background: white;
-		color: black;
-		font-size: 0.72em;
-		font-weight: 900;
-		vertical-align: middle;
-	}
-
-	:global(.chat-domain-name) {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.15rem;
-		font-weight: 800;
-		vertical-align: middle;
-	}
-
-	:global(.chat-keyword-badge) {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 1.7em;
-		margin: 1px 3px;
-		padding: 0.12em 0.65em;
-		color: white;
-		font-size: 0.75em;
-		font-weight: 900;
-		line-height: 1;
-		text-transform: uppercase;
-		vertical-align: middle;
-		box-shadow: 1px 2px 0 rgba(0, 0, 0, 0.24);
-		transform: skewX(-13deg);
-	}
-
-	:global(.chat-keyword-badge > span) {
-		transform: skewX(13deg);
-	}
-</style>
+	</div>
+{/if}

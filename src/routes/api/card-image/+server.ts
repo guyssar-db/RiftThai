@@ -10,9 +10,12 @@ export const GET = async ({ url }) => {
 
 	// กรณี 1: หากเป็น Local Relative Path ใน Static Folder (เช่น /image/cards/xxx.avif)
 	if (rawUrl.startsWith('/')) {
-		// ป้องกัน Path Traversal
-		const safeUrl = path.normalize(rawUrl).replace(/^(\.\.(\/|\\|$))+/, '');
-		const localFilePath = path.join(process.cwd(), 'static', safeUrl);
+		const staticRoot = path.resolve(process.cwd(), 'static');
+		const safeUrl = path.normalize(rawUrl).replace(/^[/\\]+/, '');
+		const localFilePath = path.resolve(staticRoot, safeUrl);
+		if (localFilePath !== staticRoot && !localFilePath.startsWith(`${staticRoot}${path.sep}`)) {
+			error(400, 'Invalid local image path');
+		}
 
 		if (!fs.existsSync(localFilePath)) {
 			error(404, 'Local image not found');
@@ -54,4 +57,3 @@ export const GET = async ({ url }) => {
 		}
 	});
 };
-

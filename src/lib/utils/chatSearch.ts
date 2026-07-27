@@ -272,6 +272,14 @@ export function escapeHtml(value: string) {
 		.replace(/'/g, '&#39;');
 }
 
+export function sanitizeUrl(url: string): string {
+	const trimmed = url.trim();
+	if (/^(https?:\/\/)/i.test(trimmed) || (trimmed.startsWith('/') && !trimmed.startsWith('//'))) {
+		return trimmed;
+	}
+	return '#';
+}
+
 export function parseAnswerText(text: string) {
 	let processed = escapeHtml(text);
 	const placeholders: Record<string, string> = {};
@@ -335,7 +343,10 @@ export function parseAnswerText(text: string) {
 	processed = processed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-white">$1</strong>');
 	processed = processed.replace(/\*(.*?)\*/g, '<em class="italic text-slate-200">$1</em>');
 	processed = processed.replace(/`([^`]+)`/g, '<code class="bg-slate-900 border border-white/10 text-pink-400 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>');
-	processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-bold">$1</a>');
+	processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, text, url) => {
+		const safeUrl = sanitizeUrl(url);
+		return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline font-bold">${text}</a>`;
+	});
 
 	// Block-level Markdown (Headers, lists, paragraphs)
 	const blocks = processed.split(/\n\n+/);

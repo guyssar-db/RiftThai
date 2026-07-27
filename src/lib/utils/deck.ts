@@ -94,7 +94,8 @@ export function normalizeDeck(entries: DeckEntry[]) {
 	const byCode = new Map<string, number>();
 
 	for (const entry of entries) {
-		const code = entry.code.trim();
+		if (!entry || typeof entry.code !== 'string') continue;
+		const code = entry.code.trim().slice(0, 80);
 		const quantity = Math.max(0, Math.min(999, Math.floor(Number(entry.quantity) || 0)));
 		if (!code || quantity <= 0) continue;
 		byCode.set(code, (byCode.get(code) ?? 0) + quantity);

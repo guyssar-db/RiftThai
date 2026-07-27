@@ -14,6 +14,8 @@ import {
 	adminSetDeckVisibility
 } from '$lib/server/decks';
 import { normalizeDeck, type StoredDeck } from '$lib/utils/deck';
+import { boundedString, isRecord, safeServerError } from '$lib/server/request';
+import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/security';
 
 export const GET = async ({ cookies, url }) => {
 	const deckId = url.searchParams.get('id');
@@ -75,17 +77,23 @@ export const GET = async ({ cookies, url }) => {
 	return json({ decks });
 };
 
-export const POST = async ({ cookies, request }) => {
+export const POST = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
 	if (!user) return json({ error: 'login required' }, { status: 401 });
+	const limit = checkRateLimit(`deck-save:${clientKey(getClientAddress())}:${user.id}`, { windowMs: 60_000, max: 60 });
+	if (limit.limited) return json({ error: 'too many deck updates' }, { status: 429, headers: rateLimitHeaders(limit.retryAfter) });
 
 	const body = await request.json().catch(() => null);
-	const deck = normalizeDeckInput(body?.deck);
+	const deck = isRecord(body) ? normalizeDeckInput(body.deck) : null;
 	if (!deck) return json({ error: 'invalid deck' }, { status: 400 });
 	deck.visibility = deck.visibility ?? user.settings.defaultDeckVisibility;
 
-	const savedDeck = await upsertUserDeck(user.id, deck);
-	return json({ deck: savedDeck });
+	try {
+		const savedDeck = await upsertUserDeck(user.id, deck);
+		return json({ deck: savedDeck });
+	} catch (error) {
+		return json(safeServerError('Deck save failed', error), { status: 500 });
+	}
 };
 
 export const PATCH = async ({ cookies, request }) => {
@@ -147,13 +155,15 @@ export const DELETE = async ({ cookies, url }) => {
 function normalizeDeckInput(value: unknown): StoredDeck | null {
 	if (!value || typeof value !== 'object') return null;
 	const deck = value as Partial<StoredDeck>;
-	const id = typeof deck.id === 'string' && deck.id.trim() ? deck.id.trim() : '';
+	const id = boundedString(deck.id, 80, 1) ?? '';
 	if (!id) return null;
+	if (!Array.isArray(deck.entries) || deck.entries.length > 500) return null;
+	if (deck.sideboardEntries !== undefined && (!Array.isArray(deck.sideboardEntries) || deck.sideboardEntries.length > 200)) return null;
 
 	return {
 		id,
 		name: String(deck.name ?? 'Untitled Deck').trim().slice(0, 48) || 'Untitled Deck',
-		championCode: String(deck.championCode ?? '').trim(),
+		championCode: boundedString(deck.championCode, 80) ?? '',
 		entries: normalizeDeck(Array.isArray(deck.entries) ? deck.entries : []),
 		sideboardEntries: normalizeDeck(Array.isArray(deck.sideboardEntries) ? deck.sideboardEntries : []),
 		updatedAt:

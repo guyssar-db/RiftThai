@@ -50,7 +50,11 @@ export const load = async ({ cookies }) => {
 				unreadConversationsCount
 			},
 			users,
-			decks
+			decks,
+			aiConfig: {
+				geminiConfigured: Boolean(getRagConfig().geminiApiKey),
+				geminiModel: getRagConfig().geminiModel
+			}
 		};
 	} catch (error) {
 		console.error('Admin loader failed:', error);
@@ -63,7 +67,11 @@ export const load = async ({ cookies }) => {
 				unreadConversationsCount: 0
 			},
 			users: [],
-			decks: []
+			decks: [],
+			aiConfig: {
+				geminiConfigured: Boolean(getRagConfig().geminiApiKey),
+				geminiModel: getRagConfig().geminiModel
+			}
 		};
 	}
 };

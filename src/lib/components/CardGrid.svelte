@@ -50,12 +50,12 @@
 		{#each cards as card}
 			<button
 				type="button"
-				class="rt-glow-card group min-w-0 rounded-xl text-left transition duration-300 hover:-translate-y-1.5 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25"
+				class="rt-glow-card group min-w-0 rounded-xl text-left transition duration-200 hover:-translate-y-1 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25"
 				onpointerenter={() => preloadPopupImage(card)}
 				onfocus={() => preloadPopupImage(card)}
 				onclick={() => handleOpenPopup(card)}
 			>
-				<div class="relative flex aspect-[744/1039] w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-[0_18px_40px_rgba(0,0,0,0.48)] transition duration-300 group-hover:border-cyan-300/60 group-hover:shadow-[0_0_42px_rgba(83,234,253,0.16)] group-active:scale-[0.98]">
+				<div class="relative flex aspect-[744/1039] w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-[0_12px_28px_rgba(0,0,0,0.34)] transition duration-200 group-hover:border-cyan-300/45 group-active:scale-[0.985]">
 					{#if card.image_url}
 						{@const imageSources = getCardImageSources(card.image_url, [240, 320, 480, 744])}
 						<img

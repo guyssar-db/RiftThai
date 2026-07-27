@@ -1,0 +1,207 @@
+ ## สรุปตรงๆ
+
+  เว็บมี feature เยอะและ “ทำเป็นระบบ” กว่าเว็บ hobby ทั่วไป แต่ตอนนี้ยังไม่ถึงระดับ production-grade ที่ควรปล่อยให้คนใช้จริงแบบมั่นใจเต็มที่
+
+  คะแนนโดยประมาณ:
+
+   ด้าน                      คะแนน
+  ━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━
+   Feature / Product         7/10
+  ──────────────────────  ────────
+   Visual Design             7/10
+  ──────────────────────  ────────
+   UX                      5.5/10
+  ──────────────────────  ────────
+   Accessibility           4.5/10
+  ──────────────────────  ────────
+   Performance               5/10
+  ──────────────────────  ────────
+   Security                  5/10
+  ──────────────────────  ────────
+   Maintainability           5/10
+  ──────────────────────  ────────
+   Production readiness      5/10
+
+  ## จุดที่ทำได้ดี
+
+  - Product direction ชัด: card database, search/filter, rules, deck builder, collection, community deck
+  - มี auth, email verification, session, ban, admin, rate limit และ security headers
+  - มีการ validate ข้อมูลฝั่ง server หลาย endpoint
+  - ใช้ httpOnly session cookie และเก็บ session token เป็น hash
+  - Card grid, filter และ deck browser มีพื้นฐาน UX ที่ดี
+  - npm run check ผ่าน ไม่มี error
+  - npm run build ผ่าน
+
+  ## ปัญหาระดับสูง
+
+  ### 1. มี XSS sink จาก {@html}
+
+  พบที่:
+
+  - src/lib/components/CardModal.svelte:707
+  - src/lib/components/CardModal.svelte:733
+  - src/lib/components/FakeAiChat.svelte:524
+
+  parseAbility() เอาข้อมูล ability ไปสร้าง HTML โดยไม่ได้ escape ข้อความต้นทางทั้งหมด และมีการเอา hint ไปใส่ attribute ตรงๆ
+
+  นอกจากนี้ src/lib/utils/chatSearch.ts:338 สร้าง Markdown link โดยเอา URL ไปใส่ href โดยไม่ตรวจ protocol เช่น javascript:
+  อาจกลายเป็นช่อง XSS ได้
+
+  ควรแก้ก่อนปล่อยจริง:
+
+  - ห้ามใช้ {@html} กับข้อมูลดิบ
+  - ใช้ Markdown sanitizer ที่ allowlist ชัดเจน
+  - อนุญาตเฉพาะ https: และ relative URL
+  - escape attribute ทุกจุด
+
+  ### 2. AI deck analyze ไม่มี rate limit และไม่มี input limit
+
+  ที่ src/routes/api/deck/analyze/+server.ts:28
+
+  ผู้ใช้ที่ login แล้วสามารถส่ง:
+
+  - entries จำนวนมากผิดปกติ
+  - quantity ค่าสูงมาก
+  - payload ใหญ่
+  - เรียก Gemini ได้โดยไม่มี rate limit endpoint นี้
+
+  นี่มีความเสี่ยงทั้ง DoS และค่า API พุ่ง ควรเพิ่ม:
+
+  - จำกัด body size
+  - จำกัดจำนวน cards
+  - จำกัด quantity
+  - rate limit ต่อ user/IP
+  - ตรวจว่า deck มีโครงสร้างถูกต้องก่อนส่ง AI
+
+  ### 3. Rate limit เป็น in-memory
+
+  พบที่:
+
+  - src/hooks.server.ts
+  - src/lib/server/security.ts
+
+  บน Vercel/serverless หรือหลาย instance rate limit จะไม่แชร์กัน ทำให้ bypass ได้ง่ายเมื่อ request กระจายไปคนละ instance อีกทั้ง Map
+  ที่ใช้ IP เป็น key อาจโตได้จาก IP จำนวนมาก
+
+  ควรใช้ Redis/Upstash หรือ rate limit provider ที่แชร์ state ได้
+
+  ### 4. Daily AI limit มี race condition
+
+  ที่ src/routes/api/rag/chat/+server.ts:28
+
+  โค้ดทำ getChatUsage() ก่อน แล้วค่อย incrementChatUsage() หลัง AI ตอบ หากยิงพร้อมกันหลาย request อาจใช้เกิน daily limit ได้
+
+  ควรให้ database ทำ atomic increment/check ใน transaction หรือ function เดียว
+
+  ## UX/UI ที่ยังไม่ดีพอ
+
+  ### Visual สวย แต่หนักและเสียงดังเกินไป
+
+  Neon, glow, animated blobs, grid background และ uppercase ถูกใช้เกือบทุกพื้นที่ ทำให้:
+
+  - ทุกส่วนแย่งความสนใจ
+  - hierarchy ไม่ชัดเท่าที่ควร
+  - อ่านข้อมูลยาวๆ เหนื่อย
+  - ภาพรวมออกไปทาง “gaming dashboard template” มากกว่า product ที่ polished
+
+  ส่วน card database ดูดีสุด แต่หน้า deck builder และ admin มี density สูงและต้องใช้เวลาทำความเข้าใจ
+
+  ### Typography ไม่เหมาะกับภาษาไทยเท่าไร
+
+  พบการใช้ตัวเล็กมาก เช่น text-[9px], text-[10px] และ letter spacing สูงหลายจุด เช่น src/lib/components/CardModal.svelte
+
+  สำหรับภาษาไทย:
+
+  - tracking กว้างทำให้อ่านสะดุด
+  - uppercase กับไทยไม่มีประโยชน์
+  - text 9–10px เล็กเกินไปบนมือถือ
+  - label หลายจุดดูเป็น technical metadata มากกว่าข้อมูลที่อ่านง่าย
+
+  ควรใช้ body text อย่างน้อย 14–16px และลด uppercase/letter spacing ในข้อความภาษาไทย
+
+  ### Modal ยังไม่ accessible
+
+  src/lib/components/ui/Modal.svelte ไม่มี:
+
+  - role="dialog"
+  - aria-modal="true"
+  - aria-labelledby
+  - focus trap
+  - ปิดด้วย Escape
+  - คืน focus ไปยังปุ่มเดิม
+
+  Card modal เป็น interaction หลักของเว็บ ปัญหานี้จึงกระทบผู้ใช้จริง ไม่ใช่แค่คะแนน Lighthouse
+
+  ### ไม่มี reduced-motion
+
+  เว็บมี animation หลายจุด เช่น loading overlay และ animated background แต่ยังไม่เห็น prefers-reduced-motion
+
+  ควรลด/ปิด animation สำหรับผู้ใช้ที่ตั้งค่า accessibility นี้ไว้
+
+  ## Performance
+
+  Build แจ้ง chunk ใหญ่เกิน 500 kB:
+
+  - client chunk ประมาณ 763 kB ก่อน gzip
+  - card data ถูก import เข้า client ทั้งชุด
+  - riftbound_cards_all.json อยู่ใน bundle
+  - FakeAiChat ถูกโหลดจาก root layout ทำให้ทุกหน้าต้องแบกโค้ด chat
+
+  ผลคือหน้า card database อาจเปิดช้าบนมือถือหรือเน็ตช้า แม้ gzip จะเล็กลงแล้วก็ตาม
+
+  แนวทางแก้:
+
+  - lazy-load AI chat
+  - dynamic import หน้า deck/admin/chat
+  - แยก card index ออกจาก card detail
+  - ใช้ server-side search หรือแบ่ง data ตาม set
+  - ทำ image dimensions/aspect ratio ให้ครบเพื่อลด layout shift
+
+  ## Security ที่ทำได้ดีแต่ยังไม่ครบ
+
+  ดี:
+
+  - session cookie เป็น httpOnly
+  - token ใน database เก็บเป็น hash
+  - มี origin check สำหรับ unsafe methods
+  - มี CSP, X-Frame-Options, nosniff
+  - มีการตรวจสิทธิ์ admin ฝั่ง server
+
+  ควรปรับ:
+
+  - CSP ยังใช้ 'unsafe-inline' ที่ src/hooks.server.ts
+  - ยังไม่มี HSTS
+  - ไม่มี body-size limit รวมศูนย์
+  - endpoint บางตัวไม่มี rate limit
+  - admin endpoints ส่ง email และข้อมูล deck จำนวนมาก ซึ่งควร review เรื่อง PII และ audit log
+  - ไม่พบ automated test script ใน package.json
+
+  ## Code quality / maintainability
+
+  npm run check ผ่าน แต่มี warning:
+
+  src/routes/+page.svelte:22
+  This reference only captures the initial value of data
+
+  npm run build ผ่าน แต่ npm run lint ไม่ผ่าน เพราะ:
+
+  - formatting หลายไฟล์ไม่ผ่าน
+  - .antigravitycli/...json มีรูปแบบไม่ใช่ JSON ที่ Prettier อ่านได้
+  - มีไฟล์ที่แก้ไข/เพิ่มจำนวนมากใน working tree
+
+  ปัจจุบัน git status มี modified, deleted และ untracked files จำนวนมาก ดังนั้นควรแยกให้ชัดว่าอะไรคือ production change อะไรคือ
+  scratch/generated file ก่อน merge
+
+  ## ลำดับที่ควรแก้
+
+  1. แก้ {@html} และ Markdown/URL sanitizer
+  2. เพิ่ม rate limit + payload limit ให้ AI analyze/chat ทุก endpoint
+  3. แก้ atomic daily usage limit
+  4. แยก lazy-load chat และ card data เพื่อลด initial bundle
+  5. ปรับ modal accessibility และ keyboard flow
+  6. ลด visual noise และเพิ่ม typography ภาษาไทย
+  7. เพิ่ม automated tests, security tests และ E2E flow
+  8. ตั้ง production adapter ให้ชัดเจนแทน adapter-auto
+
+  พูดแบบไม่อวย: เว็บนี้ “มีของและมี direction” แต่ตอนนี้ยังอยู่ระดับ strong prototype / early production มากกว่าเว็บที่พร้อมรับผู้ใช้จำนวนมาก
+  จุดที่น่ากังวลที่สุดไม่ใช่หน้าตา แต่คือ XSS, AI cost abuse, in-memory rate limit และ accessibility ของ interaction หลักครับ

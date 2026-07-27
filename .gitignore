@@ -33,6 +33,7 @@ pnpm-debug.log*
 !package.json
 !package-lock.json
 !tsconfig.json
+!vercel.json
 
 # Allow data files inside src
 !src/lib/data/*.json

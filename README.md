@@ -39,7 +39,7 @@ RiftThai เป็นโปรเจกต์แฟนเมดที่สร�
 
 ## โครงสร้างโปรเจกต์ (Project Structure)
 
-- `src/lib/data/`: เก็บข้อมูลการ์ดหลัก (`riftbound_cards_all.json`) และข้อมูล Keywords (`keywords.ts`)
+- `src/lib/data/`: เก็บข้อมูลการ์ดหลัก (`cards.json`) และข้อมูล Keywords (`keywords.ts`)
 - `src/lib/components/`: ส่วนประกอบต่างๆ ของ UI เช่น CardModal, SearchBar, KeywordSection
 - `static/images/icons/`: ไฟล์ไอคอนและสัญลักษณ์ต่างๆ ที่ใช้ในเกม
 

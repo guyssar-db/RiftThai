@@ -130,11 +130,10 @@
 		'All',
 		...new Set(cards.flatMap((card) => card.domains ?? []).filter(Boolean))
 	]);
-
-	let filteredCards = $derived(
-		cards.filter((card) => {
-			const searchTokens = normalizeForSearch(searchTerm).split(' ').filter(Boolean);
-			const searchable = normalizeForSearch([
+	let indexedCards = $derived(
+		cards.map((card) => ({
+			card,
+			searchable: normalizeForSearch([
 				card.name_en,
 				card.name_th,
 				card.code,
@@ -145,7 +144,13 @@
 				card.ability_th,
 				...(card.domains ?? []),
 				...(card.tags ?? [])
-			]);
+			])
+		}))
+	);
+
+	let filteredCards = $derived(
+		indexedCards.filter(({ card, searchable }) => {
+			const searchTokens = normalizeForSearch(searchTerm).split(' ').filter(Boolean);
 
 			const matchesSearch =
 				searchTokens.length === 0 || searchTokens.every((token) => searchable.includes(token));
@@ -167,7 +172,7 @@
 						: card.power?.value?.id === selectedMight));
 
 			return matchesSearch && matchesSet && matchesType && matchesDomain && matchesEnergy && matchesMight;
-		})
+		}).map(({ card }) => card)
 	);
 
 	let totalPages = $derived(Math.max(1, Math.ceil(filteredCards.length / cardsPerPage)));
@@ -268,7 +273,7 @@
 	<main class="rt-container py-5 sm:py-8 lg:py-10">
 		{#if viewMode === 'gallery'}
 			<header
-				class="rt-panel rt-topline rt-scanline relative mb-5 grid overflow-hidden rounded-xl lg:mb-7 lg:grid-cols-[minmax(0,1fr)_360px]"
+				class="rt-hero rt-panel rt-topline rt-scanline relative mb-5 grid overflow-hidden rounded-2xl lg:mb-7 lg:grid-cols-[minmax(0,1fr)_360px]"
 			>
 				<div
 					class="pointer-events-none absolute -top-28 right-10 h-64 w-64 rounded-full bg-cyan-300/15 blur-3xl"
@@ -277,7 +282,7 @@
 					class="pointer-events-none absolute -right-20 -bottom-32 h-72 w-72 rounded-full bg-[#ffb86b]/10 blur-3xl"
 				></div>
 
-				<div class="rt-rule-line relative min-w-0 p-5 pl-7 sm:p-7 sm:pl-9 lg:p-8 lg:pl-10">
+				<div class="rt-rule-line rt-hero-copy relative min-w-0 p-5 pl-7 sm:p-7 sm:pl-9 lg:p-10 lg:pl-12">
 					<div class="mb-4 flex flex-wrap items-center gap-2">
 						<p class="rt-kicker">Riftbound Thai Card Database</p>
 						<span
@@ -285,6 +290,7 @@
 							>Live Index</span
 						>
 					</div>
+					<p class="rt-hero-index">INDEX / 01 · CARD DATABASE</p>
 					<h1 class="rt-heading text-5xl uppercase italic sm:text-7xl lg:text-8xl">
 						Rift<span class="text-cyan-300">Thai</span>
 					</h1>
@@ -295,7 +301,7 @@
 
 				</div>
 
-				<div class="relative border-t border-white/10 bg-slate-950/32 p-4 lg:border-t-0 lg:border-l">
+				<div class="rt-hero-metrics relative border-t border-white/10 bg-slate-950/32 p-4 lg:border-t-0 lg:border-l">
 					<div class="grid h-full grid-cols-3 gap-2 text-center lg:h-auto lg:grid-cols-1">
 						<div
 							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-cyan-300/15 bg-black/20 p-2.5 shadow-inner shadow-cyan-300/5 sm:p-3 lg:flex-row lg:justify-between"

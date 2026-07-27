@@ -33,10 +33,12 @@
 	let verticalTransform = $state('');
 	let tooltipX = $state(0);
 	let tooltipY = $state(0);
+	let activeLang = $state<'th' | 'en'>('th');
 
 	$effect(() => {
 		tempAbilityEn = card.ability_en;
 		tempAbilityTh = card.ability_th;
+		activeLang = 'th';
 	});
 
 	async function handleSave() {
@@ -162,12 +164,21 @@
 		Conquer: 'Conquer: ชนะการประจันหน้า (Showdown) และยึดพื้นที่สำเร็จ',
 		Hold: 'Hold: การควบคุมสนามรบต่อเนื่องจนถึง BEGINNING PHASE',
 		Banish:
-			'Banish: การ์ดที่โดนส่งมาโซนนี้จะหลุดออกนอกวงโคจรของระบบเกมโดยสิ้นเชิง มันจะไม่ได้อยู่บนสนาม ไม่ได้อยู่ในมือ ไม่ได้อยู่ในกองทิ้ง และไม่สามารถใช้การ์ดชุบชีวิตทั่วไปดึงกลับมาใช้งานได้อีกเลย'
+			'Banish: การนำการ์ดออกจากเกม ไม่ถือว่าอยู่ใน Trash และโดยปกติไม่สามารถนำกลับมาได้ เว้นแต่จะมีการ์ดที่ระบุไว้โดยเฉพาะ'
 	};
+
+	function escapeHtml(str: string) {
+		return str
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#039;');
+	}
 
 	function parseAbility(text: string) {
 		if (!text) return '';
-		let processed = text;
+		let processed = escapeHtml(text);
 		const placeholders: Record<string, string> = {};
 		let phCount = 0;
 
@@ -216,11 +227,88 @@
 
 		// 2. Identify and hide tokens into placeholders to prevent nested replacements
 
-		// Rainbow Rune [c]
-		processed = processed.replace(/\[c\]/gi, () =>
+		// Normalize keyword arrows
+		processed = processed.replace(/\[(?:\&gt;|\>){1,2}\]\s*\[([^\]]+)\]\s*\[(?:\&gt;|\>){1,2}\]/gi, '[>>$1>]');
+		processed = processed.replace(/\[([^\]]+)\]\s*\[(?:\&gt;|\>){1,2}\]\s*\[(?:\&gt;|\>){1,2}\]/gi, '[>>$1>]');
+		processed = processed.replace(/\[(?:\&gt;|\>){2}\]\s*\[([^\]]+)\]/gi, '[>>$1]');
+		processed = processed.replace(/\[([^\]]+)\]\s*\[(?:\&gt;|\>)\]/gi, '[$1>]');
+		processed = processed.replace(/\[(?:\&gt;|\>)\]\s*\[([^\]]+)\]/gi, '[>>$1]');
+
+		// Standalone arrow markers (when not attached to a keyword)
+		processed = processed.replace(/\[(?:\&gt;|\>){2}\]/gi, () => addPH('<span class="kw-arrow-standalone" title="Action Trigger">»</span>'));
+		processed = processed.replace(/\[(?:\&gt;|\>)\]/gi, () => addPH('<span class="kw-arrow-standalone" title="Trigger">›</span>'));
+
+		// Rainbow Rune [a]
+		processed = processed.replace(/\[a\]/gi, () =>
 			addPH(
 				`<img src="/images/icons/rune_rainbow.svg" class="inline-icon" title="Any Rune" alt="Any Rune" />`
 			)
+		);
+
+		// Might [s]
+		processed = processed.replace(/\[s\]/gi, () =>
+			addPH(
+				`<img src="/images/icons/might.svg" class="inline-icon" title="Might" alt="Might" />`
+			)
+		);
+
+		// Exhaust [T]
+		processed = processed.replace(/\[t\]/gi, () =>
+			addPH(
+				`<img src="/images/icons/exhaust.svg" class="inline-icon" title="Exhaust" alt="Exhaust" />`
+			)
+		);
+
+		// Green Calm Rune [g]
+		processed = processed.replace(/\[g\]/gi, () =>
+			addPH(
+				`<img src="/images/icons/icon_calm.avif" class="inline-icon" title="Calm" alt="Calm" />`
+			)
+		);
+
+		// Red Fury Rune [r]
+		processed = processed.replace(/\[r\]/gi, () =>
+			addPH(
+				`<img src="/images/icons/icon_fury.avif" class="inline-icon" title="Fury" alt="Fury" />`
+			)
+		);
+
+		// Orange Body Rune [o]
+		processed = processed.replace(/\[o\]/gi, () =>
+			addPH(
+				`<img src="/images/icons/icon_body.avif" class="inline-icon" title="Body" alt="Body" />`
+			)
+		);
+
+		// Blue Mind Rune [b]
+		processed = processed.replace(/\[b\]/gi, () =>
+			addPH(
+				`<img src="/images/icons/icon_mind.avif" class="inline-icon" title="Mind" alt="Mind" />`
+			)
+		);
+
+		// Pink Chaos Rune [p]
+		processed = processed.replace(/\[p\]/gi, () =>
+			addPH(
+				`<img src="/images/icons/icon_chaos.avif" class="inline-icon" title="Chaos" alt="Chaos" />`
+			)
+		);
+
+		// Card Domain [c]
+		processed = processed.replace(/\[c\]/gi, () => {
+			if (!card.domains || card.domains.length === 0) return '';
+			return card.domains.map((d: string) => {
+				const lowerD = d.toLowerCase();
+				const iconFile = lowerD === 'colorless' ? 'rune.avif' : `icon_${lowerD}.avif`;
+				return addPH(
+					`<img src="/images/icons/${iconFile}" class="inline-icon" title="${d}" alt="${d}" />`
+				);
+			}).join('');
+		});
+
+		// Generic energy cost / number circle [number]
+		processed = processed.replace(/\[(\d+)\]/g, (match, p1) =>
+			addPH(`<span class="icon-energy-circle" title="Energy: ${p1}">${p1}</span>`)
 		);
 
 		// Energy Icons
@@ -232,29 +320,46 @@
 		Object.entries(iconMappings).forEach(([key, value]) => {
 			processed = processed.replace(new RegExp(key, 'g'), () =>
 				addPH(
-					`<img src="/images/icons/${value.icon}" class="inline-icon" title="${value.hint}" alt="${key}" />`
+					`<img src="/images/icons/${value.icon}" class="inline-icon" title="${escapeHtml(value.hint)}" alt="${escapeHtml(key)}" />`
 				)
 			);
 		});
 
-		// Keep keyword costs inside the same keyword background.
+		// Keep keyword costs inside the same keyword background dynamically for all keywords except "Add"
+		const costKeywordNames = keywords
+			.filter(k => k.id !== 'add')
+			.flatMap(k => [k.name_en, k.name_th]);
+		const escapedNames = [...new Set(costKeywordNames)]
+			.filter(Boolean)
+			.map(name => name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+		const costKeywordRegex = new RegExp(`\\[(${escapedNames.join('|')})\\]((?:\\s*___PH\\d+___)+)`, 'gi');
+
 		processed = processed.replace(
-			/\[(Repeat|Equip)\]((?:\s*___PH\d+___)+)/gi,
+			costKeywordRegex,
 			(_match, keyword, costs) => {
-				const kw = keywords.find((k) => k.name_en.toLowerCase() === keyword.toLowerCase());
+				const kw = keywords.find(
+					(k) =>
+						k.name_en.toLowerCase() === keyword.toLowerCase() ||
+						k.name_th.toLowerCase() === keyword.toLowerCase()
+				);
 				const bgColor = kw ? kw.color : '#107361';
 				const hint = kw ? kw.description_th : '';
+				const textColor = bgColor === '#97B028' ? 'color: #020617;' : '';
 				return addPH(
-					`<span class="kw-inline-badge kw-cost-badge cursor-pointer outline-none" tabindex="0" data-tooltip="${hint}" style="background-color: ${bgColor}; border: none; shadow: none;"><span>${keyword}</span>${costs}</span>`
+					`<span class="kw-inline-badge kw-cost-badge cursor-pointer outline-none" tabindex="0" data-tooltip="${escapeHtml(hint)}" style="background-color: ${bgColor}; ${textColor} border: none; shadow: none;"><span>${escapeHtml(keyword)}</span>${costs}</span>`
 				);
 			}
 		);
 
 		// Keywords [Badge]
 		processed = processed.replace(/\[([^\]]+)\]/g, (match, p1) => {
-			const trimmedP1 = p1.trim();
-			const hasArrow = trimmedP1.endsWith('>');
-			const displayP1 = hasArrow ? trimmedP1.slice(0, -1).trim() : p1;
+			let trimmedP1 = p1.trim();
+			const hasLeftArrow = trimmedP1.startsWith('>>') || trimmedP1.startsWith('>');
+			if (hasLeftArrow) {
+				trimmedP1 = trimmedP1.replace(/^>+/, '').trim();
+			}
+			const hasRightArrow = trimmedP1.endsWith('>');
+			const displayP1 = hasRightArrow ? trimmedP1.slice(0, -1).trim() : trimmedP1;
 
 			const cleanP1 = displayP1.split(' ')[0];
 			const kw = keywords.find(
@@ -265,17 +370,25 @@
 			);
 			const bgColor = kw ? kw.color : '#107361';
 			const hint = kw ? kw.description_th : '';
-			const className = hasArrow
-				? 'kw-inline-badge kw-arrow cursor-pointer outline-none'
-				: 'kw-inline-badge cursor-pointer outline-none';
+			const textColor = bgColor === '#97B028' ? 'color: #020617;' : '';
+
+			let arrowClass = 'kw-inline-badge';
+			if (hasLeftArrow && hasRightArrow) {
+				arrowClass = 'kw-inline-badge kw-arrow-double';
+			} else if (hasRightArrow) {
+				arrowClass = 'kw-inline-badge kw-arrow-right';
+			} else if (hasLeftArrow) {
+				arrowClass = 'kw-inline-badge kw-arrow-left';
+			}
+			const className = `${arrowClass} cursor-pointer outline-none`;
 
 			if (hint) {
 				return addPH(
-					`<span class="${className}" tabindex="0" data-tooltip="${hint}" style="background-color: ${bgColor}; border: none; shadow: none;"><span>${displayP1}</span></span>`
+					`<span class="${className}" tabindex="0" data-tooltip="${escapeHtml(hint)}" style="background-color: ${bgColor}; ${textColor} border: none; shadow: none;"><span>${escapeHtml(displayP1)}</span></span>`
 				);
 			}
 			return addPH(
-				`<span class="${hasArrow ? 'kw-inline-badge kw-arrow' : 'kw-inline-badge'}" style="background-color: ${bgColor}; border: none; shadow: none;"><span>${displayP1}</span></span>`
+				`<span class="${arrowClass}" style="background-color: ${bgColor}; ${textColor} border: none; shadow: none;"><span>${escapeHtml(displayP1)}</span></span>`
 			);
 		});
 
@@ -285,7 +398,7 @@
 			const regex = new RegExp(`\\b(${key})\\b`, 'gi');
 			processed = processed.replace(regex, (match) =>
 				addPH(
-					`<span class="text-cyan-400 underline decoration-cyan-400/30 decoration-dotted underline-offset-4 cursor-pointer inline-block outline-none font-bold" tabindex="0" data-tooltip="${hint}">${match}</span>`
+					`<span class="text-cyan-400 underline decoration-cyan-400/30 decoration-dotted underline-offset-4 cursor-pointer inline-block outline-none font-bold" tabindex="0" data-tooltip="${escapeHtml(hint)}">${escapeHtml(match)}</span>`
 				)
 			);
 		});
@@ -305,25 +418,9 @@
 		return processed.replace(/\r\n/g, '<br />').replace(/\n/g, '<br />');
 	}
 
-	function formatTranslatedAbility(text: string, sourceText: string) {
+	function formatTranslatedAbility(text: string, _sourceText?: string) {
 		if (!text) return '';
-
 		let formatted = text.replace(/\\n/g, '\n');
-		const sourceHasStructuredLines = /\\n|\n/.test(sourceText || '');
-
-		if (sourceHasStructuredLines) {
-			formatted = formatted
-				.replace(
-					/\s+(\[(?:Action|Reaction|Repeat|Equip|Hidden|Accelerate|Deathknell|Level|Tank|Assault|Shield|Deflect|Hunt|Ganking|Temporary|Vision|Predict|Quick-Draw|Weaponmaster)\b[^\]]*\])/g,
-					'\n$1'
-				)
-				.replace(
-					/(\[(?:Action|Reaction|Repeat|Equip|Hidden|Accelerate|Deathknell|Level|Tank|Assault|Shield|Deflect|Hunt|Ganking|Temporary|Vision|Predict|Quick-Draw|Weaponmaster)\b[^\]]*\](?:\s*:rb_[a-z0-9_]+:)*\s*\([^)]*\))\s+(?=\S)/g,
-					'$1\n'
-				)
-				.replace(/([.)])\s+(?=\[)/g, '$1\n');
-		}
-
 		return formatted.replace(/\n{3,}/g, '\n\n').trim();
 	}
 
@@ -466,26 +563,31 @@
 									{card.set_name}
 								</span>
 							{/if}
-							<!-- {#if card.rarity}
-                                <span class="rounded-lg border px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] {rarityClass(card.rarity)}">
-                                    {card.rarity}
-                                </span>
-                            {/if} -->
 						</div>
 
-						<div class="space-y-2">
-							<h2
-								class="text-2xl leading-tight font-black tracking-tight break-words text-white uppercase italic sm:text-3xl lg:text-[2.35rem]"
-							>
-								{card.name_en}
-							</h2>
-							{#if card.name_th && card.name_th !== card.name_en}
-								<p
-									class="text-sm leading-relaxed font-bold break-words text-slate-400 sm:text-base"
+						<div class="flex items-start justify-between gap-3">
+							<div class="space-y-2 min-w-0">
+								<h2
+									class="text-2xl leading-tight font-black tracking-tight break-words text-white uppercase italic sm:text-3xl lg:text-[2.35rem]"
 								>
-									{card.name_th}
-								</p>
-							{/if}
+									{card.name_en}
+								</h2>
+								{#if card.name_th && card.name_th !== card.name_en}
+									<p
+										class="text-sm leading-relaxed font-bold break-words text-slate-400 sm:text-base"
+									>
+										{card.name_th}
+									</p>
+								{/if}
+							</div>
+							<button
+								type="button"
+								class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition duration-200 cursor-pointer shadow-md select-none outline-none {isReportOpen ? 'border-amber-400 bg-amber-400/15 text-amber-300 shadow-amber-500/10' : 'border-slate-700 bg-slate-900/50 text-slate-400 hover:border-slate-500 hover:text-white'}"
+								onclick={() => (isReportOpen = !isReportOpen)}
+								title="Report Issue"
+							>
+								i
+							</button>
 						</div>
 
 						<div
@@ -504,17 +606,14 @@
 											/>
 										{/each}
 									</div>
-									<span class="text-[9px] font-black tracking-[0.18em] text-slate-500 uppercase"
-										>Type</span
-									>
 									<span
-										class="min-w-0 truncate text-xs font-black tracking-widest text-white uppercase"
+										class="min-w-0 truncate text-xs font-black tracking-wider text-white uppercase"
 										>{card.type || '-'}</span
 									>
 								</div>
 
 								<div
-									class="flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black tracking-widest uppercase {card.rarity
+									class="flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold tracking-wide uppercase {card.rarity
 										? rarityClass(card.rarity)
 										: 'border-white/10 bg-white/5 text-slate-300'}"
 								>
@@ -525,17 +624,31 @@
 											alt="{card.rarity} rarity"
 										/>
 									{/if}
-									<span class="text-[9px] opacity-70">Rarity</span>
-									<span>{card.rarity || 'No Rarity'}</span>
+									<span class="font-bold">{card.rarity || 'No Rarity'}</span>
 								</div>
+
+								{#if card.domains?.length > 0}
+									{#each card.domains as domain}
+										<div
+											class="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2"
+										>
+											<img
+												src="/images/icons/{domainIconMap[domain] || 'rune_rainbow.svg'}"
+												class="h-5 w-5 object-contain"
+												alt={domain}
+											/>
+											<span class="text-xs font-black tracking-wider text-white uppercase">{domain}</span>
+										</div>
+									{/each}
+								{/if}
 
 								{#if card.energy !== null}
 									<div
-										class="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black tracking-widest text-white uppercase"
+										class="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold tracking-wide text-white uppercase"
 									>
-										<span class="text-[9px] text-slate-500">Energy</span>
+										<span class="text-[11px] text-slate-500">Energy</span>
 										<span
-											class="grid h-6 min-w-6 place-items-center rounded-full bg-white px-1 text-xs text-slate-950"
+											class="grid h-6 min-w-6 place-items-center rounded-full bg-white px-1 text-xs font-bold text-slate-950"
 											>{card.energy}</span
 										>
 									</div>
@@ -543,45 +656,27 @@
 
 								{#if card.power !== null}
 									<div
-										class="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black tracking-widest text-white uppercase"
+										class="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold tracking-wide text-white uppercase"
 									>
-										<span class="text-[9px] text-slate-500">Might</span>
+										<span class="text-[11px] text-slate-500">Might</span>
 										<img src="/images/icons/might.svg" class="h-5 w-auto" alt="Might" />
-										<span>{card.power?.value?.label}</span>
+										<span class="font-bold">{card.power?.value?.label}</span>
 									</div>
 								{/if}
 							</div>
 						</div>
 
-						{#if card.domains?.length > 0 || card.tags?.length > 0}
-							<div class="space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-								{#if card.domains?.length > 0}
-									<div class="flex flex-wrap gap-2">
-										{#each card.domains as domain}
-											<div
-												class="flex items-center gap-2 rounded-xl border border-white/5 bg-slate-950/70 px-3 py-2 text-[10px] font-black transition-colors hover:border-white/20"
-											>
-												<img
-													src="/images/icons/{domainIconMap[domain] || 'rune_rainbow.svg'}"
-													class="h-5 w-auto"
-													alt={domain}
-												/>
-												<span class="tracking-widest text-white/80 uppercase">{domain}</span>
-											</div>
-										{/each}
-									</div>
-								{/if}
-								{#if card.tags?.length > 0}
-									<div class="flex flex-wrap gap-2">
-										{#each card.tags ?? [] as tag}
-											<span
-												class="rounded-xl border border-cyan-400/10 bg-cyan-400/5 px-3 py-1.5 text-[9px] font-black tracking-widest text-cyan-300/80 uppercase"
-											>
-												#{tag}
-											</span>
-										{/each}
-									</div>
-								{/if}
+						{#if card.tags?.length > 0}
+							<div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+								<div class="flex flex-wrap gap-2">
+									{#each card.tags ?? [] as tag}
+										<span
+											class="rounded-xl border border-cyan-400/10 bg-cyan-400/5 px-3 py-1.5 text-[11px] font-bold tracking-wide text-cyan-300/80 uppercase"
+										>
+											#{tag}
+										</span>
+									{/each}
+								</div>
 							</div>
 						{/if}
 					</div>
@@ -590,7 +685,7 @@
 						{#if canEdit}
 							<div class="flex items-center gap-3">
 								<button
-									class="rounded-xl px-5 py-2.5 text-[9px] font-black tracking-widest uppercase transition-all {isEditing
+									class="rounded-xl px-5 py-2.5 text-[11px] font-bold tracking-wide uppercase transition-all {isEditing
 										? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20'
 										: 'border border-white/5 bg-white/5 text-slate-400 hover:bg-white/10'}"
 									onclick={() => (isEditing = !isEditing)}
@@ -599,7 +694,7 @@
 								</button>
 								{#if isEditing}
 									<button
-										class="rounded-xl bg-cyan-500 px-5 py-2.5 text-[9px] font-black tracking-widest text-slate-950 uppercase shadow-lg shadow-cyan-500/20 transition-all active:scale-95"
+										class="rounded-xl bg-cyan-500 px-5 py-2.5 text-[11px] font-bold tracking-wide text-slate-950 uppercase shadow-lg shadow-cyan-500/20 transition-all active:scale-95"
 										onclick={handleSave}
 										disabled={isSaving}
 									>
@@ -611,7 +706,7 @@
 							<div class="rounded-2xl border border-cyan-400/20 bg-cyan-950/20 p-3 shadow-lg shadow-cyan-500/5 mb-4">
 								<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 									<div>
-										<div class="text-[10px] font-black tracking-[0.22em] text-cyan-400 uppercase">
+										<div class="text-xs font-bold text-cyan-400">
 											Play Assistant (ระบบจำลองเอฟเฟกต์)
 										</div>
 										<div class="mt-1 text-xs font-semibold text-slate-400">
@@ -628,45 +723,34 @@
 								</div>
 							</div>
 						{/if}
-						<div class="rounded-2xl border border-white/10 bg-slate-950/35 p-3">
-							<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-								<div>
-									<div class="text-[10px] font-black tracking-[0.22em] text-slate-500 uppercase">
-										Community report
-									</div>
-									{#if reportNotice}
-										<div class="mt-1 text-xs font-bold text-cyan-100">{reportNotice}</div>
-									{:else}
-										<div class="mt-1 text-xs font-semibold text-slate-500">
-											แจ้งคำแปล รูป หรือข้อมูลการ์ดที่ผิด
-										</div>
-									{/if}
+						{#if isReportOpen}
+							<div class="rounded-2xl border border-amber-500/20 bg-amber-950/15 p-4 mt-3">
+								<div class="text-xs font-black text-amber-400 uppercase tracking-widest mb-1.5">
+									Report Issue
 								</div>
-								<button
-									type="button"
-									class="inline-flex min-h-10 items-center justify-center rounded-lg border border-amber-200/20 px-3 text-xs font-black tracking-widest text-amber-100 uppercase transition hover:bg-amber-200/10"
-									onclick={() => (isReportOpen = !isReportOpen)}
-								>
-									{isReportOpen ? 'Close Report' : 'Report Issue'}
-								</button>
-							</div>
-							{#if isReportOpen}
-								<div class="mt-3 grid gap-2 border-t border-white/10 pt-3">
+								{#if reportNotice}
+									<div class="text-xs font-bold text-cyan-100 bg-cyan-950/30 p-2 rounded border border-cyan-400/20 mb-3">{reportNotice}</div>
+								{:else}
+									<div class="text-[11px] font-semibold text-slate-500 mb-3">
+										แจ้งคำแปล รูป หรือข้อมูลการ์ดที่ผิดพลาดในระบบ
+									</div>
+								{/if}
+								<div class="grid gap-3">
 									<select
 										bind:value={reportType}
 										class="min-h-10 rounded-lg border border-white/10 bg-slate-950 px-3 text-xs font-bold text-white focus:border-cyan-400/50 focus:outline-none"
 									>
-										<option value="translation">Translation</option>
-										<option value="card_data">Card data</option>
-										<option value="image">Image</option>
-										<option value="rules_text">Rules text</option>
-										<option value="other">Other</option>
+										<option value="translation">Translation (คำแปลภาษาไทย)</option>
+										<option value="card_data">Card data (สเตตัสการ์ด)</option>
+										<option value="image">Image (รูปภาพการ์ด)</option>
+										<option value="rules_text">Rules text (กติกาการ์ด)</option>
+										<option value="other">Other (อื่นๆ)</option>
 									</select>
 									<textarea
 										bind:value={reportMessage}
 										class="min-h-24 resize-y rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm font-semibold text-white placeholder:text-slate-600 focus:border-cyan-400/50 focus:outline-none"
 										maxlength="2000"
-										placeholder="บอกจุดที่ผิดหรือควรแก้..."
+										placeholder="อธิบายจุดที่ต้องการเสนอแนะหรือแก้ไข..."
 									></textarea>
 									<button
 										type="button"
@@ -677,63 +761,82 @@
 										{isReportSubmitting ? 'Sending...' : 'Submit Report'}
 									</button>
 								</div>
-							{/if}
+							</div>
+						{/if}
+
+						<div class="border-b border-white/5 pb-4">
+							<div class="flex items-center justify-between">
+								<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+									{activeLang === 'th' ? 'Localized Intel (TH)' : 'Source Transmission (EN)'}
+								</span>
+								<div class="flex rounded-lg border border-white/10 bg-slate-950/60 p-0.5 shadow-inner">
+									<button
+										type="button"
+										class="rounded-md px-3.5 py-1 text-xs font-black transition-all duration-200 cursor-pointer {activeLang === 'th' ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white'}"
+										onclick={() => activeLang = 'th'}
+									>
+										TH
+									</button>
+									<button
+										type="button"
+										class="rounded-md px-3.5 py-1 text-xs font-black transition-all duration-200 cursor-pointer {activeLang === 'en' ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white'}"
+										onclick={() => activeLang = 'en'}
+									>
+										EN
+									</button>
+								</div>
+							</div>
 						</div>
 
-						<div class="group/thai relative pl-5 sm:pl-7">
-							<div
-								class="absolute top-0 bottom-0 left-0 w-1 rounded-full bg-gradient-to-b from-cyan-500 to-violet-500 transition-shadow group-hover/thai:shadow-[0_0_15px_rgba(6,182,212,0.5)]"
-							></div>
-							<h4
-								class="mb-4 text-[10px] font-black tracking-[0.32em] text-cyan-500 uppercase italic opacity-70"
-							>
-								Localized Intel (TH)
-							</h4>
-							{#if isEditing && canEdit}
-								<textarea
-									bind:value={tempAbilityTh}
-									class="h-40 w-full rounded-lg border border-white/10 bg-slate-950 p-5 text-sm leading-relaxed font-medium text-white transition-all focus:border-cyan-500/50 focus:outline-none"
-								></textarea>
-							{:else}
-								<!-- svelte-ignore a11y_no_static_element_interactions, a11y_mouse_events_have_key_events -->
+						{#if activeLang === 'th'}
+							<div class="group/thai relative pl-5 sm:pl-7">
 								<div
-									class="text-lg leading-relaxed font-black tracking-tight break-words text-white sm:text-xl"
-									onmouseover={showTooltip}
-									onmouseout={handleMouseOut}
-									onfocusin={showTooltip}
-									onfocusout={hideTooltip}
-									onclick={toggleTooltip}
-								>
-									{@html parseAbility(formatTranslatedAbility(card.ability_th, card.ability_en))}
-								</div>
-							{/if}
-						</div>
-
-						<div class="group/en relative border-t border-white/5 pt-8">
-							<h4
-								class="mb-4 text-[10px] font-black tracking-[0.32em] text-slate-600 uppercase italic opacity-70"
-							>
-								Source Transmission (EN)
-							</h4>
-							{#if isEditing && canEdit}
-								<textarea
-									bind:value={tempAbilityEn}
-									class="h-40 w-full rounded-lg border border-white/10 bg-slate-950 p-5 text-sm leading-relaxed font-medium text-slate-300 italic transition-all focus:border-cyan-500/50 focus:outline-none"
-								></textarea>
-							{:else}
-								<!-- svelte-ignore a11y_no_static_element_interactions, a11y_mouse_events_have_key_events -->
+									class="absolute top-0 bottom-0 left-0 w-1 rounded-full bg-gradient-to-b from-cyan-500 to-violet-500 transition-shadow group-hover/thai:shadow-[0_0_15px_rgba(6,182,212,0.5)]"
+								></div>
+								{#if isEditing && canEdit}
+									<textarea
+										bind:value={tempAbilityTh}
+										class="h-40 w-full rounded-lg border border-white/10 bg-slate-950 p-5 text-sm leading-relaxed font-medium text-white transition-all focus:border-cyan-500/50 focus:outline-none"
+									></textarea>
+								{:else}
+									<!-- svelte-ignore a11y_no_static_element_interactions, a11y_mouse_events_have_key_events -->
+									<div
+										class="text-lg leading-relaxed font-black tracking-tight break-words text-white sm:text-xl"
+										onmouseover={showTooltip}
+										onmouseout={handleMouseOut}
+										onfocusin={showTooltip}
+										onfocusout={hideTooltip}
+										onclick={toggleTooltip}
+									>
+										{@html parseAbility(formatTranslatedAbility(card.ability_th, card.ability_en))}
+									</div>
+								{/if}
+							</div>
+						{:else}
+							<div class="group/en relative pl-5 sm:pl-7">
 								<div
-									class="text-sm leading-relaxed font-medium break-words text-slate-400 sm:text-base lg:text-lg"
-									onmouseover={showTooltip}
-									onmouseout={handleMouseOut}
-									onfocusin={showTooltip}
-									onfocusout={hideTooltip}
-									onclick={toggleTooltip}
-								>
-									{@html parseAbility(card.ability_en)}
-								</div>
-							{/if}
-						</div>
+									class="absolute top-0 bottom-0 left-0 w-1 rounded-full bg-gradient-to-b from-slate-500 to-slate-700 transition-shadow"
+								></div>
+								{#if isEditing && canEdit}
+									<textarea
+										bind:value={tempAbilityEn}
+										class="h-40 w-full rounded-lg border border-white/10 bg-slate-950 p-5 text-sm leading-relaxed font-medium text-slate-300 italic transition-all focus:border-cyan-500/50 focus:outline-none"
+									></textarea>
+								{:else}
+									<!-- svelte-ignore a11y_no_static_element_interactions, a11y_mouse_events_have_key_events -->
+									<div
+										class="text-sm leading-relaxed font-medium break-words text-slate-400 sm:text-base lg:text-lg"
+										onmouseover={showTooltip}
+										onmouseout={handleMouseOut}
+										onfocusin={showTooltip}
+										onfocusout={hideTooltip}
+										onclick={toggleTooltip}
+									>
+										{@html parseAbility(card.ability_en)}
+									</div>
+								{/if}
+							</div>
+						{/if}
 					</div>
 				</div>
 			</div>
