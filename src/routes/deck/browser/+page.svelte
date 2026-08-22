@@ -30,7 +30,7 @@
 
 	let { data } = $props();
 	let cards = $derived((data.cards as Card[]) || []);
-		let decks = $state<StoredDeck[]>([]);
+	let decks = $state<StoredDeck[]>([]);
 	let currentUser = $state<{ id: string } | null>(null);
 	let isLoading = $state(true);
 	let errorMessage = $state('');
@@ -156,8 +156,7 @@
 				if (sortMode === 'name') return a.name.localeCompare(b.name);
 				if (sortMode === 'main')
 					return getDeckSummary(b).stats.mainTotal - getDeckSummary(a).stats.mainTotal;
-				if (sortMode === 'trending')
-					return (b.likesCount ?? 0) - (a.likesCount ?? 0);
+				if (sortMode === 'trending') return (b.likesCount ?? 0) - (a.likesCount ?? 0);
 				return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
 			})
 	);
@@ -206,9 +205,7 @@
 			if (session.user) {
 				userCollection = await getUserCollection();
 			}
-		} catch (err) {
-			console.error('Failed to load user collection:', err);
-		}
+		} catch {}
 	}
 
 	$effect(() => {
@@ -230,10 +227,10 @@
 			const sortParam = sortMode === 'trending' ? 'trending' : 'newest';
 			const response = await fetch(`/api/decks?scope=public&sort=${sortParam}`);
 			const payload = await response.json().catch(() => ({}));
-			if (!response.ok) throw new Error(payload.error || 'Could not load decks');
+			if (!response.ok) throw new Error(payload.error || 'โหลดเด็คไม่สำเร็จ');
 			decks = Array.isArray(payload.decks) ? payload.decks : [];
 		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Could not load decks';
+			errorMessage = error instanceof Error ? error.message : 'โหลดเด็คไม่สำเร็จ';
 		} finally {
 			isLoading = false;
 		}
@@ -255,7 +252,7 @@
 	}
 
 	function createDeckCopy(deck: StoredDeck, source: 'local' | 'online' = 'local') {
-		const copiedDeck = createEmptyDeck(`${deck.name} Copy`);
+		const copiedDeck = createEmptyDeck(`${deck.name} (สำเนา)`);
 		copiedDeck.championCode = deck.championCode;
 		copiedDeck.entries = deck.entries;
 		copiedDeck.sideboardEntries = deck.sideboardEntries ?? [];
@@ -274,13 +271,13 @@
 		});
 
 		writeDeckCollectionToStorage(localStorage, nextCollection);
-		showActionNotice('Deck copied to local', 'success');
+		showActionNotice('คัดลอกเด็คไว้ในเครื่องแล้ว', 'success');
 	}
 
 	async function copyDeckOnline(deck: StoredDeck) {
 		if (!browser || copyingDeckId) return;
 		if (!isOnline) {
-			showActionNotice('Offline mode supports local copy only', 'error');
+			showActionNotice('ขณะออฟไลน์คัดลอกได้เฉพาะไว้ในเครื่อง', 'error');
 			return;
 		}
 
@@ -298,8 +295,8 @@
 			if (!response.ok) {
 				throw new Error(
 					payload.error === 'login required'
-						? 'Login required to copy online'
-						: payload.error || 'Could not copy deck'
+						? 'กรุณาเข้าสู่ระบบเพื่อคัดลอกเด็คออนไลน์'
+						: payload.error || 'คัดลอกเด็คไม่สำเร็จ'
 				);
 			}
 
@@ -310,9 +307,9 @@
 				decks: [...collection.decks, savedDeck]
 			});
 			writeDeckCollectionToStorage(localStorage, nextCollection);
-			showActionNotice('Deck copied online', 'success');
+			showActionNotice('คัดลอกเด็คออนไลน์แล้ว', 'success');
 		} catch (error) {
-			showActionNotice(error instanceof Error ? error.message : 'Could not copy deck', 'error');
+			showActionNotice(error instanceof Error ? error.message : 'คัดลอกเด็คไม่สำเร็จ', 'error');
 		} finally {
 			copyingDeckId = '';
 		}
@@ -342,17 +339,25 @@
 			...previewZones.tokens,
 			...previewZones.other
 		];
-		const cardUrls = [...new Set(allItems.map((item) => item.card.image_url).filter(Boolean))].map(url => getCanvasImageUrl(url));
-		const domainUrls = previewStats.domains.map(d => getDomainIconUrl(d.label)).filter(Boolean) as string[];
-		const typeUrls = previewStats.types.map(t => getTypeIconUrl(t.label)).filter(Boolean) as string[];
+		const cardUrls = [...new Set(allItems.map((item) => item.card.image_url).filter(Boolean))].map(
+			(url) => getCanvasImageUrl(url)
+		);
+		const domainUrls = previewStats.domains
+			.map((d) => getDomainIconUrl(d.label))
+			.filter(Boolean) as string[];
+		const typeUrls = previewStats.types
+			.map((t) => getTypeIconUrl(t.label))
+			.filter(Boolean) as string[];
 
 		const allUrls = [...new Set([...cardUrls, ...domainUrls, ...typeUrls])];
 
-		await Promise.all(allUrls.map((url) => {
-			return loadImage(url).then(img => {
-				return img;
-			});
-		}));
+		await Promise.all(
+			allUrls.map((url) => {
+				return loadImage(url).then((img) => {
+					return img;
+				});
+			})
+		);
 	}
 
 	async function downloadPng() {
@@ -372,7 +377,6 @@
 			link.href = canvas.toDataURL('image/png');
 			link.click();
 		} catch (error) {
-			console.error('[RiftThai Preview] downloadPng error:', error);
 			exportError = error instanceof Error ? error.message : 'ไม่สามารถ export PNG ได้';
 		} finally {
 			isExporting = false;
@@ -394,7 +398,6 @@
 			const canvas = await buildExportCanvas();
 			previewUrl = canvas.toDataURL('image/png');
 		} catch (error) {
-			console.error('[RiftThai Preview] generatePreview error:', error);
 			exportError = error instanceof Error ? error.message : 'ไม่สามารถ preview PNG ได้';
 		} finally {
 			isExporting = false;
@@ -441,8 +444,10 @@
 			const bottomSections = [];
 			if (previewSideboardCards.length > 0)
 				bottomSections.push({ title: 'Sideboard', cards: previewSideboardCards });
-			if (previewZones.tokens.length > 0) bottomSections.push({ title: 'Tokens', cards: previewZones.tokens });
-			if (previewZones.other.length > 0) bottomSections.push({ title: 'Other', cards: previewZones.other });
+			if (previewZones.tokens.length > 0)
+				bottomSections.push({ title: 'การ์ด Token', cards: previewZones.tokens });
+			if (previewZones.other.length > 0)
+				bottomSections.push({ title: 'Other', cards: previewZones.other });
 
 			for (let i = 0; i < bottomSections.length; i += 2) {
 				const left = bottomSections[i];
@@ -496,13 +501,13 @@
 		canvas.height = height;
 
 		const context = canvas.getContext('2d');
-		if (!context) throw new Error('Canvas is not available');
+		if (!context) throw new Error('อุปกรณ์นี้ไม่รองรับการสร้างรูป');
 
 		drawExportBackground(context, width, height);
 		drawExportHeader(context, width);
 
 		if (isLandscape) {
-			drawExportStats(context, previewStats.costs, 48, 210, 460, 230, 'Cost Curve');
+			drawExportStats(context, previewStats.costs, 48, 210, 460, 230, 'ค่าร่าย');
 			await drawExportIconStats(
 				context,
 				previewStats.types,
@@ -510,7 +515,7 @@
 				210,
 				460,
 				230,
-				'Card Types',
+				'ประเภทการ์ด',
 				getTypeIconUrl,
 				true
 			);
@@ -521,7 +526,7 @@
 				210,
 				460,
 				230,
-				'Main Domains',
+				'Domain หลัก',
 				getDomainIconUrl,
 				false
 			);
@@ -581,8 +586,10 @@
 			const bottomSections = [];
 			if (previewSideboardCards.length > 0)
 				bottomSections.push({ title: 'Sideboard', cards: previewSideboardCards });
-			if (previewZones.tokens.length > 0) bottomSections.push({ title: 'Tokens', cards: previewZones.tokens });
-			if (previewZones.other.length > 0) bottomSections.push({ title: 'Other', cards: previewZones.other });
+			if (previewZones.tokens.length > 0)
+				bottomSections.push({ title: 'การ์ด Token', cards: previewZones.tokens });
+			if (previewZones.other.length > 0)
+				bottomSections.push({ title: 'Other', cards: previewZones.other });
 
 			for (let i = 0; i < bottomSections.length; i += 2) {
 				const left = bottomSections[i];
@@ -626,7 +633,7 @@
 				}
 			}
 		} else {
-			drawExportStats(context, previewStats.costs, 48, 210, 460, 230, 'Cost Curve');
+			drawExportStats(context, previewStats.costs, 48, 210, 460, 230, 'ค่าร่าย');
 			await drawExportIconStats(
 				context,
 				previewStats.types,
@@ -634,7 +641,7 @@
 				210,
 				460,
 				230,
-				'Card Types',
+				'ประเภทการ์ด',
 				getTypeIconUrl,
 				true
 			);
@@ -645,7 +652,7 @@
 				210,
 				460,
 				230,
-				'Main Domains',
+				'Domain หลัก',
 				getDomainIconUrl,
 				false
 			);
@@ -1181,7 +1188,6 @@
 		const promise = new Promise<HTMLImageElement | null>((resolve) => {
 			const image = new Image();
 			const timer = setTimeout(() => {
-				console.warn('[RiftThai Preview] loadImage request timeout reached (2.5s) for:', src);
 				image.onload = null;
 				image.onerror = null;
 				resolve(null);
@@ -1191,9 +1197,8 @@
 				clearTimeout(timer);
 				resolve(image);
 			};
-			image.onerror = (e) => {
+			image.onerror = () => {
 				clearTimeout(timer);
-				console.error('[RiftThai Preview] loadImage request error for:', src, e);
 				resolve(null);
 			};
 			image.src = src;
@@ -1203,7 +1208,10 @@
 	}
 
 	function getLegendChampionCards() {
-		return [...previewZones.legends, ...(previewChampionCard ? [{ card: previewChampionCard, quantity: 1 }] : [])];
+		return [
+			...previewZones.legends,
+			...(previewChampionCard ? [{ card: previewChampionCard, quantity: 1 }] : [])
+		];
 	}
 
 	function slugify(value: string) {
@@ -1219,7 +1227,9 @@
 
 	async function loadPreferredDeckSettings() {
 		try {
-			const session = await getAuthSession<{ user?: { id: string; settings?: { defaultExportLayout?: string } } }>();
+			const session = await getAuthSession<{
+				user?: { id: string; settings?: { defaultExportLayout?: string } };
+			}>();
 			currentUser = session.user || null;
 			const layout = session.user?.settings?.defaultExportLayout;
 			if (layout === 'portrait' || layout === 'landscape') exportLayout = layout;
@@ -1230,7 +1240,7 @@
 
 	async function toggleLike(deck: StoredDeck) {
 		if (!currentUser) {
-			showActionNotice('โปรดเข้าสู่ระบบเพื่อโหวตเด็ค (Please log in to upvote decks)', 'error');
+			showActionNotice('โปรดเข้าสู่ระบบเพื่อโหวตเด็ค', 'error');
 			return;
 		}
 		if (!deck.onlineId) return;
@@ -1254,13 +1264,16 @@
 			});
 			const result = await response.json().catch(() => ({}));
 			if (!response.ok) {
-				throw new Error(result.error || 'Failed to update like');
+				throw new Error(result.error || 'อัปเดตคะแนนโหวตไม่สำเร็จ');
 			}
 		} catch (error) {
 			// Rollback on error
 			deck.isLiked = isCurrentlyLiked;
 			deck.likesCount = (deck.likesCount ?? 0) + (isCurrentlyLiked ? 1 : -1);
-			showActionNotice(error instanceof Error ? error.message : 'Error updating vote', 'error');
+			showActionNotice(
+				error instanceof Error ? error.message : 'อัปเดตคะแนนโหวตไม่สำเร็จ',
+				'error'
+			);
 		}
 	}
 </script>
@@ -1276,7 +1289,7 @@
 				href="/deck"
 				class="shrink-0 border-l-2 border-cyan-300/60 pl-3 text-xl font-black text-white uppercase italic"
 			>
-				Rift<span class="text-cyan-300">Thai</span>
+				Rift<span class="rt-brand-accent">Thai</span>
 			</a>
 			<SiteMenu active="deck" />
 		</div>
@@ -1290,8 +1303,8 @@
 			<div class="rt-rule-line relative p-5 pl-7 sm:p-7 sm:pl-9">
 				<div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 					<div class="min-w-0">
-						<p class="rt-kicker mb-3">Public Decks</p>
-						<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">Deck Browser</h1>
+						<p class="rt-kicker mb-3">เด็คสาธารณะ</p>
+						<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">ค้นหาเด็ค</h1>
 						<p class="rt-copy mt-3 max-w-2xl text-sm">
 							ดูเด็ค public จากฐานข้อมูล แล้วคัดลอกเป็น local หรือ online deck ของตัวเองได้
 						</p>
@@ -1301,7 +1314,7 @@
 							href="/deck"
 							class="inline-flex min-h-11 items-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
 						>
-							My Decks
+							เด็คของฉัน
 						</a>
 					</div>
 				</div>
@@ -1310,14 +1323,14 @@
 						<input
 							bind:value={query}
 							class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 pr-10 pl-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
-							placeholder="Search deck, champion, or legend..."
+							placeholder="ค้นหาชื่อเด็ค Champion หรือ Legend..."
 						/>
 						{#if query}
 							<button
 								type="button"
 								class="absolute top-1/2 right-3 -translate-y-1/2 text-slate-500 hover:text-white"
 								onclick={() => (query = '')}
-								aria-label="Clear search"
+								aria-label="ล้างคำค้นหา"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -1338,21 +1351,21 @@
 							bind:value={selectedCoverCode}
 							class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 text-xs font-bold text-white focus:border-cyan-300/50 focus:outline-none sm:w-60"
 						>
-							<option value="">All Legends & Champions</option>
+							<option value="">Legend และ Champion ทั้งหมด</option>
 							{#if availableLegends.length > 0}
-								<optgroup label="Legends">
+								<optgroup label="Legend">
 									{#each availableLegends as legend}
 										<option value={legend.code}
-											>{legend.name_en} ({legend.name_th || 'EN Only'})</option
+											>{legend.name_en} ({legend.name_th || 'มีเฉพาะอังกฤษ'})</option
 										>
 									{/each}
 								</optgroup>
 							{/if}
 							{#if availableChampions.length > 0}
-								<optgroup label="Champions">
+								<optgroup label="Champion">
 									{#each availableChampions as champion}
 										<option value={champion.code}
-											>{champion.name_en} ({champion.name_th || 'EN Only'})</option
+											>{champion.name_en} ({champion.name_th || 'มีเฉพาะอังกฤษ'})</option
 										>
 									{/each}
 								</optgroup>
@@ -1363,29 +1376,33 @@
 							bind:value={sortMode}
 							class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 text-xs font-bold text-white focus:border-cyan-300/50 focus:outline-none sm:w-36"
 						>
-							<option value="newest">Newest</option>
-							<option value="trending">Trending</option>
-							<option value="name">Name</option>
-							<option value="main">Main Count</option>
+							<option value="newest">ใหม่ล่าสุด</option>
+							<option value="trending">ยอดนิยม</option>
+							<option value="name">ชื่อเด็ค</option>
+							<option value="main">จำนวนการ์ด Main Deck</option>
 						</select>
 
 						<label
-							class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-xs font-black tracking-widest text-slate-300 uppercase cursor-pointer select-none"
+							class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-xs font-black tracking-widest text-slate-300 uppercase select-none"
 						>
 							<input type="checkbox" bind:checked={readyOnly} class="h-4 w-4 accent-cyan-300" />
-							Ready
+							พร้อมเล่น
 						</label>
 
 						{#if Object.keys(userCollection).length > 0}
 							<label
-								class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-xs font-black tracking-widest text-slate-300 uppercase cursor-pointer select-none"
+								class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-xs font-black tracking-widest text-slate-300 uppercase select-none"
 							>
-								<input type="checkbox" bind:checked={canBuildInstantlyFilter} class="h-4 w-4 accent-cyan-300" />
+								<input
+									type="checkbox"
+									bind:checked={canBuildInstantlyFilter}
+									class="h-4 w-4 accent-cyan-300"
+								/>
 								ประกอบเด็คได้ทันที
 							</label>
 						{/if}
 
-						<div class="flex flex-wrap items-center gap-1.5" title="Filter by Color / Domain">
+						<div class="flex flex-wrap items-center gap-1.5" title="กรองตามสีหรือ Domain">
 							{#each ['Body', 'Calm', 'Chaos', 'Fury', 'Mind', 'Order'] as domain}
 								{@const icon = getDomainIcon(domain)}
 								<button
@@ -1395,7 +1412,8 @@
 										? 'border-cyan-300 bg-cyan-300/18 shadow-[0_0_12px_rgba(83,234,253,0.38)]'
 										: 'border-white/10 bg-slate-950/70 hover:border-cyan-300/30'}"
 									onclick={() => (selectedColor = selectedColor === domain ? '' : domain)}
-									aria-label="Filter by {domain}"
+									aria-label="กรองตาม {domain}"
+									aria-pressed={selectedColor === domain}
 									title={domain}
 								>
 									{#if icon}
@@ -1409,7 +1427,7 @@
 					{#if query || selectedCoverCode || selectedColor || readyOnly || canBuildInstantlyFilter || sortMode !== 'newest'}
 						<button
 							type="button"
-							class="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-rose-300/20 bg-rose-300/8 px-4 text-xs font-black tracking-widest text-rose-100 uppercase transition hover:bg-rose-300/14 lg:w-auto"
+							class="rt-button rt-button-ghost w-full lg:w-auto"
 							onclick={() => {
 								query = '';
 								selectedCoverCode = '';
@@ -1419,7 +1437,7 @@
 								sortMode = 'newest';
 							}}
 						>
-							Clear Filters
+							ล้างตัวกรอง
 						</button>
 					{/if}
 				</div>
@@ -1427,8 +1445,15 @@
 		</header>
 
 		{#if errorMessage}
-			<section class="rt-panel rounded-xl p-5 text-sm font-bold text-rose-100">
-				{errorMessage}
+			<section class="rt-panel rounded-xl p-6 text-center">
+				<p class="text-sm font-bold text-rose-100">{errorMessage}</p>
+				<button
+					type="button"
+					class="rt-button rt-button-secondary mt-4"
+					onclick={() => void loadDecks()}
+				>
+					ลองใหม่
+				</button>
 			</section>
 		{:else if isLoading}
 			<section class="rt-panel rounded-xl p-8 text-center">
@@ -1436,15 +1461,34 @@
 					class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"
 				></div>
 				<div class="mt-4 text-sm font-black tracking-widest text-white uppercase">
-					Loading Decks
+					กำลังโหลดเด็ค
 				</div>
 			</section>
 		{:else if filteredDecks.length === 0}
 			<section class="rt-panel rounded-xl p-8 text-center">
-				<h2 class="text-2xl font-black text-white uppercase italic">No Public Decks</h2>
+				<h2 class="text-2xl font-black text-white uppercase italic">ไม่พบเด็คสาธารณะ</h2>
 				<p class="rt-copy mx-auto mt-3 max-w-lg text-sm">
 					ยังไม่มีเด็ค public หรือไม่เจอผลลัพธ์ที่ค้นหา
 				</p>
+				<div class="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
+					{#if query || selectedCoverCode || selectedColor || readyOnly || canBuildInstantlyFilter || sortMode !== 'newest'}
+						<button
+							type="button"
+							class="rt-button rt-button-primary"
+							onclick={() => {
+								query = '';
+								selectedCoverCode = '';
+								selectedColor = '';
+								readyOnly = false;
+								canBuildInstantlyFilter = false;
+								sortMode = 'newest';
+							}}
+						>
+							ล้างตัวกรอง
+						</button>
+					{/if}
+					<a href="/deck" class="rt-button rt-button-secondary">ไปที่เด็คของฉัน</a>
+				</div>
 			</section>
 		{:else}
 			<section class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -1456,29 +1500,39 @@
 						<div
 							class="pointer-events-none absolute top-2 left-2 z-20 rounded-full border border-emerald-300/25 bg-slate-950/92 px-2.5 py-1 text-[0.62rem] font-black tracking-[0.18em] text-emerald-100 uppercase shadow-lg shadow-black/40 backdrop-blur"
 						>
-							Online
+							ออนไลน์
 						</div>
 
 						<button
 							type="button"
 							class="absolute top-2 right-2 z-20 flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.62rem] font-black tracking-widest uppercase shadow-lg backdrop-blur-md transition select-none
 							{deck.isLiked
-								? 'border-pink-500 bg-pink-500/20 text-pink-300 hover:bg-pink-500/30 shadow-[0_0_10px_rgba(236,72,153,0.3)]'
+								? 'border-pink-500 bg-pink-500/20 text-pink-300 shadow-[0_0_10px_rgba(236,72,153,0.3)] hover:bg-pink-500/30'
 								: 'border-white/10 bg-slate-950/92 text-slate-400 hover:border-white/20 hover:text-white'}"
 							onclick={(e) => {
 								e.stopPropagation();
 								void toggleLike(deck);
 							}}
-							aria-label="Upvote deck"
+							aria-label={deck.isLiked ? 'ยกเลิกโหวตเด็ค' : 'โหวตเด็ค'}
+							aria-pressed={Boolean(deck.isLiked)}
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5 transition-transform active:scale-125 {deck.isLiked ? 'text-pink-500' : 'text-slate-400'}">
-								<path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 20 20"
+								fill="currentColor"
+								class="h-3.5 w-3.5 transition-transform active:scale-125 {deck.isLiked
+									? 'text-pink-500'
+									: 'text-slate-400'}"
+							>
+								<path
+									d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"
+								/>
 							</svg>
 							<span>{deck.likesCount ?? 0}</span>
 						</button>
 						<a
 							href="/deck/{deck.id}"
-							class="relative flex rounded-l-xl bg-slate-950/80 p-2 sm:p-3 transition hover:bg-slate-900"
+							class="relative flex rounded-l-xl bg-slate-950/80 p-2 transition hover:bg-slate-900 sm:p-3"
 						>
 							{#if summary.primaryCover}
 								<div
@@ -1495,7 +1549,7 @@
 								<div
 									class="grid aspect-[744/1039] place-items-center rounded-lg border border-dashed border-white/10 bg-black/20 text-sm font-black tracking-widest text-slate-600 uppercase"
 								>
-									No Cover
+									ไม่มีภาพปก
 								</div>
 							{/if}
 							{#if summary.secondaryCover}
@@ -1513,18 +1567,20 @@
 						</a>
 						<div class="flex min-w-0 flex-col p-3 sm:p-5">
 							<div class="min-w-0">
-								<h2 class="truncate text-base font-black text-white uppercase italic sm:text-xl hover:text-cyan-300 transition">
+								<h2
+									class="truncate text-base font-black text-white uppercase italic transition hover:text-cyan-300 sm:text-xl"
+								>
 									<a href="/deck/{deck.id}">{deck.name}</a>
 								</h2>
 								<p class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
-									Updated {new Date(deck.updatedAt).toLocaleDateString()}
+									อัปเดต {new Date(deck.updatedAt).toLocaleDateString('th-TH')}
 								</p>
 								{#if deck.owner}
 									<a
 										href="/profile/{deck.owner.profileSlug}"
 										class="mt-2 inline-flex max-w-full items-center rounded-md border border-cyan-300/15 bg-cyan-300/8 px-2 py-1 text-[10px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14"
 									>
-										<span class="truncate">By {deck.owner.profileHandle}</span>
+										<span class="truncate">โดย {deck.owner.profileHandle}</span>
 									</a>
 								{/if}
 							</div>
@@ -1549,7 +1605,7 @@
 							>
 								<div
 									class="rounded-md border border-white/10 bg-black/20 p-2"
-									title="Main Deck: {summary.stats.mainTotal} / {maxMainDeckCards} cards"
+									title="Main Deck: {summary.stats.mainTotal} / {maxMainDeckCards} ใบ"
 								>
 									<div class="text-xs font-black text-white sm:text-sm">
 										{summary.stats.mainTotal}
@@ -1571,30 +1627,32 @@
 										{summary.stats.battlefieldTotal}
 									</div>
 									<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
-										Field
+										สนาม
 									</div>
 								</div>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
 									<div class="text-xs font-black text-white sm:text-sm">{summary.stats.total}</div>
 									<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
-										Total
+										รวม
 									</div>
 								</div>
 							</div>
-							<div class="mt-auto grid grid-cols-1 gap-1.5 pt-4 min-[380px]:grid-cols-3 sm:gap-2 text-center">
+							<div
+								class="mt-auto grid grid-cols-1 gap-1.5 pt-4 text-center min-[380px]:grid-cols-3 sm:gap-2"
+							>
 								<button
 									type="button"
 									class="inline-flex h-10 items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-3 text-[11px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white"
 									onclick={() => openPreview(deck)}
 								>
-									Preview
+									ดูตัวอย่าง
 								</button>
 								<button
 									type="button"
 									class="inline-flex h-10 items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-3 text-[11px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white"
 									onclick={() => openPlaytest(deck)}
 								>
-									Playtest
+									ทดลองเล่น
 								</button>
 								<div class="relative">
 									<button
@@ -1606,7 +1664,7 @@
 											activeCopyMenuDeckId = activeCopyMenuDeckId === deck.id ? '' : deck.id;
 										}}
 									>
-										<span>{copyingDeckId === deck.id ? 'Copying...' : 'Copy'}</span>
+										<span>{copyingDeckId === deck.id ? 'กำลังคัดลอก...' : 'คัดลอก'}</span>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											viewBox="0 0 20 20"
@@ -1640,9 +1698,9 @@
 													activeCopyMenuDeckId = '';
 												}}
 											>
-												<span>Local Copy</span>
+												<span>เก็บไว้ในเครื่อง</span>
 												<span class="rounded bg-white/5 px-1 py-0.5 text-[8px] text-slate-400"
-													>Offline</span
+													>ออฟไลน์</span
 												>
 											</button>
 											<button
@@ -1650,17 +1708,17 @@
 												class="mt-1 flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-[10px] font-black tracking-wider text-slate-300 uppercase transition hover:bg-white/5 hover:text-white disabled:pointer-events-none disabled:opacity-40"
 												disabled={!isOnline || copyingDeckId === deck.id}
 												title={isOnline
-													? 'Copy to your online decks'
-													: 'Offline mode supports local copy only'}
+													? 'คัดลอกไปยังเด็คออนไลน์ของคุณ'
+													: 'ขณะออฟไลน์คัดลอกได้เฉพาะไว้ในเครื่อง'}
 												onclick={() => {
 													void copyDeckOnline(deck);
 													activeCopyMenuDeckId = '';
 												}}
 											>
-												<span>Online Copy</span>
+												<span>เก็บแบบออนไลน์</span>
 												<span
 													class="rounded bg-emerald-400/10 px-1 py-0.5 text-[8px] text-emerald-400"
-													>Cloud</span
+													>คลาวด์</span
 												>
 											</button>
 										</div>
@@ -1680,9 +1738,9 @@
 				<div
 					class="mx-auto mb-5 h-14 w-14 animate-spin rounded-full border-4 border-white/10 border-t-cyan-300"
 				></div>
-				<div class="rt-kicker mb-2">Loading</div>
+				<div class="rt-kicker mb-2">กำลังโหลด</div>
 				<h2 class="text-xl font-black text-white uppercase italic">
-					{exportMode === 'preview' ? 'Preparing Preview' : 'Preparing Download'}
+					{exportMode === 'preview' ? 'กำลังเตรียมตัวอย่าง' : 'กำลังเตรียมไฟล์ดาวน์โหลด'}
 				</h2>
 				<p class="rt-copy mt-3 text-sm">กำลังโหลดรูปการ์ดและสร้าง PNG กรุณารอสักครู่</p>
 			</div>
@@ -1696,8 +1754,8 @@
 					class="mb-4 flex flex-col gap-3 rounded-xl border border-white/10 bg-[#0a0e15]/95 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between"
 				>
 					<div>
-						<div class="rt-kicker">Developer Preview</div>
-						<div class="text-sm font-bold text-slate-300">PNG export preview</div>
+						<div class="rt-kicker">ตัวอย่างก่อนส่งออก</div>
+						<div class="text-sm font-bold text-slate-300">ตัวอย่างรูป PNG</div>
 					</div>
 					<div class="flex flex-wrap items-center gap-3">
 						<!-- Segmented Control for Layout -->
@@ -1713,7 +1771,7 @@
 								onclick={() => changeLayout('portrait')}
 								disabled={isExporting}
 							>
-								Portrait
+								แนวตั้ง
 							</button>
 							<button
 								type="button"
@@ -1724,7 +1782,7 @@
 								onclick={() => changeLayout('landscape')}
 								disabled={isExporting}
 							>
-								Landscape
+								แนวนอน
 							</button>
 						</div>
 
@@ -1735,7 +1793,7 @@
 							disabled={isExporting}
 							onclick={downloadPng}
 						>
-							Download PNG
+							ดาวน์โหลด PNG
 						</button>
 
 						<!-- Close Button -->
@@ -1747,7 +1805,7 @@
 								previewDeck = null;
 							}}
 						>
-							Close
+							ปิด
 						</button>
 					</div>
 				</div>
@@ -1759,24 +1817,19 @@
 									class="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-cyan-300"
 								></div>
 								<div class="text-xs font-black tracking-widest text-white uppercase">
-									Regenerating Preview...
+									กำลังสร้างตัวอย่างใหม่...
 								</div>
 							</div>
 						</div>
 					{/if}
-					<img src={previewUrl} alt="Deck export preview" class="w-full" />
+					<img src={previewUrl} alt="ตัวอย่างรูปเด็ค" class="w-full" />
 				</div>
 			</div>
 		</div>
 	{/if}
 
 	{#if playtestDeck}
-		<PlaytestModal
-			deck={playtestDeck}
-			cards={cards}
-			isOpen={isPlaytestOpen}
-			onClose={closePlaytest}
-		/>
+		<PlaytestModal deck={playtestDeck} {cards} isOpen={isPlaytestOpen} onClose={closePlaytest} />
 	{/if}
 
 	{#if actionNotice}
@@ -1784,8 +1837,7 @@
 			show={true}
 			message={actionNotice.message}
 			type={actionNotice.type}
-			onclose={() => actionNotice = null}
+			onclose={() => (actionNotice = null)}
 		/>
 	{/if}
 </div>
-

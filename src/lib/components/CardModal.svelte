@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount, tick } from 'svelte';
 	import { keywords, iconMappings } from '$lib/data/keywords';
 	import { getRarityIcon } from '$lib/data/rarityIcons';
 	import { getTypeIcons } from '$lib/data/typeIcons';
@@ -7,13 +8,13 @@
 	let {
 		card,
 		closePopup,
-		canEdit,
+		canEdit = false,
 		showAutoSkill = false,
 		onAutoSkill = undefined
 	} = $props<{
 		card: Card;
 		closePopup: () => void;
-		canEdit: boolean;
+		canEdit?: boolean;
 		showAutoSkill?: boolean;
 		onAutoSkill?: () => void;
 	}>();
@@ -34,6 +35,63 @@
 	let tooltipX = $state(0);
 	let tooltipY = $state(0);
 	let activeLang = $state<'th' | 'en'>('th');
+	let modalElement: HTMLDivElement | null = null;
+	let previouslyFocusedElement: HTMLElement | null = null;
+	let previousBodyOverflow = '';
+
+	function getFocusableElements() {
+		if (!modalElement) return [];
+
+		return Array.from(
+			modalElement.querySelectorAll<HTMLElement>(
+				'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+			)
+		).filter((element) => element.getClientRects().length > 0);
+	}
+
+	function handleModalKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			event.stopPropagation();
+			closePopup();
+			return;
+		}
+
+		if (event.key !== 'Tab') return;
+
+		const focusableElements = getFocusableElements();
+		if (focusableElements.length === 0) {
+			event.preventDefault();
+			modalElement?.focus();
+			return;
+		}
+
+		const firstElement = focusableElements[0];
+		const lastElement = focusableElements[focusableElements.length - 1];
+		if (event.shiftKey && document.activeElement === firstElement) {
+			event.preventDefault();
+			lastElement.focus();
+		} else if (!event.shiftKey && document.activeElement === lastElement) {
+			event.preventDefault();
+			firstElement.focus();
+		}
+	}
+
+	onMount(() => {
+		previouslyFocusedElement = document.activeElement as HTMLElement | null;
+		previousBodyOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+
+		void tick().then(() => {
+			const focusableElements = getFocusableElements();
+			(focusableElements[0] ?? modalElement)?.focus();
+		});
+
+		return () => {
+			document.body.style.overflow = previousBodyOverflow;
+			previouslyFocusedElement?.focus();
+		};
+	});
 
 	$effect(() => {
 		tempAbilityEn = card.ability_en;
@@ -58,9 +116,9 @@
 			card.ability_en = tempAbilityEn;
 			card.ability_th = tempAbilityTh;
 			isEditing = false;
-			alert('Saved successfully!');
+			alert('บันทึกสำเร็จ');
 		} else {
-			alert('Failed to save: ' + result.message);
+			alert('บันทึกไม่สำเร็จ: ' + result.message);
 		}
 		isSaving = false;
 	}
@@ -84,12 +142,12 @@
 				})
 			});
 			const payload = await response.json().catch(() => ({}));
-			if (!response.ok) throw new Error(payload.error || 'Could not submit report');
-			reportNotice = 'Report submitted. Thank you.';
+			if (!response.ok) throw new Error(payload.error || 'ส่งรายงานไม่สำเร็จ');
+			reportNotice = 'ส่งรายงานแล้ว ขอบคุณครับ';
 			reportMessage = '';
 			isReportOpen = false;
 		} catch (error) {
-			reportNotice = error instanceof Error ? error.message : 'Could not submit report';
+			reportNotice = error instanceof Error ? error.message : 'ส่งรายงานไม่สำเร็จ';
 		} finally {
 			isReportSubmitting = false;
 		}
@@ -228,15 +286,25 @@
 		// 2. Identify and hide tokens into placeholders to prevent nested replacements
 
 		// Normalize keyword arrows
-		processed = processed.replace(/\[(?:\&gt;|\>){1,2}\]\s*\[([^\]]+)\]\s*\[(?:\&gt;|\>){1,2}\]/gi, '[>>$1>]');
-		processed = processed.replace(/\[([^\]]+)\]\s*\[(?:\&gt;|\>){1,2}\]\s*\[(?:\&gt;|\>){1,2}\]/gi, '[>>$1>]');
+		processed = processed.replace(
+			/\[(?:\&gt;|\>){1,2}\]\s*\[([^\]]+)\]\s*\[(?:\&gt;|\>){1,2}\]/gi,
+			'[>>$1>]'
+		);
+		processed = processed.replace(
+			/\[([^\]]+)\]\s*\[(?:\&gt;|\>){1,2}\]\s*\[(?:\&gt;|\>){1,2}\]/gi,
+			'[>>$1>]'
+		);
 		processed = processed.replace(/\[(?:\&gt;|\>){2}\]\s*\[([^\]]+)\]/gi, '[>>$1]');
 		processed = processed.replace(/\[([^\]]+)\]\s*\[(?:\&gt;|\>)\]/gi, '[$1>]');
 		processed = processed.replace(/\[(?:\&gt;|\>)\]\s*\[([^\]]+)\]/gi, '[>>$1]');
 
 		// Standalone arrow markers (when not attached to a keyword)
-		processed = processed.replace(/\[(?:\&gt;|\>){2}\]/gi, () => addPH('<span class="kw-arrow-standalone" title="Action Trigger">»</span>'));
-		processed = processed.replace(/\[(?:\&gt;|\>)\]/gi, () => addPH('<span class="kw-arrow-standalone" title="Trigger">›</span>'));
+		processed = processed.replace(/\[(?:\&gt;|\>){2}\]/gi, () =>
+			addPH('<span class="kw-arrow-standalone" title="Action Trigger">»</span>')
+		);
+		processed = processed.replace(/\[(?:\&gt;|\>)\]/gi, () =>
+			addPH('<span class="kw-arrow-standalone" title="Trigger">›</span>')
+		);
 
 		// Rainbow Rune [a]
 		processed = processed.replace(/\[a\]/gi, () =>
@@ -247,9 +315,7 @@
 
 		// Might [s]
 		processed = processed.replace(/\[s\]/gi, () =>
-			addPH(
-				`<img src="/images/icons/might.svg" class="inline-icon" title="Might" alt="Might" />`
-			)
+			addPH(`<img src="/images/icons/might.svg" class="inline-icon" title="Might" alt="Might" />`)
 		);
 
 		// Exhaust [T]
@@ -297,13 +363,15 @@
 		// Card Domain [c]
 		processed = processed.replace(/\[c\]/gi, () => {
 			if (!card.domains || card.domains.length === 0) return '';
-			return card.domains.map((d: string) => {
-				const lowerD = d.toLowerCase();
-				const iconFile = lowerD === 'colorless' ? 'rune.avif' : `icon_${lowerD}.avif`;
-				return addPH(
-					`<img src="/images/icons/${iconFile}" class="inline-icon" title="${d}" alt="${d}" />`
-				);
-			}).join('');
+			return card.domains
+				.map((d: string) => {
+					const lowerD = d.toLowerCase();
+					const iconFile = lowerD === 'colorless' ? 'rune.avif' : `icon_${lowerD}.avif`;
+					return addPH(
+						`<img src="/images/icons/${iconFile}" class="inline-icon" title="${d}" alt="${d}" />`
+					);
+				})
+				.join('');
 		});
 
 		// Generic energy cost / number circle [number]
@@ -327,29 +395,29 @@
 
 		// Keep keyword costs inside the same keyword background dynamically for all keywords except "Add"
 		const costKeywordNames = keywords
-			.filter(k => k.id !== 'add')
-			.flatMap(k => [k.name_en, k.name_th]);
+			.filter((k) => k.id !== 'add')
+			.flatMap((k) => [k.name_en, k.name_th]);
 		const escapedNames = [...new Set(costKeywordNames)]
 			.filter(Boolean)
-			.map(name => name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
-		const costKeywordRegex = new RegExp(`\\[(${escapedNames.join('|')})\\]((?:\\s*___PH\\d+___)+)`, 'gi');
-
-		processed = processed.replace(
-			costKeywordRegex,
-			(_match, keyword, costs) => {
-				const kw = keywords.find(
-					(k) =>
-						k.name_en.toLowerCase() === keyword.toLowerCase() ||
-						k.name_th.toLowerCase() === keyword.toLowerCase()
-				);
-				const bgColor = kw ? kw.color : '#107361';
-				const hint = kw ? kw.description_th : '';
-				const textColor = bgColor === '#97B028' ? 'color: #020617;' : '';
-				return addPH(
-					`<span class="kw-inline-badge kw-cost-badge cursor-pointer outline-none" tabindex="0" data-tooltip="${escapeHtml(hint)}" style="background-color: ${bgColor}; ${textColor} border: none; shadow: none;"><span>${escapeHtml(keyword)}</span>${costs}</span>`
-				);
-			}
+			.map((name) => name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+		const costKeywordRegex = new RegExp(
+			`\\[(${escapedNames.join('|')})\\]((?:\\s*___PH\\d+___)+)`,
+			'gi'
 		);
+
+		processed = processed.replace(costKeywordRegex, (_match, keyword, costs) => {
+			const kw = keywords.find(
+				(k) =>
+					k.name_en.toLowerCase() === keyword.toLowerCase() ||
+					k.name_th.toLowerCase() === keyword.toLowerCase()
+			);
+			const bgColor = kw ? kw.color : '#107361';
+			const hint = kw ? kw.description_th : '';
+			const textColor = bgColor === '#97B028' ? 'color: #020617;' : '';
+			return addPH(
+				`<span class="kw-inline-badge kw-cost-badge cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300" tabindex="0" data-tooltip="${escapeHtml(hint)}" style="background-color: ${bgColor}; ${textColor} border: none; shadow: none;"><span>${escapeHtml(keyword)}</span>${costs}</span>`
+			);
+		});
 
 		// Keywords [Badge]
 		processed = processed.replace(/\[([^\]]+)\]/g, (match, p1) => {
@@ -380,7 +448,7 @@
 			} else if (hasLeftArrow) {
 				arrowClass = 'kw-inline-badge kw-arrow-left';
 			}
-			const className = `${arrowClass} cursor-pointer outline-none`;
+			const className = `${arrowClass} cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300`;
 
 			if (hint) {
 				return addPH(
@@ -398,7 +466,7 @@
 			const regex = new RegExp(`\\b(${key})\\b`, 'gi');
 			processed = processed.replace(regex, (match) =>
 				addPH(
-					`<span class="text-cyan-400 underline decoration-cyan-400/30 decoration-dotted underline-offset-4 cursor-pointer inline-block outline-none font-bold" tabindex="0" data-tooltip="${escapeHtml(hint)}">${escapeHtml(match)}</span>`
+					`<span class="text-cyan-400 underline decoration-cyan-400/30 decoration-dotted underline-offset-4 cursor-pointer inline-block font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300" tabindex="0" data-tooltip="${escapeHtml(hint)}">${escapeHtml(match)}</span>`
 				)
 			);
 		});
@@ -455,9 +523,11 @@
 	}
 </script>
 
+<svelte:window onkeydown={handleModalKeydown} />
+
 {#if activeTooltip}
 	<div
-		class="animate-in fade-in zoom-in pointer-events-none fixed z-[9999] max-w-[280px] max-w-[calc(100vw-2rem)] rounded-2xl border border-white/10 bg-slate-900/95 p-4 text-center font-sans text-xs leading-relaxed font-medium
+		class="animate-in fade-in zoom-in pointer-events-none fixed z-[9999] max-w-[280px] max-w-[calc(100vw-2rem)] rounded-xl border border-white/10 bg-slate-900/96 p-3.5 text-center font-sans text-xs leading-relaxed font-medium
                whitespace-normal text-white shadow-2xl
                backdrop-blur-xl duration-200 sm:max-w-[320px] sm:p-5 sm:text-sm"
 		style="left: {tooltipX}px; top: {tooltipY}px; transform: translateX(-50%) {verticalTransform};"
@@ -469,13 +539,18 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="animate-in fade-in fixed inset-0 z-[1000] flex items-center justify-center p-2 duration-300 sm:p-6 lg:p-8"
+	class="animate-in fade-in fixed inset-0 z-[1000] flex items-center justify-center p-2 duration-200 sm:p-5 lg:p-8"
 	onclick={closePopup}
 >
-	<div class="absolute inset-0 bg-slate-950/90 backdrop-blur-2xl transition-opacity"></div>
+	<div class="absolute inset-0 bg-slate-950/88 backdrop-blur-xl transition-opacity"></div>
 
 	<div
-		class="rt-panel animate-in zoom-in-95 relative flex max-h-[96dvh] w-full max-w-6xl flex-col overflow-hidden rounded-xl transition-all duration-500 sm:max-h-[92dvh]"
+		bind:this={modalElement}
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="card-modal-title"
+		tabindex="-1"
+		class="rt-panel animate-in zoom-in-95 relative flex max-h-[96dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl transition-all duration-300 sm:max-h-[92dvh]"
 		onclick={(e) => {
 			e.stopPropagation();
 			activeTooltip = '';
@@ -483,16 +558,18 @@
 	>
 		<!-- Mobile Header -->
 		<div
-			class="flex items-center justify-between border-b border-white/5 bg-slate-950/50 p-4 backdrop-blur-md sm:p-5 lg:hidden"
+			class="flex items-center justify-between border-b border-white/8 bg-slate-950/55 p-3 lg:hidden"
 		>
 			<div class="flex items-center gap-3">
-				<div class="h-2 w-2 animate-pulse rounded-full bg-cyan-500"></div>
-				<span class="text-xs font-black tracking-[0.2em] text-white uppercase">{card.code}</span>
+				<div class="h-1.5 w-1.5 rounded-full bg-cyan-300"></div>
+				<span class="font-display text-xs font-semibold tracking-[0.12em] text-slate-200"
+					>{card.code}</span
+				>
 			</div>
 			<button
-				class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition-transform active:scale-90"
+				class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-slate-300 transition hover:bg-white/[0.07] hover:text-white active:scale-95"
 				onclick={closePopup}
-				aria-label="Close Modal"
+				aria-label="ปิดรายละเอียดการ์ด"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -508,9 +585,9 @@
 
 		<!-- Desktop Close -->
 		<button
-			class="absolute top-5 right-5 z-50 hidden h-12 w-12 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 transition-all duration-300 hover:bg-rose-500 hover:text-white lg:flex"
+			class="absolute top-5 right-5 z-50 hidden h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-slate-950/55 text-slate-400 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white lg:flex"
 			onclick={closePopup}
-			aria-label="Close Modal"
+			aria-label="ปิดรายละเอียดการ์ด"
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
@@ -524,13 +601,13 @@
 		</button>
 
 		<div class="custom-scrollbar min-h-0 flex-1 overflow-y-auto" onscroll={hideTooltip}>
-			<div class="grid lg:grid-cols-[minmax(300px,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
+			<div class="grid lg:grid-cols-[minmax(290px,0.82fr)_minmax(0,1.18fr)] lg:items-stretch">
 				<!-- Image Section -->
 				<div
-					class="group relative flex items-center justify-center border-b border-white/5 bg-slate-950/40 p-5 sm:p-8 lg:border-r lg:border-b-0 lg:p-10 xl:p-12"
+					class="group relative flex items-center justify-center border-b border-white/8 bg-slate-950/35 p-5 sm:p-7 lg:border-r lg:border-b-0 lg:p-9"
 				>
 					<div
-						class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/5 opacity-50"
+						class="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(118,223,205,0.06),transparent_55%)]"
 					></div>
 					<div class="relative z-10 w-full max-w-[250px] sm:max-w-[340px] lg:max-w-[380px]">
 						<img
@@ -542,23 +619,23 @@
 							decoding="async"
 							fetchpriority="high"
 							draggable="false"
-							class="pointer-events-none h-auto w-full rounded-xl border border-white/5 object-contain shadow-[0_30px_70px_rgba(0,0,0,0.6)] transition-transform duration-500 group-hover:scale-[1.01]"
+							class="pointer-events-none h-auto w-full rounded-xl border border-white/8 object-contain shadow-[0_24px_60px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:scale-[1.01]"
 						/>
 					</div>
 				</div>
 
 				<!-- Info Section -->
-				<div class="space-y-7 bg-slate-900/50 p-5 backdrop-blur-3xl sm:p-8 lg:p-10 xl:p-12">
+				<div class="space-y-7 bg-slate-900/35 p-5 sm:p-7 lg:p-9 lg:pr-16">
 					<div class="space-y-5">
 						<div class="flex flex-wrap items-center gap-2.5">
 							<span
-								class="rounded-lg border border-cyan-400/20 bg-cyan-400/10 px-3.5 py-1.5 text-[10px] font-black tracking-[0.2em] text-cyan-300 uppercase"
+								class="rounded-lg border border-cyan-300/18 bg-cyan-300/[0.07] px-3 py-1.5 font-display text-[10px] font-semibold tracking-[0.12em] text-cyan-200"
 							>
 								{card.code}
 							</span>
 							{#if card.set_name}
 								<span
-									class="rounded-lg border border-white/10 bg-white/5 px-3.5 py-1.5 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase"
+									class="rounded-lg border border-white/8 bg-white/[0.025] px-3 py-1.5 font-display text-[10px] font-semibold tracking-[0.08em] text-slate-400"
 								>
 									{card.set_name}
 								</span>
@@ -566,9 +643,10 @@
 						</div>
 
 						<div class="flex items-start justify-between gap-3">
-							<div class="space-y-2 min-w-0">
+							<div class="min-w-0 space-y-2">
 								<h2
-									class="text-2xl leading-tight font-black tracking-tight break-words text-white uppercase italic sm:text-3xl lg:text-[2.35rem]"
+									id="card-modal-title"
+									class="font-display text-2xl leading-tight font-bold tracking-[-0.035em] break-words text-white sm:text-3xl lg:text-[2.35rem]"
 								>
 									{card.name_en}
 								</h2>
@@ -582,17 +660,18 @@
 							</div>
 							<button
 								type="button"
-								class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition duration-200 cursor-pointer shadow-md select-none outline-none {isReportOpen ? 'border-amber-400 bg-amber-400/15 text-amber-300 shadow-amber-500/10' : 'border-slate-700 bg-slate-900/50 text-slate-400 hover:border-slate-500 hover:text-white'}"
+								class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border shadow-md transition duration-200 select-none focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 {isReportOpen
+									? 'border-amber-400 bg-amber-400/15 text-amber-300 shadow-amber-500/10'
+									: 'border-slate-700 bg-slate-900/50 text-slate-400 hover:border-slate-500 hover:text-white'}"
 								onclick={() => (isReportOpen = !isReportOpen)}
-								title="Report Issue"
+								title="รายงานปัญหา"
+								aria-label="รายงานปัญหาของ {card.name_en}"
 							>
 								i
 							</button>
 						</div>
 
-						<div
-							class="rounded-2xl border border-white/10 bg-slate-950/45 p-2 shadow-inner shadow-black/20"
-						>
+						<div class="rounded-xl border border-white/8 bg-slate-950/35 p-2">
 							<div class="flex flex-wrap items-center gap-2">
 								<div
 									class="flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-cyan-300/10 bg-cyan-300/8 px-3 py-2"
@@ -624,7 +703,7 @@
 											alt="{card.rarity} rarity"
 										/>
 									{/if}
-									<span class="font-bold">{card.rarity || 'No Rarity'}</span>
+									<span class="font-bold">{card.rarity || 'ไม่ระบุความหายาก'}</span>
 								</div>
 
 								{#if card.domains?.length > 0}
@@ -637,7 +716,9 @@
 												class="h-5 w-5 object-contain"
 												alt={domain}
 											/>
-											<span class="text-xs font-black tracking-wider text-white uppercase">{domain}</span>
+											<span class="text-xs font-black tracking-wider text-white uppercase"
+												>{domain}</span
+											>
 										</div>
 									{/each}
 								{/if}
@@ -667,7 +748,7 @@
 						</div>
 
 						{#if card.tags?.length > 0}
-							<div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+							<div class="rounded-xl border border-white/8 bg-white/[0.02] p-3.5">
 								<div class="flex flex-wrap gap-2">
 									{#each card.tags ?? [] as tag}
 										<span
@@ -690,7 +771,7 @@
 										: 'border border-white/5 bg-white/5 text-slate-400 hover:bg-white/10'}"
 									onclick={() => (isEditing = !isEditing)}
 								>
-									{isEditing ? 'Cancel Edit' : 'Modify Core'}
+									{isEditing ? 'ยกเลิกการแก้ไข' : 'แก้ไขข้อมูลหลัก'}
 								</button>
 								{#if isEditing}
 									<button
@@ -698,12 +779,15 @@
 										onclick={handleSave}
 										disabled={isSaving}
 									>
-										{isSaving ? 'Processing...' : 'Sync Changes'}
+										{isSaving ? 'กำลังดำเนินการ...' : 'บันทึกการแก้ไข'}
 									</button>
 								{/if}
 							</div>
-						{/if}						{#if showAutoSkill && onAutoSkill}
-							<div class="rounded-2xl border border-cyan-400/20 bg-cyan-950/20 p-3 shadow-lg shadow-cyan-500/5 mb-4">
+						{/if}
+						{#if showAutoSkill && onAutoSkill}
+							<div
+								class="mb-4 rounded-2xl border border-cyan-400/20 bg-cyan-950/20 p-3 shadow-lg shadow-cyan-500/5"
+							>
 								<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 									<div>
 										<div class="text-xs font-bold text-cyan-400">
@@ -715,7 +799,7 @@
 									</div>
 									<button
 										type="button"
-										class="inline-flex min-h-10 items-center justify-center rounded-lg bg-cyan-400 px-4 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-300 shadow-md shadow-cyan-500/10"
+										class="inline-flex min-h-10 items-center justify-center rounded-lg bg-cyan-400 px-4 text-xs font-black tracking-widest text-slate-950 uppercase shadow-md shadow-cyan-500/10 transition hover:bg-cyan-300"
 										onclick={onAutoSkill}
 									>
 										🪄 ใช้สกิล
@@ -724,14 +808,18 @@
 							</div>
 						{/if}
 						{#if isReportOpen}
-							<div class="rounded-2xl border border-amber-500/20 bg-amber-950/15 p-4 mt-3">
-								<div class="text-xs font-black text-amber-400 uppercase tracking-widest mb-1.5">
-									Report Issue
+							<div class="mt-3 rounded-2xl border border-amber-500/20 bg-amber-950/15 p-4">
+								<div class="mb-1.5 text-xs font-black tracking-widest text-amber-400 uppercase">
+									รายงานปัญหา
 								</div>
 								{#if reportNotice}
-									<div class="text-xs font-bold text-cyan-100 bg-cyan-950/30 p-2 rounded border border-cyan-400/20 mb-3">{reportNotice}</div>
+									<div
+										class="mb-3 rounded border border-cyan-400/20 bg-cyan-950/30 p-2 text-xs font-bold text-cyan-100"
+									>
+										{reportNotice}
+									</div>
 								{:else}
-									<div class="text-[11px] font-semibold text-slate-500 mb-3">
+									<div class="mb-3 text-[11px] font-semibold text-slate-500">
 										แจ้งคำแปล รูป หรือข้อมูลการ์ดที่ผิดพลาดในระบบ
 									</div>
 								{/if}
@@ -740,11 +828,11 @@
 										bind:value={reportType}
 										class="min-h-10 rounded-lg border border-white/10 bg-slate-950 px-3 text-xs font-bold text-white focus:border-cyan-400/50 focus:outline-none"
 									>
-										<option value="translation">Translation (คำแปลภาษาไทย)</option>
-										<option value="card_data">Card data (สเตตัสการ์ด)</option>
-										<option value="image">Image (รูปภาพการ์ด)</option>
-										<option value="rules_text">Rules text (กติกาการ์ด)</option>
-										<option value="other">Other (อื่นๆ)</option>
+										<option value="translation">คำแปลภาษาไทย</option>
+										<option value="card_data">ข้อมูลและค่าสถานะการ์ด</option>
+										<option value="image">รูปภาพการ์ด</option>
+										<option value="rules_text">ข้อความกติกาการ์ด</option>
+										<option value="other">อื่นๆ</option>
 									</select>
 									<textarea
 										bind:value={reportMessage}
@@ -758,7 +846,7 @@
 										disabled={reportMessage.trim().length < 4 || isReportSubmitting}
 										onclick={submitReport}
 									>
-										{isReportSubmitting ? 'Sending...' : 'Submit Report'}
+										{isReportSubmitting ? 'กำลังส่ง...' : 'ส่งรายงาน'}
 									</button>
 								</div>
 							</div>
@@ -766,21 +854,29 @@
 
 						<div class="border-b border-white/5 pb-4">
 							<div class="flex items-center justify-between">
-								<span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-									{activeLang === 'th' ? 'Localized Intel (TH)' : 'Source Transmission (EN)'}
+								<span class="text-xs font-bold tracking-wide text-slate-500">
+									{activeLang === 'th' ? 'คำแปลภาษาไทย' : 'ข้อความการ์ดภาษาอังกฤษ'}
 								</span>
-								<div class="flex rounded-lg border border-white/10 bg-slate-950/60 p-0.5 shadow-inner">
+								<div
+									class="flex rounded-lg border border-white/10 bg-slate-950/60 p-0.5 shadow-inner"
+								>
 									<button
 										type="button"
-										class="rounded-md px-3.5 py-1 text-xs font-black transition-all duration-200 cursor-pointer {activeLang === 'th' ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white'}"
-										onclick={() => activeLang = 'th'}
+										class="cursor-pointer rounded-md px-3.5 py-1 text-xs font-black transition-all duration-200 {activeLang ===
+										'th'
+											? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+											: 'text-slate-400 hover:text-white'}"
+										onclick={() => (activeLang = 'th')}
 									>
 										TH
 									</button>
 									<button
 										type="button"
-										class="rounded-md px-3.5 py-1 text-xs font-black transition-all duration-200 cursor-pointer {activeLang === 'en' ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white'}"
-										onclick={() => activeLang = 'en'}
+										class="cursor-pointer rounded-md px-3.5 py-1 text-xs font-black transition-all duration-200 {activeLang ===
+										'en'
+											? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+											: 'text-slate-400 hover:text-white'}"
+										onclick={() => (activeLang = 'en')}
 									>
 										EN
 									</button>
@@ -790,9 +886,7 @@
 
 						{#if activeLang === 'th'}
 							<div class="group/thai relative pl-5 sm:pl-7">
-								<div
-									class="absolute top-0 bottom-0 left-0 w-1 rounded-full bg-gradient-to-b from-cyan-500 to-violet-500 transition-shadow group-hover/thai:shadow-[0_0_15px_rgba(6,182,212,0.5)]"
-								></div>
+								<div class="absolute top-0 bottom-0 left-0 w-0.5 rounded-full bg-cyan-300/70"></div>
 								{#if isEditing && canEdit}
 									<textarea
 										bind:value={tempAbilityTh}
@@ -801,7 +895,7 @@
 								{:else}
 									<!-- svelte-ignore a11y_no_static_element_interactions, a11y_mouse_events_have_key_events -->
 									<div
-										class="text-lg leading-relaxed font-black tracking-tight break-words text-white sm:text-xl"
+										class="text-lg leading-relaxed font-semibold tracking-tight break-words text-slate-100 sm:text-xl"
 										onmouseover={showTooltip}
 										onmouseout={handleMouseOut}
 										onfocusin={showTooltip}

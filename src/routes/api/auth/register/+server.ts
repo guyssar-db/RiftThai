@@ -37,7 +37,7 @@ export const POST = async ({ request, getClientAddress }) => {
 		return json(registerResponse);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : '';
-		if (message === 'Email already exists') return json(registerResponse);
-		return json({ error: message || 'Register failed' }, { status: 400 });
+		if (message === 'อีเมลนี้ถูกใช้งานแล้ว') return json(registerResponse);
+		return json({ error: message || 'สมัครสมาชิกไม่สำเร็จ' }, { status: 400 });
 	}
 };

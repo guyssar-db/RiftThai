@@ -21,20 +21,27 @@
 		} | null;
 	};
 
-	let { active = '' } = $props<{ active?: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '' }>();
+	let { active = '' } = $props<{
+		active?: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '';
+	}>();
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
 	let accountOpen = $state(false);
 
 	let menuItems = $derived<MenuItem[]>([
-		{ label: 'Cards', href: '/', active: active === 'cards', icon: 'cards' },
-		{ label: 'Rules', href: '/rules', active: active === 'rules', icon: 'rules' },
-		{ label: 'Domains', href: '/domains', active: active === 'domains', icon: 'domains' },
-		{ label: 'Q&A', href: '/qa', active: active === 'qa', icon: 'qa' },
-		{ label: 'Deck', href: '/deck', active: active === 'deck', icon: 'deck' },
-		{ label: 'Collection', href: '/collection', active: active === 'collection', icon: 'collection' },
-		{ label: 'Donate', href: '/donate', active: active === 'donate', icon: 'donate' },
-		{ label: 'Official', href: 'https://riftbound.com', external: true, icon: 'official' }
+		{ label: 'การ์ด', href: '/', active: active === 'cards', icon: 'cards' },
+		{ label: 'กติกา', href: '/rules', active: active === 'rules', icon: 'rules' },
+		{ label: 'โดเมน', href: '/domains', active: active === 'domains', icon: 'domains' },
+		{ label: 'ถาม–ตอบ', href: '/qa', active: active === 'qa', icon: 'qa' },
+		{ label: 'เด็ค', href: '/deck', active: active === 'deck', icon: 'deck' },
+		{
+			label: 'การ์ดสะสม',
+			href: '/collection',
+			active: active === 'collection',
+			icon: 'collection'
+		},
+		{ label: 'สนับสนุน', href: '/donate', active: active === 'donate', icon: 'donate' },
+		{ label: 'เว็บไซต์ทางการ', href: 'https://riftbound.com', external: true, icon: 'official' }
 	]);
 
 	onMount(() => {
@@ -70,11 +77,19 @@
 </script>
 
 <aside
-	class="sticky top-0 z-[250] hidden h-dvh min-h-dvh flex-col border-r border-cyan-300/10 bg-[#07111f]/92 px-3 py-6 shadow-2xl shadow-black/25 backdrop-blur-xl lg:flex"
+	class="rt-desktop-sidebar sticky top-0 z-[250] hidden h-dvh min-h-dvh flex-col border-r border-white/8 bg-slate-950/88 px-3 py-4 backdrop-blur-xl lg:flex"
 >
+	<a
+		href="/"
+		class="hidden h-12 items-center rounded-xl border border-white/8 bg-white/[0.025] px-3 text-white transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.04] xl:flex"
+		aria-label="RiftThai home"
+	>
+		<span class="font-display text-sm font-bold tracking-[0.08em]"
+			>RIFT<span class="rt-brand-accent">THAI</span></span
+		>
+	</a>
 
-
-	<nav class="flex flex-1 flex-col gap-1.5 pt-12" aria-label="Desktop navigation">
+	<nav class="flex flex-1 flex-col gap-1.5 pt-5" aria-label="Desktop navigation">
 		{#each menuItems as item}
 			<a
 				href={item.href}
@@ -83,18 +98,18 @@
 				aria-label={item.label}
 				title={item.label}
 				class="group relative flex h-12 w-full items-center justify-center rounded-xl text-[11px] font-black tracking-widest uppercase transition xl:justify-start xl:gap-3 xl:px-3 {item.active
-					? 'border border-cyan-300/20 bg-cyan-300/10 text-cyan-200 shadow-[0_0_15px_rgba(83,234,253,0.1)]'
-					: 'text-slate-400 hover:bg-white/5 hover:text-white'} {item.external
-					? 'border border-white/10 bg-white/5 text-white hover:bg-white/10'
+					? 'border border-cyan-300/18 bg-cyan-300/[0.08] text-cyan-100'
+					: 'border border-transparent text-slate-400 hover:border-white/8 hover:bg-white/[0.035] hover:text-white'} {item.external
+					? 'border border-white/8 bg-white/[0.025] text-slate-200 hover:bg-white/[0.05]'
 					: ''}"
 			>
 				{#if item.active}
-					<span class="absolute -left-1.5 h-6 w-1 rounded-full bg-cyan-400 xl:-left-3"></span>
+					<span class="absolute -left-1 h-5 w-0.5 rounded-full bg-cyan-300 xl:-left-3"></span>
 				{/if}
 				<span
 					class="grid h-8 w-8 shrink-0 place-items-center rounded-lg transition {item.active
-						? 'bg-cyan-300/15 text-cyan-300'
-						: 'bg-white/5 text-cyan-200 group-hover:bg-cyan-300/10'}"
+						? 'bg-cyan-300/12 text-cyan-200'
+						: 'bg-white/[0.035] text-slate-400 group-hover:text-slate-100'}"
 				>
 					{#if item.icon === 'cards'}
 						<svg
@@ -179,7 +194,9 @@
 							stroke-linecap="round"
 							stroke-linejoin="round"
 						>
-							<path d="M12 21s-7-4.4-9.2-8.6C1 8.9 3.2 5 7 5c2 0 3.4 1 5 2.8C13.6 6 15 5 17 5c3.8 0 6 3.9 4.2 7.4C19 16.6 12 21 12 21Z" />
+							<path
+								d="M12 21s-7-4.4-9.2-8.6C1 8.9 3.2 5 7 5c2 0 3.4 1 5 2.8C13.6 6 15 5 17 5c3.8 0 6 3.9 4.2 7.4C19 16.6 12 21 12 21Z"
+							/>
 						</svg>
 					{:else if item.icon === 'collection'}
 						<svg
@@ -196,7 +213,6 @@
 							<path d="M6 8h6" />
 							<path d="M6 12h6" />
 						</svg>
-
 					{:else}
 						<svg
 							class="h-5 w-5"
@@ -227,12 +243,14 @@
 			<button
 				type="button"
 				class="group flex h-12 w-full items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/8 text-[11px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white xl:justify-start xl:gap-3 xl:px-3"
-				aria-label="Profile"
-				title="Profile"
+				aria-label="โปรไฟล์"
+				title="โปรไฟล์"
 				aria-expanded={accountOpen}
 				onclick={() => (accountOpen = !accountOpen)}
 			>
-				<span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-300/10 text-cyan-200">
+				<span
+					class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-300/10 text-cyan-200"
+				>
 					<svg
 						class="h-5 w-5"
 						viewBox="0 0 24 24"
@@ -274,11 +292,11 @@
 					<a
 						href="/profile/{currentUser.profileSlug}"
 						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white xl:justify-start xl:px-3"
-						aria-label="Profile"
-						title="Profile"
+						aria-label="โปรไฟล์"
+						title="โปรไฟล์"
 					>
-						<span class="hidden xl:block">Profile</span>
-						<span class="xl:hidden">Profile</span>
+						<span class="hidden xl:block">โปรไฟล์</span>
+						<span class="xl:hidden">โปรไฟล์</span>
 					</a>
 					<a
 						href="/setting"
@@ -304,8 +322,8 @@
 				type="button"
 				class="flex h-12 w-full items-center justify-center rounded-xl bg-cyan-300 text-[11px] font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-200 xl:justify-start xl:gap-3 xl:px-3"
 				onclick={() => openAuth('login')}
-				aria-label="Login"
-				title="Login"
+				aria-label="เข้าสู่ระบบ"
+				title="เข้าสู่ระบบ"
 			>
 				<span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-950/15">
 					<svg
@@ -322,14 +340,14 @@
 						<path d="M15 12H3" />
 					</svg>
 				</span>
-				<span class="hidden xl:block">Login</span>
+				<span class="hidden xl:block">เข้าสู่ระบบ</span>
 			</button>
 			<button
 				type="button"
 				class="flex h-12 w-full items-center justify-center rounded-xl border border-cyan-300/20 text-[11px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10 xl:justify-start xl:gap-3 xl:px-3"
 				onclick={() => openAuth('register')}
-				aria-label="Register"
-				title="Register"
+				aria-label="สมัครสมาชิก"
+				title="สมัครสมาชิก"
 			>
 				<span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-300/10">
 					<svg
@@ -347,7 +365,7 @@
 						<path d="M22 11h-6" />
 					</svg>
 				</span>
-				<span class="hidden xl:block">Register</span>
+				<span class="hidden xl:block">สมัครสมาชิก</span>
 			</button>
 		{/if}
 	</div>

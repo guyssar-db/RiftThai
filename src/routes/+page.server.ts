@@ -15,5 +15,14 @@ export const load = async ({ cookies, url }) => {
 	const mightParam = url.searchParams.get('might');
 	const selectedMight = mightParam !== null && mightParam !== '' ? Number(mightParam) : null;
 
-	return { canEdit, searchTerm, selectedSet, selectedType, selectedDomains, viewMode, selectedEnergy, selectedMight };
+	return {
+		canEdit,
+		searchTerm,
+		selectedSet,
+		selectedType,
+		selectedDomains,
+		viewMode,
+		selectedEnergy,
+		selectedMight
+	};
 };

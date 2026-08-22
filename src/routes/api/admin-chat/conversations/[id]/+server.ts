@@ -5,15 +5,14 @@ import { getConversation, getMessages, markConversationRead } from '$lib/server/
 
 export const GET = async ({ cookies, params }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
-	if (!user.isAdmin) return json({ error: 'admin required' }, { status: 403 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
+	if (!user.isAdmin) return json({ error: 'ต้องมีสิทธิ์ผู้ดูแลระบบ' }, { status: 403 });
 
 	const conversation = await getConversation(params.id);
-	if (!conversation) return json({ error: 'conversation not found' }, { status: 404 });
+	if (!conversation) return json({ error: 'ไม่พบบทสนทนา' }, { status: 404 });
 
 	await markConversationRead(conversation.id);
 	const messages = await getMessages(conversation.id);
 
 	return json({ conversation, messages });
 };
-

@@ -67,7 +67,7 @@ export async function getMessages(conversationId: string) {
 
 export async function sendMessage(conversationId: string, sender: AuthUser, body: string) {
 	const cleanBody = body.trim();
-	if (!cleanBody) throw new Error('Message is required');
+	if (!cleanBody) throw new Error('กรุณากรอกข้อความ');
 
 	const now = new Date().toISOString();
 	const [message] = await dbRequest<AdminMessage[]>('/rest/v1/admin_messages?select=*', {
@@ -96,7 +96,7 @@ export async function sendMessage(conversationId: string, sender: AuthUser, body
 		})
 	});
 
-	if (!message) throw new Error('Could not send message');
+	if (!message) throw new Error('ส่งข้อความไม่สำเร็จ');
 	return message;
 }
 
@@ -113,21 +113,27 @@ export async function markConversationRead(conversationId: string) {
 		})
 	});
 
-	await dbRequest(`/rest/v1/admin_messages?conversation_id=eq.${conversationId}&sender_role=eq.user&read_at=is.null`, {
-		method: 'PATCH',
-		headers: {
-			Prefer: 'return=minimal'
-		},
-		body: JSON.stringify({
-			read_at: now
-		})
-	});
+	await dbRequest(
+		`/rest/v1/admin_messages?conversation_id=eq.${conversationId}&sender_role=eq.user&read_at=is.null`,
+		{
+			method: 'PATCH',
+			headers: {
+				Prefer: 'return=minimal'
+			},
+			body: JSON.stringify({
+				read_at: now
+			})
+		}
+	);
 }
 
 export function hasUnreadUserMessage(conversation: AdminConversation) {
 	if (!conversation.last_user_message_at) return false;
 	if (!conversation.last_admin_read_at) return true;
-	return new Date(conversation.last_user_message_at).getTime() > new Date(conversation.last_admin_read_at).getTime();
+	return (
+		new Date(conversation.last_user_message_at).getTime() >
+		new Date(conversation.last_admin_read_at).getTime()
+	);
 }
 
 async function dbRequest<T = unknown>(path: string, init: RequestInit = {}) {

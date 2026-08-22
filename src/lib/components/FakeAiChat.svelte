@@ -25,12 +25,11 @@
 	};
 
 	let pathname = $derived(page.url.pathname.replace(/\/$/, '') || '/');
-	let isHomePage = $derived(pathname === '/');
 	let isChatPage = $derived(pathname === '/chat');
 
 	let isOpen = $state(false);
 	let currentUser = $state<AuthSession['user']>(null);
-	
+
 	// Authentication modal state
 	let authModalOpen = $state(false);
 	let authMode = $state<'login' | 'register'>('login');
@@ -55,9 +54,9 @@
 
 	onMount(() => {
 		void loadSession();
-		
+
 		const syncAuth = () => void loadSession(true);
-		
+
 		const openAuthEvent = (event: Event) => {
 			const detail = (event as CustomEvent<{ mode?: 'login' | 'register' }>).detail;
 			authMode = detail?.mode === 'register' ? 'register' : 'login';
@@ -94,11 +93,11 @@
 		loginError = '';
 		if (authMode === 'register') {
 			if (loginPassword !== confirmPassword) {
-				loginError = 'Passwords do not match';
+				loginError = 'รหัสผ่านไม่ตรงกัน';
 				return;
 			}
 			if (!acceptedTerms) {
-				loginError = 'Please accept the Privacy Policy and Terms of Use';
+				loginError = 'กรุณายอมรับนโยบายความเป็นส่วนตัวและข้อกำหนดการใช้งาน';
 				return;
 			}
 		}
@@ -119,7 +118,7 @@
 				}
 			);
 			const data = (await response.json()) as AuthSession;
-			if (!response.ok) throw new Error(data.error || 'Auth failed');
+			if (!response.ok) throw new Error(data.error || 'ดำเนินการบัญชีไม่สำเร็จ');
 			if (authMode === 'register') {
 				registerSent = true;
 				loginPassword = '';
@@ -127,7 +126,7 @@
 				loginDisplayName = '';
 				return;
 			}
-			if (!data.user) throw new Error(data.error || 'Login failed');
+			if (!data.user) throw new Error(data.error || 'เข้าสู่ระบบไม่สำเร็จ');
 			currentUser = data.user;
 			authModalOpen = false;
 			window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
@@ -135,7 +134,7 @@
 			confirmPassword = '';
 			loginDisplayName = '';
 		} catch (err) {
-			loginError = err instanceof Error ? err.message : 'Auth failed';
+			loginError = err instanceof Error ? err.message : 'ดำเนินการบัญชีไม่สำเร็จ';
 		} finally {
 			authLoading = false;
 		}
@@ -146,7 +145,7 @@
 		error = '';
 		const response = await fetch('/api/user-chat/messages');
 		const data = await response.json();
-		if (!response.ok) throw new Error(data.error || 'Could not load messages');
+		if (!response.ok) throw new Error(data.error || 'โหลดข้อความไม่สำเร็จ');
 		return data.messages ?? [];
 	}
 
@@ -155,7 +154,7 @@
 		try {
 			messages = await fetchMessages();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Could not load messages';
+			error = err instanceof Error ? err.message : 'โหลดข้อความไม่สำเร็จ';
 		} finally {
 			loading = false;
 		}
@@ -209,10 +208,10 @@
 				body: JSON.stringify({ body: text })
 			});
 			const data = await response.json();
-			if (!response.ok) throw new Error(data.error || 'Could not send message');
+			if (!response.ok) throw new Error(data.error || 'ส่งข้อความไม่สำเร็จ');
 			messages = [...messages, data.message];
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Could not send message';
+			error = err instanceof Error ? err.message : 'ส่งข้อความไม่สำเร็จ';
 			body = text;
 		} finally {
 			sending = false;
@@ -221,7 +220,11 @@
 </script>
 
 <!-- Global authentication modal triggered by riftthai-open-auth events -->
-<Modal bind:open={authModalOpen} title="Account" subtitle={authMode === 'login' ? 'Login to RiftThai account' : 'Create RiftThai account'}>
+<Modal
+	bind:open={authModalOpen}
+	title="บัญชี"
+	subtitle={authMode === 'login' ? 'เข้าสู่ระบบบัญชี RiftThai' : 'สร้างบัญชี RiftThai'}
+>
 	<form
 		class="space-y-3"
 		onsubmit={(event) => {
@@ -241,7 +244,7 @@
 					loginError = '';
 				}}
 			>
-				Login
+				เข้าสู่ระบบ
 			</button>
 			<button
 				type="button"
@@ -254,44 +257,33 @@
 					loginError = '';
 				}}
 			>
-				Register
+				สมัครสมาชิก
 			</button>
 		</div>
 		{#if registerSent}
 			<div
 				class="rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200"
 			>
-				Check your email and click the verification link before logging in.
+				ตรวจสอบอีเมลแล้วกดลิงก์ยืนยันก่อนเข้าสู่ระบบ
 			</div>
 		{/if}
 		{#if authMode === 'register'}
-			<Input
-				bind:value={loginDisplayName}
-				autocomplete="name"
-				placeholder="Display Name"
-				required
-			/>
+			<Input bind:value={loginDisplayName} autocomplete="name" placeholder="ชื่อที่แสดง" required />
 		{/if}
-		<Input
-			bind:value={loginEmail}
-			type="email"
-			autocomplete="email"
-			placeholder="Email"
-			required
-		/>
+		<Input bind:value={loginEmail} type="email" autocomplete="email" placeholder="Email" required />
 		<div class="relative">
 			<Input
 				bind:value={loginPassword}
 				type={showPassword ? 'text' : 'password'}
 				autocomplete={authMode === 'register' ? 'new-password' : 'current-password'}
-				placeholder="Password"
+				placeholder="รหัสผ่าน"
 				required
 			/>
 			<button
 				type="button"
-				class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200 cursor-pointer"
-				aria-label={showPassword ? 'Hide password' : 'Show password'}
-				title={showPassword ? 'Hide password' : 'Show password'}
+				class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200"
+				aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+				title={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
 				onclick={() => (showPassword = !showPassword)}
 			>
 				{#if showPassword}
@@ -331,14 +323,14 @@
 					bind:value={confirmPassword}
 					type={showConfirmPassword ? 'text' : 'password'}
 					autocomplete="new-password"
-					placeholder="Confirm password"
+					placeholder="ยืนยันรหัสผ่าน"
 					required
 				/>
 				<button
 					type="button"
-					class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200 cursor-pointer"
-					aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-					title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+					class="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-slate-500 transition hover:bg-white/5 hover:text-cyan-200"
+					aria-label={showConfirmPassword ? 'ซ่อนรหัสผ่านยืนยัน' : 'แสดงรหัสผ่านยืนยัน'}
+					title={showConfirmPassword ? 'ซ่อนรหัสผ่านยืนยัน' : 'แสดงรหัสผ่านยืนยัน'}
 					onclick={() => (showConfirmPassword = !showConfirmPassword)}
 				>
 					{#if showConfirmPassword}
@@ -387,17 +379,23 @@
 				(authMode === 'register' &&
 					(!acceptedTerms || !loginPassword || loginPassword !== confirmPassword))}
 		>
-			{authMode === 'login' ? 'Login' : 'Create account'}
+			{authMode === 'login' ? 'เข้าสู่ระบบ' : 'สร้างบัญชี'}
 		</Button>
 		{#if authMode === 'register'}
 			<Checkbox bind:checked={acceptedTerms} required>
 				ฉันอ่านและยอมรับ
-				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy" target="_blank" rel="noopener noreferrer"
-					>นโยบายความเป็นส่วนตัว</a
+				<a
+					class="font-black text-cyan-300 transition hover:text-cyan-100"
+					href="/privacy"
+					target="_blank"
+					rel="noopener noreferrer">นโยบายความเป็นส่วนตัว</a
 				>
 				และ
-				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms" target="_blank" rel="noopener noreferrer"
-					>ข้อกำหนดการใช้งาน</a
+				<a
+					class="font-black text-cyan-300 transition hover:text-cyan-100"
+					href="/terms"
+					target="_blank"
+					rel="noopener noreferrer">ข้อกำหนดการใช้งาน</a
 				>
 			</Checkbox>
 		{/if}
@@ -405,36 +403,46 @@
 </Modal>
 
 {#if currentUser && !isChatPage}
-	<div
-		class="fixed z-[900] font-sans {isHomePage
-			? 'right-4 bottom-24 md:right-5 md:bottom-5'
-			: 'right-5 bottom-5'}"
-	>
+	<div class="fixed right-4 bottom-24 z-[900] font-sans md:right-5 md:bottom-5">
 		{#if isOpen}
 			<div
-				class="rt-panel mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-xl animate-in fade-in zoom-in-95 duration-200"
+				class="rt-panel animate-in fade-in zoom-in-95 mb-3 flex h-[min(560px,72dvh)] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-xl duration-200"
 			>
 				<!-- Header -->
-				<div class="flex items-center justify-between border-b border-white/10 bg-slate-950/55 px-4 py-3">
+				<div
+					class="flex items-center justify-between border-b border-white/10 bg-slate-950/55 px-4 py-3"
+				>
 					<div class="flex items-center gap-2">
-						<div class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950">
-							<svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+						<div
+							class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950"
+						>
+							<svg
+								class="h-4.5 w-4.5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="3"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
 								<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
 								<path d="M8 9h8" />
 								<path d="M8 13h5" />
 							</svg>
 						</div>
 						<div>
-							<div class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">Support</div>
+							<div class="text-xs font-black tracking-[0.22em] text-cyan-300 uppercase">
+								ติดต่อทีมงาน
+							</div>
 							<div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-								Chat with admin
+								คุยกับผู้ดูแล
 							</div>
 						</div>
 					</div>
 					<button
 						type="button"
-						class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5 cursor-pointer"
-						aria-label="Close chat"
+						class="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-white/10 text-slate-300 transition hover:bg-white/5"
+						aria-label="ปิดแชต"
 						onclick={toggleChat}
 					>
 						<svg
@@ -454,7 +462,7 @@
 				<!-- Message List -->
 				<div class="flex-1 space-y-3 overflow-y-auto bg-slate-950/35 p-3">
 					{#if loading && messages.length === 0}
-						<div class="py-8 text-center text-xs text-slate-500">Loading conversation...</div>
+						<div class="py-8 text-center text-xs text-slate-500">กำลังโหลดบทสนทนา...</div>
 					{:else if error && messages.length === 0}
 						<div class="rounded-lg border border-red-400/20 bg-red-500/10 p-3 text-xs text-red-200">
 							{error}
@@ -470,13 +478,17 @@
 						{#each messages as message}
 							<div class="flex {message.sender_role === 'user' ? 'justify-end' : 'justify-start'}">
 								<div
-									class="max-w-[86%] rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap {message.sender_role === 'user'
+									class="max-w-[86%] rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap {message.sender_role ===
+									'user'
 										? 'bg-cyan-300 text-slate-950'
 										: 'border border-white/10 bg-slate-800 text-slate-100'}"
 								>
 									{message.body}
 									<div class="mt-1 text-[9px] opacity-60">
-										{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+										{new Date(message.created_at).toLocaleTimeString([], {
+											hour: '2-digit',
+											minute: '2-digit'
+										})}
 									</div>
 								</div>
 							</div>
@@ -501,8 +513,8 @@
 						/>
 						<button
 							type="submit"
-							class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950 transition active:scale-95 cursor-pointer"
-							aria-label="Send"
+							class="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-lg bg-cyan-300 text-slate-950 transition active:scale-95"
+							aria-label="ส่งข้อความ"
 							disabled={sending || !body.trim()}
 						>
 							<svg
@@ -526,8 +538,8 @@
 		<!-- Floating bubble button -->
 		<button
 			type="button"
-			class="ml-auto grid h-14 w-14 place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300 text-slate-950 shadow-2xl shadow-cyan-950/40 transition hover:scale-105 active:scale-95 cursor-pointer"
-			aria-label="Open support chat"
+			class="ml-auto grid h-14 w-14 cursor-pointer place-items-center rounded-xl border border-cyan-300/30 bg-cyan-300 text-slate-950 shadow-2xl shadow-cyan-950/40 transition hover:scale-105 active:scale-95"
+			aria-label="เปิดแชตติดต่อทีมงาน"
 			aria-expanded={isOpen}
 			onclick={toggleChat}
 		>

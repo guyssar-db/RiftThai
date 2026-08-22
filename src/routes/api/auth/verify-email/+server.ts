@@ -14,7 +14,7 @@ export const GET = async ({ url }) => {
 		next.searchParams.set('status', 'error');
 		next.searchParams.set(
 			'message',
-			error instanceof Error ? error.message : 'Verification failed'
+			error instanceof Error ? error.message : 'ยืนยันอีเมลไม่สำเร็จ'
 		);
 	}
 
@@ -40,7 +40,7 @@ export const POST = async ({ request, getClientAddress }) => {
 		return json({ user });
 	} catch (error) {
 		return json(
-			{ error: error instanceof Error ? error.message : 'Verification failed' },
+			{ error: error instanceof Error ? error.message : 'ยืนยันอีเมลไม่สำเร็จ' },
 			{ status: 400 }
 		);
 	}

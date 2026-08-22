@@ -15,8 +15,9 @@ type CardRecord = {
 export async function POST({ request, cookies, getClientAddress }) {
 	try {
 		const user = await getAuthenticatedUser(cookies);
-		if (!user) return json({ success: false, message: 'login required' }, { status: 401 });
-		if (!user.isAdmin) return json({ success: false, message: 'admin required' }, { status: 403 });
+		if (!user) return json({ success: false, message: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
+		if (!user.isAdmin)
+			return json({ success: false, message: 'ต้องมีสิทธิ์ผู้ดูแลระบบ' }, { status: 403 });
 
 		const rateLimit = checkRateLimit(`update-card:${clientKey(getClientAddress())}:${user.id}`, {
 			windowMs: 60_000,
@@ -38,7 +39,7 @@ export async function POST({ request, cookies, getClientAddress }) {
 			ability_en.length > 5_000 ||
 			ability_th.length > 5_000
 		) {
-			return json({ success: false, message: 'Invalid card update payload' }, { status: 400 });
+			return json({ success: false, message: 'ข้อมูลอัปเดตการ์ดไม่ถูกต้อง' }, { status: 400 });
 		}
 
 		const filePath = path.join(process.cwd(), 'src/lib/data/cards.json');
@@ -47,12 +48,12 @@ export async function POST({ request, cookies, getClientAddress }) {
 
 		const cardIndex = cards.findIndex((c) => c.code === code);
 		if (cardIndex === -1) {
-			return json({ success: false, message: 'Card not found' }, { status: 404 });
+			return json({ success: false, message: 'ไม่พบการ์ด' }, { status: 404 });
 		}
 
 		const cardName = cards[cardIndex].name_en;
 		if (typeof cardName !== 'string') {
-			return json({ success: false, message: 'Invalid card data' }, { status: 500 });
+			return json({ success: false, message: 'ข้อมูลการ์ดไม่ถูกต้อง' }, { status: 500 });
 		}
 
 		// Update all cards with the same name
@@ -79,14 +80,11 @@ export async function POST({ request, cookies, getClientAddress }) {
 					}
 				});
 				fs.writeFileSync(staticFilePath, JSON.stringify(staticCards, null, 2));
-			} catch (e) {
-				console.error('Error updating static/cards.json:', e);
-			}
+			} catch {}
 		}
 
 		return json({ success: true });
-	} catch (error) {
-		console.error('Update error:', error);
+	} catch {
 		return json({ success: false, message: 'Internal server error' }, { status: 500 });
 	}
 }

@@ -3,6 +3,7 @@
 		maxMainDeckCards,
 		maxRuneCards,
 		maxSideboardCards,
+		requiredBattlefieldCards,
 		type DeckStats,
 		type DeckValidation
 	} from '$lib/utils/deck';
@@ -10,13 +11,23 @@
 	let { stats, validation }: { stats: DeckStats; validation: DeckValidation } = $props();
 
 	const items = $derived([
-		{ label: 'Main', value: stats.mainTotal, max: maxMainDeckCards },
-		{ label: 'Rune', value: stats.runeTotal, max: maxRuneCards },
-		{ label: 'Side', value: stats.sideboardTotal, max: maxSideboardCards }
+		{
+			label: 'สนาม',
+			value: stats.battlefieldTotal,
+			max: requiredBattlefieldCards,
+			optional: false
+		},
+		{ label: 'Main', value: stats.mainTotal, max: maxMainDeckCards, optional: false },
+		{ label: 'Rune', value: stats.runeTotal, max: maxRuneCards, optional: false },
+		{ label: 'สำรอง', value: stats.sideboardTotal, max: maxSideboardCards, optional: true }
 	]);
 
 	function percent(value: number, max: number) {
 		return `${Math.min(100, Math.max(0, (value / Math.max(1, max)) * 100))}%`;
+	}
+
+	function isComplete(item: (typeof items)[number]) {
+		return item.optional ? item.value <= item.max : item.value === item.max;
 	}
 </script>
 
@@ -34,17 +45,17 @@
 			</div>
 			<div class="min-w-0">
 				<div class="text-sm font-black tracking-widest text-white uppercase">
-					{validation.isReady ? 'Ready to play' : 'Deck still needs work'}
+					{validation.isReady ? 'เด็คพร้อมเล่น' : 'เด็คยังต้องแก้ไข'}
 				</div>
 				<div class="mt-0.5 truncate text-xs font-semibold text-slate-500">
 					{validation.isReady
 						? 'ผ่านเงื่อนไขหลักแล้ว'
-						: (validation.issues[0]?.message ?? 'Check deck requirements')}
+						: (validation.issues[0]?.message ?? 'ตรวจสอบเงื่อนไขของเด็ค')}
 				</div>
 			</div>
 		</div>
 
-		<div class="grid gap-2 sm:grid-cols-3 xl:min-w-[34rem]">
+		<div class="grid gap-2 sm:grid-cols-2 xl:min-w-[42rem] xl:grid-cols-4">
 			{#each items as item}
 				<div class="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
 					<div
@@ -54,7 +65,7 @@
 						<span
 							class={item.value > item.max
 								? 'text-rose-100'
-								: item.value === item.max
+								: isComplete(item)
 									? 'text-emerald-100'
 									: 'text-amber-100'}
 						>
@@ -65,7 +76,7 @@
 						<div
 							class="h-full rounded-full {item.value > item.max
 								? 'bg-rose-300'
-								: item.value === item.max
+								: isComplete(item)
 									? 'bg-emerald-300'
 									: 'bg-amber-200'}"
 							style={`width: ${percent(item.value, item.max)}`}

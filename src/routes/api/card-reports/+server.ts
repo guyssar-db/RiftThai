@@ -28,15 +28,14 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 		const message = typeof body?.message === 'string' ? body.message.trim().slice(0, 2000) : '';
 
 		if (!cardCode || !cardName || message.length < 4) {
-			return json({ error: 'card and report detail are required' }, { status: 400 });
+			return json({ error: 'กรุณาระบุการ์ดและรายละเอียดที่ต้องการรายงาน' }, { status: 400 });
 		}
 
 		const report = await createCardReport({ user, cardCode, cardName, reportType, message });
 		return json({ report });
 	} catch (error) {
-		console.error('Card report failed', error);
 		return json(
-			{ error: error instanceof Error ? error.message : 'Could not submit report' },
+			{ error: error instanceof Error ? error.message : 'ส่งรายงานไม่สำเร็จ' },
 			{ status: 500 }
 		);
 	}

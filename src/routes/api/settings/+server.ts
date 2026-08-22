@@ -5,7 +5,7 @@ import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/securit
 
 export const PATCH = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
 	const rateLimit = checkRateLimit(`settings:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 60_000,
@@ -37,7 +37,7 @@ export const PATCH = async ({ cookies, request, getClientAddress }) => {
 		return json({ settings: updatedUser.settings });
 	} catch (error) {
 		return json(
-			{ error: error instanceof Error ? error.message : 'Could not update settings' },
+			{ error: error instanceof Error ? error.message : 'บันทึกการตั้งค่าไม่สำเร็จ' },
 			{ status: 400 }
 		);
 	}
@@ -45,7 +45,7 @@ export const PATCH = async ({ cookies, request, getClientAddress }) => {
 
 export const POST = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
 	const rateLimit = checkRateLimit(`password:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 10 * 60_000,
@@ -67,7 +67,7 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 		return json({ ok: true });
 	} catch (error) {
 		return json(
-			{ error: error instanceof Error ? error.message : 'Could not change password' },
+			{ error: error instanceof Error ? error.message : 'เปลี่ยนรหัสผ่านไม่สำเร็จ' },
 			{ status: 400 }
 		);
 	}

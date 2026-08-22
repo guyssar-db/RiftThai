@@ -18,12 +18,12 @@
 	const domains: Domain[] = [
 		{
 			name: 'Fury',
-			colorName: 'Red',
+			colorName: 'แดง',
 			icon: 'rune_fury.svg',
 			accent: 'rose',
 			summary: 'เกมบุกเร็ว, ทำดาเมจ, Conquer, เสี่ยงเพื่อ tempo',
 			bestFor: 'ผู้เล่นที่ชอบกดดันคู่แข่งตั้งแต่ต้นเกม',
-			strengths: ['Aggression', 'Conquer', 'Damage', 'Accelerate', 'Assault'],
+			strengths: ['เกมบุก', 'Conquer', 'ดาเมจ', 'Accelerate', 'Assault'],
 			pros: [
 				'เปิดเกมเร็วและบังคับให้คู่แข่งต้องตอบรับแรงกดดัน',
 				'มีเครื่องมือช่วยชนะ battlefield ผ่าน damage, Assault และ Accelerate',
@@ -41,12 +41,12 @@
 		},
 		{
 			name: 'Calm',
-			colorName: 'Green',
+			colorName: 'เขียว',
 			icon: 'rune_calm.svg',
 			accent: 'emerald',
 			summary: 'ป้องกัน, Reaction, เคลื่อนย้าย, Hold battlefield',
 			bestFor: 'ผู้เล่นที่ชอบอ่านเกมและตอบโต้จังหวะสำคัญ',
-			strengths: ['Defense', 'Hold', 'Moving', 'Reaction', 'Tricks'],
+			strengths: ['ป้องกัน', 'Hold', 'เคลื่อนย้าย', 'Reaction', 'พลิกแพลง'],
 			pros: [
 				'ป้องกันยูนิตสำคัญและรักษาพื้นที่บน battlefield ได้ดี',
 				'มี Reaction และ trick ที่ทำให้คู่แข่งคำนวณ combat ยาก',
@@ -64,12 +64,12 @@
 		},
 		{
 			name: 'Mind',
-			colorName: 'Blue',
+			colorName: 'น้ำเงิน',
 			icon: 'rune_mind.svg',
 			accent: 'sky',
 			summary: 'วางแผนล่วงหน้า, Hidden, จั่วการ์ด, trick',
 			bestFor: 'ผู้เล่นที่ชอบเกมยาวและชนะด้วยความได้เปรียบ',
-			strengths: ['Plan Ahead', 'Hidden', 'Gear', 'Tricks', 'Draw'],
+			strengths: ['วางแผน', 'Hidden', 'Gear', 'พลิกแพลง', 'จั่วการ์ด'],
 			pros: [
 				'สร้าง card advantage และเล่นเกมยาวได้แข็งแรง',
 				'Hidden และ trick ทำให้คู่แข่งเดาทางยาก',
@@ -87,12 +87,12 @@
 		},
 		{
 			name: 'Body',
-			colorName: 'Orange',
+			colorName: 'ส้ม',
 			icon: 'rune_body.svg',
 			accent: 'amber',
 			summary: 'Ramp, buff, ยูนิตใหญ่, ชนะ combat',
 			bestFor: 'ผู้เล่นที่ชอบลง threat ใหญ่และปิดเกมด้วยพลัง',
-			strengths: ['Ramp', 'Buffs', 'Win Fights', 'Ready', 'High Might'],
+			strengths: ['เร่งทรัพยากร', 'บัฟ', 'ชนะการต่อสู้', 'Ready', 'Might สูง'],
 			pros: [
 				'มี ramp ช่วยลงการ์ดใหญ่หรือ threat สำคัญก่อนเวลา',
 				'ชนะ combat ได้ด้วย Might สูงและ buff ที่ชัดเจน',
@@ -110,12 +110,12 @@
 		},
 		{
 			name: 'Chaos',
-			colorName: 'Purple',
+			colorName: 'ม่วง',
 			icon: 'rune_chaos.svg',
 			accent: 'violet',
 			summary: 'discard, ใช้ trash, play pattern แปลก, disrupt',
 			bestFor: 'ผู้เล่นที่ชอบเกมพลิกแพลงและเล่นนอกกรอบ',
-			strengths: ['Discard', 'Trash', 'Selection', 'Hidden', 'Disruption'],
+			strengths: ['ทิ้งการ์ด', 'Trash', 'คัดเลือก', 'Hidden', 'รบกวน'],
 			pros: [
 				'มีมุมเล่นแปลกและ disrupt แผนคู่แข่งได้หลายทาง',
 				'ใช้ trash เป็นทรัพยากร ทำให้การ์ดที่เสียไปยังกลับมาสร้าง value ได้',
@@ -133,12 +133,12 @@
 		},
 		{
 			name: 'Order',
-			colorName: 'Yellow',
+			colorName: 'เหลือง',
 			icon: 'rune_order.svg',
 			accent: 'yellow',
 			summary: 'token, sacrifice, Deathknell, kill effect',
 			bestFor: 'ผู้เล่นที่ชอบสร้างบอร์ดกว้างและแลกทรัพยากรคุ้ม',
-			strengths: ['Tokens', 'Kill', 'Deathknell', 'Sacrifice', 'Symmetrical Effects'],
+			strengths: ['Token', 'Kill', 'Deathknell', 'Sacrifice', 'เอฟเฟกต์สมมาตร'],
 			pros: [
 				'สร้างบอร์ดกว้างและกดดันหลาย battlefield ได้ดี',
 				'เปลี่ยนการตายของยูนิตเป็น value ผ่าน Deathknell และ sacrifice payoff',
@@ -175,16 +175,29 @@
 				<a
 					href="/"
 					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 sm:w-auto sm:px-4"
-					aria-label="Back to gallery"
+					aria-label="กลับหน้าการ์ด"
 				>
-					<svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+					<svg
+						class="h-5 w-5 shrink-0"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
 						<path d="m15 18-6-6 6-6" />
 					</svg>
-					<span class="hidden text-xs font-black uppercase tracking-widest sm:ml-2 sm:block">Back</span>
+					<span class="hidden text-xs font-black tracking-widest uppercase sm:ml-2 sm:block"
+						>กลับ</span
+					>
 				</a>
 
-				<a href="/" class="min-w-0 shrink-0 text-xl font-black uppercase italic tracking-tight text-white sm:text-2xl">
-					Rift<span class="text-cyan-400">Thai</span>
+				<a
+					href="/"
+					class="min-w-0 shrink-0 text-xl font-black tracking-tight text-white uppercase italic sm:text-2xl"
+				>
+					Rift<span class="rt-brand-accent">Thai</span>
 				</a>
 			</div>
 
@@ -193,26 +206,26 @@
 	</nav>
 
 	<main class="rt-container py-8 sm:py-12 lg:py-14">
-		<header class="mb-10 grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.55fr)] lg:items-end">
+		<header
+			class="mb-10 grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.55fr)] lg:items-end"
+		>
 			<div class="max-w-4xl">
-				<p class="rt-kicker mb-3">
-					Riftbound Domain Guide
-				</p>
+				<p class="rt-kicker mb-3">คู่มือ Domain ของ Riftbound</p>
 				<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl lg:text-7xl">
 					จุดเด่นของแต่ละ <span class="text-cyan-400">Domain</span>
 				</h1>
 				<p class="rt-copy mt-5 max-w-2xl text-sm sm:text-base">
-					Domain คือแนวทางหลักของการ์ดและเด็คใน Riftbound แต่ละ Domain มี identity,
-					mechanic และจังหวะการเล่นต่างกัน การเลือกคู่ Domain จึงเป็นตัวกำหนดว่าเด็คจะบุกเร็ว,
-					ตั้งรับ, วางแผนยาว หรือแลกทรัพยากรแบบไหน
+					Domain คือแนวทางหลักของการ์ดและเด็คใน Riftbound แต่ละ Domain มี identity, mechanic
+					และจังหวะการเล่นต่างกัน การเลือกคู่ Domain จึงเป็นตัวกำหนดว่าเด็คจะบุกเร็ว, ตั้งรับ,
+					วางแผนยาว หรือแลกทรัพยากรแบบไหน
 				</p>
 			</div>
 
 			<div class="rt-panel rounded-xl p-5">
-				<div class="mb-4 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
+				<div class="mb-4 text-[10px] font-black tracking-[0.25em] text-slate-500 uppercase">
 					Beginner Picks
 				</div>
-				<div class="space-y-3 text-sm font-bold leading-relaxed text-slate-300">
+				<div class="space-y-3 text-sm leading-relaxed font-bold text-slate-300">
 					<p><span class="text-white">เริ่มง่าย:</span> Fury หรือ Body</p>
 					<p><span class="text-white">เล่นรับ:</span> Calm</p>
 					<p><span class="text-white">เกมยาว:</span> Mind</p>
@@ -223,7 +236,9 @@
 		</header>
 
 		<section class="rt-panel mb-12 overflow-hidden rounded-xl">
-			<div class="grid grid-cols-[0.75fr_1.25fr] border-b border-white/10 bg-white/5 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 sm:grid-cols-[0.6fr_1.4fr_1fr]">
+			<div
+				class="grid grid-cols-[0.75fr_1.25fr] border-b border-white/10 bg-white/5 px-4 py-3 text-[10px] font-black tracking-widest text-slate-500 uppercase sm:grid-cols-[0.6fr_1.4fr_1fr]"
+			>
 				<div>Domain</div>
 				<div>จุดเด่นหลัก</div>
 				<div class="hidden sm:block">เหมาะกับ</div>
@@ -234,18 +249,24 @@
 					class="grid grid-cols-[0.75fr_1.25fr] gap-3 border-b border-white/5 px-4 py-4 transition hover:bg-white/[0.03] sm:grid-cols-[0.6fr_1.4fr_1fr]"
 				>
 					<div class="flex min-w-0 items-center gap-3">
-						<img src="/images/icons/{domain.icon}" class="h-8 w-8 shrink-0 object-contain" alt="{domain.name} rune" />
+						<img
+							src="/images/icons/{domain.icon}"
+							class="h-8 w-8 shrink-0 object-contain"
+							alt="{domain.name} rune"
+						/>
 						<div class="min-w-0">
-							<div class="truncate text-sm font-black uppercase tracking-wide text-white">
+							<div class="truncate text-sm font-black tracking-wide text-white uppercase">
 								{domain.name}
 							</div>
-							<div class="text-[10px] font-black uppercase tracking-widest text-slate-600">
+							<div class="text-[10px] font-black tracking-widest text-slate-600 uppercase">
 								{domain.colorName}
 							</div>
 						</div>
 					</div>
-					<div class="text-xs font-bold leading-relaxed text-slate-300 sm:text-sm">{domain.summary}</div>
-					<div class="hidden text-xs font-medium leading-relaxed text-slate-500 sm:block">
+					<div class="text-xs leading-relaxed font-bold text-slate-300 sm:text-sm">
+						{domain.summary}
+					</div>
+					<div class="hidden text-xs leading-relaxed font-medium text-slate-500 sm:block">
 						{domain.bestFor}
 					</div>
 				</a>
@@ -260,32 +281,44 @@
 				>
 					<div class="mb-5 flex items-start justify-between gap-4">
 						<div class="flex min-w-0 items-center gap-4">
-							<div class="grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-white/10 bg-slate-950/70">
-								<img src="/images/icons/{domain.icon}" class="h-9 w-9 object-contain" alt="{domain.name} rune" />
+							<div
+								class="grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-white/10 bg-slate-950/70"
+							>
+								<img
+									src="/images/icons/{domain.icon}"
+									class="h-9 w-9 object-contain"
+									alt="{domain.name} rune"
+								/>
 							</div>
 							<div class="min-w-0">
-								<h2 class="text-2xl font-black uppercase italic tracking-tight text-white">
+								<h2 class="text-2xl font-black tracking-tight text-white uppercase italic">
 									{domain.name}
 								</h2>
-								<p class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
+								<p class="text-[10px] font-black tracking-[0.25em] text-slate-500 uppercase">
 									{domain.colorName} Domain
 								</p>
 							</div>
 						</div>
-						<span class="rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest {accentClasses[domain.accent]}">
+						<span
+							class="rounded-lg border px-3 py-1.5 text-[10px] font-black tracking-widest uppercase {accentClasses[
+								domain.accent
+							]}"
+						>
 							{domain.colorName}
 						</span>
 					</div>
 
 					<div class="mb-5 flex flex-wrap gap-2">
 						{#each domain.strengths as strength}
-							<span class="rounded-lg border border-white/10 bg-slate-950/60 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-300">
+							<span
+								class="rounded-lg border border-white/10 bg-slate-950/60 px-3 py-1.5 text-[10px] font-black tracking-widest text-slate-300 uppercase"
+							>
 								{strength}
 							</span>
 						{/each}
 					</div>
 
-					<div class="space-y-4 text-sm font-medium leading-7 text-slate-300">
+					<div class="space-y-4 text-sm leading-7 font-medium text-slate-300">
 						{#each domain.description as paragraph}
 							<p>{paragraph}</p>
 						{/each}
@@ -293,10 +326,10 @@
 
 					<div class="mt-5 grid gap-3 sm:grid-cols-2">
 						<div class="rounded-lg border border-emerald-400/15 bg-emerald-400/[0.06] p-4">
-							<div class="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-emerald-300">
+							<div class="mb-3 text-[10px] font-black tracking-[0.25em] text-emerald-300 uppercase">
 								ข้อดี
 							</div>
-							<ul class="space-y-2 text-xs font-medium leading-relaxed text-slate-300">
+							<ul class="space-y-2 text-xs leading-relaxed font-medium text-slate-300">
 								{#each domain.pros as pro}
 									<li class="flex gap-2">
 										<span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300"></span>
@@ -307,10 +340,10 @@
 						</div>
 
 						<div class="rounded-lg border border-rose-400/15 bg-rose-400/[0.06] p-4">
-							<div class="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-rose-300">
+							<div class="mb-3 text-[10px] font-black tracking-[0.25em] text-rose-300 uppercase">
 								ข้อเสีย
 							</div>
-							<ul class="space-y-2 text-xs font-medium leading-relaxed text-slate-300">
+							<ul class="space-y-2 text-xs leading-relaxed font-medium text-slate-300">
 								{#each domain.cons as con}
 									<li class="flex gap-2">
 										<span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-rose-300"></span>
@@ -321,8 +354,11 @@
 						</div>
 					</div>
 
-					<div class="mt-5 rounded-lg border border-white/10 bg-slate-950/55 p-4 text-xs font-bold leading-relaxed text-slate-400">
-						<span class="text-white">เหมาะกับ:</span> {domain.bestFor}
+					<div
+						class="mt-5 rounded-lg border border-white/10 bg-slate-950/55 p-4 text-xs leading-relaxed font-bold text-slate-400"
+					>
+						<span class="text-white">เหมาะกับ:</span>
+						{domain.bestFor}
 					</div>
 				</article>
 			{/each}

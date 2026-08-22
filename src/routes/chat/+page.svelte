@@ -11,7 +11,12 @@
 	let error = $state('');
 	let loading = $state(true);
 	let { data } = $props();
-	let quickTopics = ['Account verification issue', 'RAG answer looks wrong', 'Card data correction', 'Other support request'];
+	let quickTopics = [
+		'ปัญหาการยืนยันบัญชี',
+		'คำตอบจากระบบไม่ถูกต้อง',
+		'ขอแก้ไขข้อมูลการ์ด',
+		'เรื่องอื่นๆ'
+	];
 
 	$effect(() => {
 		void loadMessages();
@@ -25,7 +30,7 @@
 		error = '';
 		const response = await fetch('/api/user-chat/messages');
 		const data = await response.json();
-		if (!response.ok) throw new Error(data.error || 'Could not load messages');
+		if (!response.ok) throw new Error(data.error || 'โหลดข้อความไม่สำเร็จ');
 		return data.messages ?? [];
 	}
 
@@ -34,7 +39,7 @@
 		try {
 			messages = await fetchMessages();
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Could not load messages';
+			error = err instanceof Error ? err.message : 'โหลดข้อความไม่สำเร็จ';
 		} finally {
 			loading = false;
 		}
@@ -61,7 +66,7 @@
 		});
 		const data = await response.json();
 		if (!response.ok) {
-			error = data.error || 'Could not send message';
+			error = data.error || 'ส่งข้อความไม่สำเร็จ';
 			body = text;
 			return;
 		}
@@ -75,39 +80,63 @@
 
 <div class="rt-page-shell px-4 py-6 text-slate-100 sm:py-8">
 	<div class="mesh-gradient"></div>
-	<div class="rt-panel mx-auto flex min-h-[calc(100dvh-3rem)] max-w-4xl flex-col overflow-hidden rounded-xl sm:min-h-[82dvh]">
-		<header class="flex items-center justify-between gap-4 border-b border-white/10 bg-slate-950/55 px-4 py-4 sm:px-5">
+	<div
+		class="rt-panel mx-auto flex min-h-[calc(100dvh-3rem)] max-w-4xl flex-col overflow-hidden rounded-xl sm:min-h-[82dvh]"
+	>
+		<header
+			class="flex items-center justify-between gap-4 border-b border-white/10 bg-slate-950/55 px-4 py-4 sm:px-5"
+		>
 			<div class="flex min-w-0 items-center gap-3">
-				<div class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950">
-					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+				<div
+					class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-cyan-300 text-slate-950"
+				>
+					<svg
+						class="h-5 w-5"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
 						<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
 						<path d="M8 9h8" />
 						<path d="M8 13h5" />
 					</svg>
 				</div>
 				<div class="min-w-0">
-					<p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-300">Support</p>
-				<h1 class="mt-1 truncate text-xl font-black">Chat with admin</h1>
+					<p class="text-[10px] font-black tracking-[0.28em] text-cyan-300 uppercase">
+						ติดต่อทีมงาน
+					</p>
+					<h1 class="mt-1 truncate text-xl font-black">คุยกับผู้ดูแล</h1>
 					<p class="mt-1 truncate text-xs font-medium text-slate-500">{data.user.profileHandle}</p>
 				</div>
 			</div>
-			<a href="/" class="shrink-0 rounded-lg border border-white/10 px-3 py-2 text-xs font-black uppercase tracking-widest text-slate-300 transition hover:bg-white/5">Back</a>
+			<a
+				href="/"
+				class="shrink-0 rounded-lg border border-white/10 px-3 py-2 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5"
+				>กลับ</a
+			>
 		</header>
 
 		<div class="flex-1 space-y-3 overflow-y-auto bg-slate-950/35 p-4">
 			{#if loading}
-				<p class="text-sm text-slate-500">Loading...</p>
+				<p class="text-sm text-slate-500">กำลังโหลด...</p>
 			{:else if error}
-				<p class="rounded-lg border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-200">{error}</p>
+				<p class="rounded-lg border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-200">
+					{error}
+				</p>
 			{:else if messages.length === 0}
 				<div class="rounded-lg border border-white/10 bg-white/5 p-4">
-					<p class="text-sm font-bold text-white">Start a support conversation</p>
-					<p class="mt-1 text-sm leading-relaxed text-slate-400">Choose a topic or write your own message. Admin replies will appear here automatically.</p>
+					<p class="text-sm font-bold text-white">เริ่มสนทนากับทีมงาน</p>
+					<p class="mt-1 text-sm leading-relaxed text-slate-400">
+						เลือกหัวข้อหรือพิมพ์ข้อความของคุณ คำตอบจากผู้ดูแลจะแสดงที่นี่โดยอัตโนมัติ
+					</p>
 					<div class="mt-4 flex flex-wrap gap-2">
 						{#each quickTopics as topic}
 							<button
 								type="button"
-							class="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-200"
+								class="rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-200"
 								onclick={() => chooseTopic(topic)}
 							>
 								{topic}
@@ -118,9 +147,16 @@
 			{:else}
 				{#each messages as message}
 					<div class="flex {message.sender_role === 'user' ? 'justify-end' : 'justify-start'}">
-						<div class="max-w-[82%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-lg {message.sender_role === 'user' ? 'bg-cyan-300 text-slate-950 shadow-cyan-950/20' : 'border border-white/10 bg-slate-800 text-slate-100 shadow-black/20'}">
+						<div
+							class="max-w-[82%] rounded-lg px-3 py-2 text-sm leading-relaxed shadow-lg {message.sender_role ===
+							'user'
+								? 'bg-cyan-300 text-slate-950 shadow-cyan-950/20'
+								: 'border border-white/10 bg-slate-800 text-slate-100 shadow-black/20'}"
+						>
 							<div class="whitespace-pre-wrap">{message.body}</div>
-							<div class="mt-1 text-[10px] opacity-60">{new Date(message.created_at).toLocaleString()}</div>
+							<div class="mt-1 text-[10px] opacity-60">
+								{new Date(message.created_at).toLocaleString()}
+							</div>
 						</div>
 					</div>
 				{/each}
@@ -138,9 +174,12 @@
 				bind:value={body}
 				rows="1"
 				class="min-h-12 min-w-0 flex-1 resize-none rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-sm text-white focus:border-cyan-400/60 focus:outline-none"
-				placeholder="Message admin..."
+				placeholder="พิมพ์ข้อความถึงผู้ดูแล..."
 			></textarea>
-			<button class="rounded-lg bg-cyan-300 px-4 text-sm font-black uppercase tracking-widest text-slate-950 transition active:scale-95">Send</button>
+			<button
+				class="rounded-lg bg-cyan-300 px-4 text-sm font-black tracking-widest text-slate-950 uppercase transition active:scale-95"
+				>ส่ง</button
+			>
 		</form>
 	</div>
 </div>

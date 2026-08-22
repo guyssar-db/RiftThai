@@ -42,10 +42,24 @@
 			description:
 				'สรุป Domain ใน Riftbound ทั้ง Fury, Calm, Mind, Body, Chaos และ Order พร้อมจุดเด่น จุดอ่อน และแนวทางเล่นภาษาไทย'
 		},
+		'/deck': {
+			title: 'Deck Builder Riftbound ภาษาไทย - RiftThai',
+			description:
+				'สร้าง ตรวจสอบ และจัดการเด็ค Riftbound พร้อมค้นหาการ์ดภาษาไทยและตรวจสอบเงื่อนไขของเด็คในที่เดียว'
+		},
+		'/deck/browser': {
+			title: 'Riftbound Deck Browser - RiftThai',
+			description:
+				'ค้นหาและสำรวจเด็ค Riftbound จากชุมชน เพื่อดูแนวทางจัดเด็ค รายการการ์ด และไอเดียสำหรับการเล่น'
+		},
+		'/donate': {
+			title: 'สนับสนุน RiftThai - Donate',
+			description:
+				'ร่วมสนับสนุนการพัฒนา RiftThai ฐานข้อมูลการ์ด เครื่องมือสร้างเด็ค และเนื้อหา Riftbound ภาษาไทย'
+		},
 		'/collection': {
 			title: 'My Collection - RiftThai',
-			description:
-				'จัดการการ์ดสะสมในระบบ RiftThai ติดตามจำนวนการ์ดที่คุณมีเพื่อใช้ในระบบสร้างเด็ค'
+			description: 'จัดการการ์ดสะสมในระบบ RiftThai ติดตามจำนวนการ์ดที่คุณมีเพื่อใช้ในระบบสร้างเด็ค'
 		},
 		'/privacy': {
 			title: 'Privacy Policy - RiftThai',
@@ -64,23 +78,24 @@
 	let canonicalPath = $derived(publicPages[pathname] ? pathname : '/');
 	let canonicalUrl = $derived(`${siteUrl}${canonicalPath === '/' ? '/' : canonicalPath}`);
 	let robots = $derived(publicPages[pathname] ? 'index, follow' : 'noindex, nofollow');
-	let sideNavActive: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '' = $derived(
-		pathname === '/'
-			? 'cards'
-			: pathname.startsWith('/rules')
-				? 'rules'
-				: pathname.startsWith('/domains')
-					? 'domains'
-					: pathname.startsWith('/qa')
-						? 'qa'
-						: pathname.startsWith('/deck')
-							? 'deck'
-							: pathname.startsWith('/donate')
-								? 'donate'
-								: pathname.startsWith('/collection')
-									? 'collection'
-									: ''
-	);
+	let sideNavActive: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '' =
+		$derived(
+			pathname === '/'
+				? 'cards'
+				: pathname.startsWith('/rules')
+					? 'rules'
+					: pathname.startsWith('/domains')
+						? 'domains'
+						: pathname.startsWith('/qa')
+							? 'qa'
+							: pathname.startsWith('/deck')
+								? 'deck'
+								: pathname.startsWith('/donate')
+									? 'donate'
+									: pathname.startsWith('/collection')
+										? 'collection'
+										: ''
+		);
 	let cookieChoice = $state<'accepted' | 'declined' | null>(null);
 	let isHydrated = $state(false);
 	let showCookieNotice = $derived(isHydrated && cookieChoice === null);
@@ -161,14 +176,15 @@
 		checkingSession = true;
 		try {
 			const data = await getAuthSession<{ user?: unknown; error?: string }>(forceRefresh);
-			
+
 			const isLoggedIn = !!data.user;
 
 			if (data.error === 'banned') {
 				banNotice = null;
 				window.setTimeout(() => {
 					banNotice = {
-						message: 'บัญชีนี้ถูกระงับการใช้งานเนื่องจากละเมิดกฎกติกา (This account has been suspended.)',
+						message:
+							'บัญชีนี้ถูกระงับการใช้งานเนื่องจากละเมิดกฎกติกา (This account has been suspended.)',
 						type: 'error'
 					};
 				}, 0);
@@ -184,8 +200,7 @@
 				window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 			}
 			lastUserStatus = isLoggedIn;
-		} catch (err) {
-			console.error('Session check failed:', err);
+		} catch {
 		} finally {
 			checkingSession = false;
 		}
@@ -204,9 +219,7 @@
 			if ('caches' in window) {
 				await Promise.all((await caches.keys()).map((key) => caches.delete(key)));
 			}
-		} catch (error) {
-			console.warn('Could not remove legacy offline cache:', error);
-		}
+		} catch {}
 	}
 </script>
 
@@ -247,18 +260,12 @@
 </div>
 
 {#if !!$navigating}
-	<div class="fixed inset-x-0 top-0 z-[1000] h-1 overflow-hidden bg-slate-950">
-		<div class="h-full bg-cyan-300 animate-global-loading-bar"></div>
-	</div>
-	<div class="fixed inset-0 z-[990] grid place-items-center bg-black/80 p-4 backdrop-blur-sm animate-global-loading-fade">
-		<div class="rt-panel w-full max-w-xs rounded-xl p-5 text-center shadow-2xl shadow-black/40">
-			<div class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"></div>
-			<div class="mt-4 text-sm font-black uppercase tracking-widest text-white">Loading</div>
-		</div>
+	<div class="fixed inset-x-0 top-0 z-[1000] h-0.5 overflow-hidden bg-slate-950" aria-hidden="true">
+		<div class="animate-global-loading-bar h-full bg-cyan-300"></div>
 	</div>
 {/if}
 <div
-	class="min-h-dvh lg:grid lg:grid-cols-[5.75rem_minmax(0,1fr)] xl:grid-cols-[12rem_minmax(0,1fr)]"
+	class="rt-app-frame min-h-dvh lg:grid lg:grid-cols-[5.25rem_minmax(0,1fr)] xl:grid-cols-[13.5rem_minmax(0,1fr)]"
 >
 	<PcSideNav active={sideNavActive} />
 	<div class="min-w-0">
@@ -267,17 +274,23 @@
 </div>
 {#if showCookieNotice}
 	<div
-		class="fixed bottom-3 left-1/2 z-[940] w-[calc(100vw-1.5rem)] max-w-2xl -translate-x-1/2 rounded-xl border border-cyan-300/20 bg-slate-950/95 p-3 text-slate-100 shadow-2xl shadow-black/50 backdrop-blur sm:bottom-4"
+		class="fixed bottom-24 left-1/2 z-[940] w-[calc(100vw-1.5rem)] max-w-2xl -translate-x-1/2 rounded-xl border border-white/10 bg-slate-950/95 p-3 text-slate-100 shadow-2xl shadow-black/40 backdrop-blur sm:bottom-4"
 	>
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<p class="text-xs leading-relaxed font-semibold text-slate-300">
 				เราใช้คุกกี้ที่จำเป็นเพื่อให้ระบบบัญชีและการใช้งานเว็บทำงานได้ดีขึ้น อ่าน
-				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/privacy" target="_blank" rel="noopener noreferrer"
-					>นโยบายความเป็นส่วนตัว</a
+				<a
+					class="font-black text-cyan-300 transition hover:text-cyan-100"
+					href="/privacy"
+					target="_blank"
+					rel="noopener noreferrer">นโยบายความเป็นส่วนตัว</a
 				>
 				และ
-				<a class="font-black text-cyan-300 transition hover:text-cyan-100" href="/terms" target="_blank" rel="noopener noreferrer"
-					>ข้อกำหนดการใช้งาน</a
+				<a
+					class="font-black text-cyan-300 transition hover:text-cyan-100"
+					href="/terms"
+					target="_blank"
+					rel="noopener noreferrer">ข้อกำหนดการใช้งาน</a
 				>
 			</p>
 			<div class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
@@ -305,7 +318,7 @@
 		show={true}
 		message={banNotice.message}
 		type={banNotice.type}
-		onclose={() => banNotice = null}
+		onclose={() => (banNotice = null)}
 	/>
 {/if}
 
@@ -324,20 +337,7 @@
 		}
 	}
 
-	@keyframes global-loading-fade {
-		0% {
-			opacity: 0;
-		}
-		100% {
-			opacity: 1;
-		}
-	}
-
 	.animate-global-loading-bar {
 		animation: global-loading-bar 1.3s infinite linear;
-	}
-
-	.animate-global-loading-fade {
-		animation: global-loading-fade 0.16s ease-out both;
 	}
 </style>

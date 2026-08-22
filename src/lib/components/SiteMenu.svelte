@@ -21,21 +21,28 @@
 		} | null;
 	};
 
-	let { active = '' } = $props<{ active?: 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '' }>();
+	let { active = '' } = $props<{
+		active?: 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '';
+	}>();
 	let isOpen = $state(false);
 	let accountOpen = $state(false);
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
 
 	let menuItems = $derived<MenuItem[]>([
-		{ label: 'Rules', href: '/rules', active: active === 'rules', icon: 'rules' },
-		{ label: 'Domains', href: '/domains', active: active === 'domains', icon: 'domains' },
-		{ label: 'Q&A', href: '/qa', active: active === 'qa', icon: 'qa' },
-		{ label: 'Deck', href: '/deck', active: active === 'deck', icon: 'deck' },
-		{ label: 'Collection', href: '/collection', active: active === 'collection', icon: 'collection' },
-		{ label: 'Donate', href: '/donate', active: active === 'donate', icon: 'donate' },
+		{ label: 'กติกา', href: '/rules', active: active === 'rules', icon: 'rules' },
+		{ label: 'โดเมน', href: '/domains', active: active === 'domains', icon: 'domains' },
+		{ label: 'ถาม–ตอบ', href: '/qa', active: active === 'qa', icon: 'qa' },
+		{ label: 'เด็ค', href: '/deck', active: active === 'deck', icon: 'deck' },
+		{
+			label: 'การ์ดสะสม',
+			href: '/collection',
+			active: active === 'collection',
+			icon: 'collection'
+		},
+		{ label: 'สนับสนุน', href: '/donate', active: active === 'donate', icon: 'donate' },
 		// { label: 'Chat', href: '/chat' },
-		{ label: 'Official', href: 'https://riftbound.com', external: true, icon: 'official' }
+		{ label: 'เว็บไซต์ทางการ', href: 'https://riftbound.com', external: true, icon: 'official' }
 	]);
 
 	onMount(() => {
@@ -74,7 +81,7 @@
 
 <div class="relative">
 	<button
-		class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 transition hover:bg-white/10 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 lg:hidden"
+		class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/8 bg-white/[0.035] text-slate-200 transition hover:border-white/15 hover:bg-white/[0.06] focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/20 lg:hidden"
 		type="button"
 		aria-label="Open menu"
 		aria-expanded={isOpen}
@@ -110,7 +117,7 @@
 
 	{#if isOpen}
 		<div
-			class="rt-panel absolute top-14 right-0 z-[220] w-56 overflow-hidden rounded-xl p-2 lg:hidden"
+			class="rt-panel absolute top-14 right-0 z-[220] w-64 overflow-hidden rounded-xl p-2 lg:hidden"
 		>
 			{#each menuItems as item}
 				<a
@@ -118,8 +125,8 @@
 					target={item.external ? '_blank' : undefined}
 					rel={item.external ? 'noreferrer' : undefined}
 					class="flex min-h-12 items-center justify-between rounded-lg px-4 text-xs font-black tracking-widest uppercase transition {item.active
-						? 'bg-amber-200 text-slate-950'
-						: 'text-slate-300 hover:bg-white/5 hover:text-amber-100'}"
+						? 'bg-cyan-300/[0.1] text-cyan-100'
+						: 'text-slate-300 hover:bg-white/5 hover:text-white'}"
 					onclick={() => (isOpen = false)}
 				>
 					{item.label}
@@ -151,7 +158,9 @@
 				>
 					Guide / คู่มือ
 					<span class="relative flex h-2 w-2">
-						<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-300 opacity-75"></span>
+						<span
+							class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-300 opacity-75"
+						></span>
 						<span class="relative inline-flex h-2 w-2 rounded-full bg-cyan-400"></span>
 					</span>
 				</button>
@@ -201,7 +210,7 @@
 									accountOpen = false;
 								}}
 							>
-								Profile
+								โปรไฟล์
 							</a>
 							<a
 								href="/setting"
@@ -228,14 +237,14 @@
 						class="flex min-h-12 w-full items-center rounded-lg px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10"
 						onclick={() => openAuth('login')}
 					>
-						Login
+						เข้าสู่ระบบ
 					</button>
 					<button
 						type="button"
 						class="flex min-h-12 w-full items-center rounded-lg px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
 						onclick={() => openAuth('register')}
 					>
-						Register
+						สมัครสมาชิก
 					</button>
 				{/if}
 			</div>

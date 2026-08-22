@@ -11,7 +11,7 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 		const password = typeof body.password === 'string' ? body.password : '';
 
 		if (!email || !password) {
-			return json({ error: 'email and password are required' }, { status: 400 });
+			return json({ error: 'กรุณากรอกอีเมลและรหัสผ่าน' }, { status: 400 });
 		}
 
 		const ip = clientKey(getClientAddress());
@@ -55,7 +55,7 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 		});
 	} catch (error) {
 		return json(
-			{ error: error instanceof Error ? error.message : 'Login failed' },
+			{ error: error instanceof Error ? error.message : 'เข้าสู่ระบบไม่สำเร็จ' },
 			{ status: 401 }
 		);
 	}

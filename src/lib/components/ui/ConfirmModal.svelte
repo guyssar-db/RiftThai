@@ -15,7 +15,7 @@
 		title = 'Confirm action',
 		message = 'Are you sure you want to perform this action?',
 		confirmText = 'Confirm / ยืนยัน',
-		cancelText = 'Cancel / ยกเลิก',
+		cancelText = 'ยกเลิก',
 		confirmType = 'primary',
 		onconfirm,
 		oncancel
@@ -34,9 +34,13 @@
 
 {#if open}
 	<!-- Overlay Backdrop -->
-	<div class="fixed inset-0 z-[1000] grid place-items-center bg-[#030712]/80 p-4 backdrop-blur-md transition-opacity duration-200">
+	<div
+		class="fixed inset-0 z-[1000] grid place-items-center bg-[#030712]/80 p-4 backdrop-blur-md transition-opacity duration-200"
+	>
 		<!-- Modal Container -->
-		<div class="rt-panel border border-white/10 w-full max-w-md overflow-hidden rounded-xl shadow-[0_24px_64px_rgba(0,0,0,0.6)] animate-in fade-in zoom-in-95 duration-200">
+		<div
+			class="rt-panel animate-in fade-in zoom-in-95 w-full max-w-md overflow-hidden rounded-xl border border-white/10 shadow-[0_24px_64px_rgba(0,0,0,0.6)] duration-200"
+		>
 			<!-- Header -->
 			<div class="flex items-center justify-between border-b border-white/5 px-5 py-4">
 				<div>
@@ -44,7 +48,7 @@
 				</div>
 				<button
 					type="button"
-					class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-400 hover:text-white transition hover:bg-white/5 cursor-pointer focus:outline-none"
+					class="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white focus:outline-none"
 					aria-label="Close popup"
 					onclick={close}
 				>
@@ -64,23 +68,26 @@
 
 			<!-- Message body -->
 			<div class="px-5 py-6">
-				<p class="text-sm font-semibold text-slate-300 leading-relaxed whitespace-pre-line">{message}</p>
+				<p class="text-sm leading-relaxed font-semibold whitespace-pre-line text-slate-300">
+					{message}
+				</p>
 			</div>
 
 			<!-- Actions Footer -->
-			<div class="flex justify-end gap-3 bg-slate-950/40 border-t border-white/5 px-5 py-4">
+			<div class="flex justify-end gap-3 border-t border-white/5 bg-slate-950/40 px-5 py-4">
 				<button
 					type="button"
-					class="h-10 rounded-lg border border-white/10 bg-slate-950 px-4 text-xs font-black tracking-widest text-slate-400 uppercase transition hover:bg-white/5 hover:text-white cursor-pointer focus:outline-none"
+					class="h-10 cursor-pointer rounded-lg border border-white/10 bg-slate-950 px-4 text-xs font-black tracking-widest text-slate-400 uppercase transition hover:bg-white/5 hover:text-white focus:outline-none"
 					onclick={close}
 				>
 					{cancelText}
 				</button>
 				<button
 					type="button"
-					class="h-10 rounded-lg px-5 text-xs font-black tracking-widest uppercase transition cursor-pointer focus:outline-none {confirmType === 'danger'
-						? 'bg-rose-500 text-white hover:bg-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
-						: 'bg-cyan-300 text-slate-950 hover:bg-cyan-200 shadow-[0_0_15px_rgba(34,211,238,0.3)]'}"
+					class="h-10 cursor-pointer rounded-lg px-5 text-xs font-black tracking-widest uppercase transition focus:outline-none {confirmType ===
+					'danger'
+						? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.3)] hover:bg-rose-400'
+						: 'bg-cyan-300 text-slate-950 shadow-[0_0_15px_rgba(34,211,238,0.3)] hover:bg-cyan-200'}"
 					onclick={handleConfirm}
 				>
 					{confirmText}

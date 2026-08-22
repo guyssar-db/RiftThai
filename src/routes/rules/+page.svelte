@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AppFooter from '$lib/components/AppFooter.svelte';
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
+	import { standardRulesMetadata } from '$lib/utils/deck';
 
 	let activeTab = $state<'overview' | 'setup' | 'types' | 'phases' | 'combat'>('overview');
 	let activePhaseStep = $state(0);
@@ -31,7 +32,7 @@
 				<a
 					href="/"
 					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 sm:w-auto sm:px-4"
-					aria-label="Back to gallery"
+					aria-label="กลับหน้าการ์ด"
 				>
 					<svg
 						class="h-5 w-5 shrink-0"
@@ -45,7 +46,7 @@
 						<path d="m15 18-6-6 6-6" />
 					</svg>
 					<span class="hidden text-xs font-black tracking-widest uppercase sm:ml-2 sm:block"
-						>Back</span
+						>กลับ</span
 					>
 				</a>
 
@@ -53,7 +54,7 @@
 					href="/"
 					class="min-w-0 shrink-0 text-xl font-black tracking-tight text-white uppercase italic sm:text-2xl"
 				>
-					Rift<span class="text-cyan-400">Thai</span>
+					Rift<span class="rt-brand-accent">Thai</span>
 				</a>
 			</div>
 
@@ -65,7 +66,7 @@
 		<!-- Header -->
 		<header class="mb-8 border-b border-white/10 pb-6">
 			<div>
-				<p class="rt-kicker text-cyan-300">How to Play</p>
+				<p class="rt-kicker text-cyan-300">วิธีเล่น</p>
 				<h1 class="rt-heading text-3xl uppercase italic sm:text-5xl lg:text-6xl">
 					วิธีเล่นและ <span class="text-cyan-400">กฎกติกา</span>
 				</h1>
@@ -73,6 +74,55 @@
 					สรุปกติกาการเล่นเบื้องต้นของ Riftbound TCG อธิบายโครงสร้างเทิร์น ลำดับเฟส
 					และขั้นตอนการเปิดศึกชิงพื้นที่ในกระดานรบ
 				</p>
+
+				<div class="rt-panel-quiet mt-5 max-w-4xl rounded-xl border border-cyan-300/15 p-4 sm:p-5">
+					<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+						<div>
+							<div class="flex flex-wrap items-center gap-2">
+								<span class="rt-kicker">ตรวจเทียบกติกาทางการ</span>
+								<span
+									class="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-1 text-[9px] font-black tracking-widest text-emerald-200 uppercase"
+									>ล่าสุด</span
+								>
+							</div>
+							<p class="mt-2 text-xs leading-relaxed text-slate-300">
+								ตรวจเทียบล่าสุด {standardRulesMetadata.lastCheckedLabel} · ใช้กติกา Standard Constructed
+								และอัปเดต Vendetta ที่มีผลตั้งแต่ {standardRulesMetadata.effectiveLabel}
+							</p>
+						</div>
+						<div class="flex shrink-0 flex-wrap gap-2">
+							<a
+								class="rt-button rt-button-secondary h-10 min-h-10 px-3 text-[10px]"
+								href={standardRulesMetadata.rulesHubUrl}
+								target="_blank"
+								rel="noopener noreferrer">ศูนย์รวมกติกา ↗</a
+							>
+							<a
+								class="rt-button rt-button-ghost h-10 min-h-10 px-3 text-[10px]"
+								href={standardRulesMetadata.changelogUrl}
+								target="_blank"
+								rel="noopener noreferrer">อัปเดต Vendetta ↗</a
+							>
+						</div>
+					</div>
+					<div
+						class="mt-4 grid gap-2 text-[11px] leading-relaxed text-slate-400 sm:grid-cols-2 lg:grid-cols-3"
+					>
+						<div><strong class="text-white">Main Deck:</strong> 40 ใบรวม Chosen Champion</div>
+						<div><strong class="text-white">Rune / Battlefield:</strong> 12 ใบ / 3 ชื่อไม่ซ้ำ</div>
+						<div><strong class="text-white">Sideboard:</strong> ไม่เกิน 10 ใบ</div>
+						<div>
+							<strong class="text-white">Copy limit:</strong> ชื่อละไม่เกิน 3 รวม Main + Sideboard + Chosen
+							Champion
+						</div>
+						<div>
+							<strong class="text-white">Legend:</strong> 1 ใบ และการ์ดต้องตรง Domain Identity
+						</div>
+						<div>
+							<strong class="text-white">Standard:</strong> ใช้ Ban List ปัจจุบันจาก Rules Hub
+						</div>
+					</div>
+				</div>
 			</div>
 		</header>
 
@@ -104,7 +154,7 @@
 					{#each tabs as t}
 						<button
 							type="button"
-							class="rounded-full border px-4 py-2 text-xs font-black tracking-wider uppercase transition {activeTab ===
+							class="min-h-11 rounded-full border px-4 py-2 text-xs font-black tracking-wider uppercase transition focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/25 {activeTab ===
 							t.id
 								? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-300'
 								: 'border-white/10 bg-slate-950/40 text-slate-400 hover:text-white'}"
@@ -191,7 +241,7 @@
 									/>
 									<div class="text-[10px] font-black text-slate-200 uppercase">Main Deck</div>
 									<div class="mt-1 text-[10px] text-slate-500">
-										อย่างน้อย 40 ใบ (ใส่ซ้ำชื่อได้สูงสุด 3 ใบ)
+										แข่งขัน 40 ใบรวม Chosen Champion (ชื่อซ้ำสูงสุด 3 ใบ)
 									</div>
 								</div>
 								<div
@@ -271,8 +321,9 @@
 								<div class="mt-1.5 space-y-1 text-xs leading-relaxed text-slate-400">
 									<p>
 										• <strong>Main Deck:</strong> หลังแยก Chosen Champion
-										ให้สับการ์ดที่เหลือและวางคว่ำใน Main Deck Zone หากจัดเด็คขั้นต่ำ 40 ใบจะเหลือ
-										<strong>39 ใบ</strong>; เด็คสามารถมีมากกว่า 40 ใบได้
+										ให้สับการ์ดที่เหลือและวางคว่ำใน Main Deck Zone สำหรับ Standard Constructed
+										ต้องลงทะเบียน 40 ใบรวม Chosen Champion จึงเหลือ <strong>39 ใบ</strong> ในกองหลังแยก
+										Champion
 									</p>
 									<p>
 										• <strong>Rune Deck:</strong> สับกองการ์ดรูน <strong>12 ใบ</strong> และวางคว่ำหน้าลงในโซนรูน
@@ -505,7 +556,7 @@
 								onclick={() => (activePhaseStep = 0)}
 							>
 								<span class="text-[10px] font-black uppercase opacity-60">Phase 1</span>
-								<span class="mt-1 text-xs font-black uppercase">Start of Turn</span>
+								<span class="mt-1 text-xs font-black uppercase">เริ่มเทิร์น</span>
 							</button>
 							<button
 								type="button"
@@ -516,7 +567,7 @@
 								onclick={() => (activePhaseStep = 1)}
 							>
 								<span class="text-[10px] font-black uppercase opacity-60">Phase 2</span>
-								<span class="mt-1 text-xs font-black uppercase">Action Phase</span>
+								<span class="mt-1 text-xs font-black uppercase">ช่วงแอ็กชัน</span>
 							</button>
 							<button
 								type="button"
@@ -527,7 +578,7 @@
 								onclick={() => (activePhaseStep = 2)}
 							>
 								<span class="text-[10px] font-black uppercase opacity-60">Phase 3</span>
-								<span class="mt-1 text-xs font-black uppercase">End of Turn</span>
+								<span class="mt-1 text-xs font-black uppercase">จบเทิร์น</span>
 							</button>
 						</div>
 
@@ -723,7 +774,7 @@
 								onclick={() => (activeCombatStep = 0)}
 							>
 								<span class="block text-[9px] font-bold opacity-60">Step 1</span>
-								<span class="text-xs font-black">Showdown Window</span>
+								<span class="text-xs font-black">ช่วงตอบโต้ Showdown</span>
 							</button>
 							<button
 								type="button"
@@ -734,7 +785,7 @@
 								onclick={() => (activeCombatStep = 1)}
 							>
 								<span class="block text-[9px] font-bold opacity-60">Step 2</span>
-								<span class="text-xs font-black">Assign Might Damage</span>
+								<span class="text-xs font-black">แบ่งดาเมจ Might</span>
 							</button>
 							<button
 								type="button"
@@ -745,7 +796,7 @@
 								onclick={() => (activeCombatStep = 2)}
 							>
 								<span class="block text-[9px] font-bold opacity-60">Step 3</span>
-								<span class="text-xs font-black">Cleanup & Deathknell</span>
+								<span class="text-xs font-black">เก็บกวาดและ Deathknell</span>
 							</button>
 							<button
 								type="button"
@@ -756,7 +807,7 @@
 								onclick={() => (activeCombatStep = 3)}
 							>
 								<span class="block text-[9px] font-bold opacity-60">Step 4</span>
-								<span class="text-xs font-black">Contested Result</span>
+								<span class="text-xs font-black">ผลการชิงพื้นที่</span>
 							</button>
 						</div>
 

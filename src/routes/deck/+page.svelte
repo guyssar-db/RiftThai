@@ -4,6 +4,7 @@
 	import DeckValidationPanel from '$lib/components/DeckValidationPanel.svelte';
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
+	import HoldToConfirmButton from '$lib/components/ui/HoldToConfirmButton.svelte';
 	import PlaytestModal from '$lib/components/PlaytestModal.svelte';
 	import CardModal from '$lib/components/CardModal.svelte';
 	import { getDomainIcon } from '$lib/data/domainIcons';
@@ -18,11 +19,11 @@
 		getActiveStoredDeck,
 		getChampionCard,
 		getDeckZones,
-		maxBattlefieldCopiesPerName,
 		maxMainDeckCards,
 		maxMainCopiesPerName,
 		maxRuneCards,
 		maxSideboardCards,
+		requiredBattlefieldCards,
 		normalizeDeck,
 		normalizeDeckCollection,
 		readDeckCollectionFromStorage,
@@ -162,7 +163,9 @@
 
 	async function loadPreferredDeckSettings() {
 		try {
-			const session = await getAuthSession<{ user?: { settings?: { defaultExportLayout?: string } } }>();
+			const session = await getAuthSession<{
+				user?: { settings?: { defaultExportLayout?: string } };
+			}>();
 			const layout = session.user?.settings?.defaultExportLayout;
 			if (layout === 'portrait' || layout === 'landscape') exportLayout = layout;
 		} catch {
@@ -225,7 +228,7 @@
 		const targetDeck = collection.decks.find((d) => d.id === deckId);
 		if (!targetDeck) return;
 
-		const copiedDeck = createEmptyDeck(`${targetDeck.name} Copy`);
+		const copiedDeck = createEmptyDeck(`${targetDeck.name} (สำเนา)`);
 		copiedDeck.championCode = targetDeck.championCode;
 		copiedDeck.entries = targetDeck.entries;
 		copiedDeck.sideboardEntries = targetDeck.sideboardEntries ?? [];
@@ -240,7 +243,7 @@
 		writeDeckCollectionToStorage(localStorage, nextCollection);
 		collection = nextCollection;
 		openDeckMenuId = '';
-		showActionNotice('คัดลอกเด็คสำเร็จ (Copy Success)', 'success');
+		showActionNotice('คัดลอกเด็คสำเร็จ', 'success');
 	}
 
 	function closeDeck() {
@@ -276,9 +279,9 @@
 		try {
 			await navigator.clipboard?.writeText(code);
 			shareCopied = true;
-			showActionNotice('Deck share code copied', 'success');
+			showActionNotice('คัดลอกรหัสแชร์เด็คแล้ว', 'success');
 		} catch {
-			showActionNotice('Could not copy share code', 'error');
+			showActionNotice('ไม่สามารถคัดลอกรหัสแชร์เด็คได้', 'error');
 		}
 	}
 
@@ -301,8 +304,8 @@
 			if (!response.ok) {
 				throw new Error(
 					payload.error === 'login required'
-						? 'Login required to save online'
-						: payload.error || 'Could not save deck'
+						? 'กรุณาเข้าสู่ระบบเพื่อบันทึกเด็คออนไลน์'
+						: payload.error || 'บันทึกเด็คไม่สำเร็จ'
 				);
 			}
 
@@ -323,9 +326,9 @@
 
 			collection = nextCollection;
 			writeDeckCollectionToStorage(localStorage, nextCollection);
-			showActionNotice('Deck saved online', 'success');
+			showActionNotice('บันทึกเด็คออนไลน์แล้ว', 'success');
 		} catch (error) {
-			showActionNotice(error instanceof Error ? error.message : 'Could not save deck', 'error');
+			showActionNotice(error instanceof Error ? error.message : 'ไม่สามารถบันทึกเด็คได้', 'error');
 		} finally {
 			savingDeckId = '';
 		}
@@ -354,8 +357,8 @@
 			if (!response.ok) {
 				throw new Error(
 					payload.error === 'login required'
-						? 'Login required to publish deck'
-						: payload.error || 'Could not update deck'
+						? 'กรุณาเข้าสู่ระบบเพื่อเผยแพร่เด็ค'
+						: payload.error || 'อัปเดตเด็คไม่สำเร็จ'
 				);
 			}
 
@@ -376,9 +379,12 @@
 			});
 			collection = nextCollection;
 			writeDeckCollectionToStorage(localStorage, nextCollection);
-			showActionNotice(visibility === 'public' ? 'Deck published' : 'Deck set private', 'success');
+			showActionNotice(
+				visibility === 'public' ? 'เผยแพร่เด็คแล้ว' : 'ตั้งเด็คเป็นส่วนตัวแล้ว',
+				'success'
+			);
 		} catch (error) {
-			showActionNotice(error instanceof Error ? error.message : 'Could not update deck', 'error');
+			showActionNotice(error instanceof Error ? error.message : 'ไม่สามารถอัปเดตเด็คได้', 'error');
 		} finally {
 			publishingDeckId = '';
 		}
@@ -434,8 +440,8 @@
 				if (!response.ok) {
 					throw new Error(
 						payload.error === 'login required'
-							? 'Login required to delete online deck'
-							: payload.error || 'Could not delete online deck'
+							? 'กรุณาเข้าสู่ระบบเพื่อลบเด็คออนไลน์'
+							: payload.error || 'ลบเด็คออนไลน์ไม่สำเร็จ'
 					);
 				}
 			}
@@ -448,11 +454,11 @@
 			collection = nextCollection;
 			writeDeckCollectionToStorage(localStorage, nextCollection);
 			showActionNotice(
-				deck.source === 'online' ? 'Online deck deleted' : 'Local deck deleted',
+				deck.source === 'online' ? 'ลบเด็คออนไลน์แล้ว' : 'ลบเด็คในเครื่องแล้ว',
 				'success'
 			);
 		} catch (error) {
-			showActionNotice(error instanceof Error ? error.message : 'Could not delete deck', 'error');
+			showActionNotice(error instanceof Error ? error.message : 'ไม่สามารถลบเด็คได้', 'error');
 		} finally {
 			deletingDeckId = '';
 			deleteConfirmDeckId = '';
@@ -473,7 +479,7 @@
 		try {
 			const payload = decodeDeckShare(importCode);
 			const importedDeck = createEmptyDeck(
-				payload.name || `Imported Deck ${collection.decks.length + 1}`
+				payload.name || `เด็คนำเข้า ${collection.decks.length + 1}`
 			);
 			importedDeck.championCode = payload.championCode;
 			importedDeck.entries = normalizeDeck(payload.entries);
@@ -487,7 +493,7 @@
 			importCode = '';
 			writeDeckCollectionToStorage(localStorage, nextCollection);
 		} catch (error) {
-			importError = error instanceof Error ? error.message : 'Invalid deck code';
+			importError = error instanceof Error ? error.message : 'รหัสเด็คไม่ถูกต้อง';
 		}
 	}
 
@@ -502,9 +508,13 @@
 			...zones.tokens,
 			...zones.other
 		];
-		const cardUrls = [...new Set(allItems.map((item) => item.card.image_url).filter(Boolean))].map(url => getCanvasImageUrl(url));
-		const domainUrls = stats.domains.map(d => getDomainIconUrl(d.label)).filter(Boolean) as string[];
-		const typeUrls = stats.types.map(t => getTypeIconUrl(t.label)).filter(Boolean) as string[];
+		const cardUrls = [...new Set(allItems.map((item) => item.card.image_url).filter(Boolean))].map(
+			(url) => getCanvasImageUrl(url)
+		);
+		const domainUrls = stats.domains
+			.map((d) => getDomainIconUrl(d.label))
+			.filter(Boolean) as string[];
+		const typeUrls = stats.types.map((t) => getTypeIconUrl(t.label)).filter(Boolean) as string[];
 
 		const allUrls = [...new Set([...cardUrls, ...domainUrls, ...typeUrls])];
 		await Promise.all(allUrls.map((url) => loadImage(url)));
@@ -590,8 +600,9 @@
 			const bottomSections = [];
 			if (sideboardCards.length > 0)
 				bottomSections.push({ title: 'Sideboard', cards: sideboardCards });
-			if (zones.tokens.length > 0) bottomSections.push({ title: 'Tokens', cards: zones.tokens });
-			if (zones.other.length > 0) bottomSections.push({ title: 'Other', cards: zones.other });
+			if (zones.tokens.length > 0)
+				bottomSections.push({ title: 'การ์ด Token', cards: zones.tokens });
+			if (zones.other.length > 0) bottomSections.push({ title: 'การ์ดอื่นๆ', cards: zones.other });
 
 			for (let i = 0; i < bottomSections.length; i += 2) {
 				const left = bottomSections[i];
@@ -645,13 +656,13 @@
 		canvas.height = height;
 
 		const context = canvas.getContext('2d');
-		if (!context) throw new Error('Canvas is not available');
+		if (!context) throw new Error('อุปกรณ์นี้ไม่รองรับการสร้างรูปภาพ');
 
 		drawExportBackground(context, width, height);
 		drawExportHeader(context, width);
 
 		if (isLandscape) {
-			drawExportStats(context, stats.costs, 48, 210, 460, 230, 'Cost Curve');
+			drawExportStats(context, stats.costs, 48, 210, 460, 230, 'ค่าร่าย');
 			await drawExportIconStats(
 				context,
 				stats.types,
@@ -659,7 +670,7 @@
 				210,
 				460,
 				230,
-				'Card Types',
+				'ประเภทการ์ด',
 				getTypeIconUrl,
 				true
 			);
@@ -670,7 +681,7 @@
 				210,
 				460,
 				230,
-				'Main Domains',
+				'Domain หลัก',
 				getDomainIconUrl,
 				false
 			);
@@ -730,8 +741,9 @@
 			const bottomSections = [];
 			if (sideboardCards.length > 0)
 				bottomSections.push({ title: 'Sideboard', cards: sideboardCards });
-			if (zones.tokens.length > 0) bottomSections.push({ title: 'Tokens', cards: zones.tokens });
-			if (zones.other.length > 0) bottomSections.push({ title: 'Other', cards: zones.other });
+			if (zones.tokens.length > 0)
+				bottomSections.push({ title: 'การ์ด Token', cards: zones.tokens });
+			if (zones.other.length > 0) bottomSections.push({ title: 'การ์ดอื่นๆ', cards: zones.other });
 
 			for (let i = 0; i < bottomSections.length; i += 2) {
 				const left = bottomSections[i];
@@ -775,7 +787,7 @@
 				}
 			}
 		} else {
-			drawExportStats(context, stats.costs, 48, 210, 460, 230, 'Cost Curve');
+			drawExportStats(context, stats.costs, 48, 210, 460, 230, 'ค่าร่าย');
 			await drawExportIconStats(
 				context,
 				stats.types,
@@ -783,7 +795,7 @@
 				210,
 				460,
 				230,
-				'Card Types',
+				'ประเภทการ์ด',
 				getTypeIconUrl,
 				true
 			);
@@ -794,7 +806,7 @@
 				210,
 				460,
 				230,
-				'Main Domains',
+				'Domain หลัก',
 				getDomainIconUrl,
 				false
 			);
@@ -1063,7 +1075,7 @@
 		context.fillStyle = '#d6dee7';
 		context.font = '700 18px Arial';
 		context.fillText(
-			`Legend + Champion: 1 each   |   Battlefield: max ${maxBattlefieldCopiesPerName} per name   |   Main Deck: ${maxMainDeckCards} cards, max ${maxMainCopiesPerName} per name   |   Rune: total max ${maxRuneCards}`,
+			`Legend + Champion: 1 each   |   Battlefield: ${requiredBattlefieldCards} unique   |   Main: ${maxMainDeckCards} + chosen champion, max ${maxMainCopiesPerName} per name   |   Rune: ${maxRuneCards}   |   Sideboard: max ${maxSideboardCards}`,
 			x + 20,
 			y + 68
 		);
@@ -1403,11 +1415,13 @@
 		const source = String(
 			sourceFields.source ?? sourceFields.origin ?? sourceFields.storage ?? 'local'
 		).toLowerCase();
-		return source === 'online' || source === 'remote' || source === 'cloud' ? 'Online' : 'Local';
+		return source === 'online' || source === 'remote' || source === 'cloud'
+			? 'ออนไลน์'
+			: 'ในเครื่อง';
 	}
 
 	function getDeckVisibilityLabel(deck: StoredDeck) {
-		return deck.visibility === 'public' ? 'Public' : 'Private';
+		return deck.visibility === 'public' ? 'สาธารณะ' : 'ส่วนตัว';
 	}
 
 	function getDeckVisibilityClass(deck: StoredDeck) {
@@ -1443,7 +1457,7 @@
 		entries: DeckEntry[];
 	} {
 		const safeCode = code.trim().replace(/\s+/g, '');
-		if (!safeCode) throw new Error('Paste a deck share code first');
+		if (!safeCode) throw new Error('กรุณาวางรหัสแชร์เด็คก่อน');
 
 		const base64 = safeCode.replace(/-/g, '+').replace(/_/g, '/');
 		const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
@@ -1453,7 +1467,7 @@
 
 		if (Array.isArray(payload) && payload[0] === 2 && Array.isArray(payload[3])) {
 			return {
-				name: String(payload[1] ?? 'Imported Deck').slice(0, 48),
+				name: String(payload[1] ?? 'เด็คนำเข้า').slice(0, 48),
 				championCode: String(payload[2] ?? ''),
 				entries: payload[3].map((entry: unknown) => {
 					if (!Array.isArray(entry)) return { code: '', quantity: 0 };
@@ -1463,11 +1477,11 @@
 		}
 
 		if (!payload || payload.v !== 1 || !Array.isArray(payload.e)) {
-			throw new Error('This deck code is not supported');
+			throw new Error('ไม่รองรับรหัสเด็ครูปแบบนี้');
 		}
 
 		return {
-			name: String(payload.n ?? 'Imported Deck').slice(0, 48),
+			name: String(payload.n ?? 'เด็คนำเข้า').slice(0, 48),
 			championCode: String(payload.c ?? ''),
 			entries: payload.e
 		};
@@ -1494,7 +1508,7 @@
 				<a
 					href="/"
 					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-amber-200/15 bg-amber-200/5 text-slate-200 transition hover:border-amber-200/30 hover:bg-amber-200/10 hover:text-amber-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-200/25 sm:w-auto sm:px-4"
-					aria-label="Back to home"
+					aria-label="กลับหน้าแรก"
 				>
 					<svg
 						class="h-5 w-5 shrink-0"
@@ -1508,12 +1522,12 @@
 						<path d="m15 18-6-6 6-6" />
 					</svg>
 					<span class="hidden text-xs font-black tracking-widest uppercase sm:ml-2 sm:block"
-						>Back</span
+						>กลับ</span
 					>
 				</a>
 
 				<a href="/" class="shrink-0 text-xl font-black text-white uppercase italic sm:text-2xl">
-					Rift<span class="text-cyan-300">Thai</span>
+					Rift<span class="rt-brand-accent">Thai</span>
 				</a>
 			</div>
 			<SiteMenu active="deck" />
@@ -1528,8 +1542,8 @@
 			<div class="rt-rule-line relative p-5 pl-7 sm:p-7 sm:pl-9">
 				<div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 					<div class="min-w-0">
-						<p class="rt-kicker mb-3">Deck Library</p>
-						<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">My Decks</h1>
+						<p class="rt-kicker mb-3">คลังเด็ค</p>
+						<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">เด็คของฉัน</h1>
 						<p class="rt-copy mt-3 max-w-2xl text-sm">
 							จัดการเด็คทั้งหมดในเครื่องนี้ เลือกเปิดดูสรุป, export PNG หรือเข้า builder
 							เพื่อแก้ไขเด็ค
@@ -1539,30 +1553,30 @@
 						<div class="rounded-lg border border-cyan-300/15 bg-black/20 p-3 text-center">
 							<div class="text-xl font-black text-white">{libraryStats.decks}</div>
 							<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
-								Decks
+								เด็ค
 							</div>
 						</div>
 						<div class="rounded-lg border border-cyan-300/15 bg-black/20 p-3 text-center">
 							<div class="text-xl font-black text-white">{libraryStats.cards}</div>
 							<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
-								Cards
+								การ์ด
 							</div>
 						</div>
 						<div class="rounded-lg border border-cyan-300/15 bg-black/20 p-3 text-center">
 							<div class="text-xl font-black text-white">{libraryStats.complete}</div>
 							<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
-								Ready
+								พร้อมเล่น
 							</div>
 						</div>
 					</div>
 				</div>
 				<div class="mt-5 flex flex-wrap gap-2">
-					<button type="button" class="rt-action" onclick={createNewDeck}>New Deck</button>
+					<button type="button" class="rt-action" onclick={createNewDeck}>สร้างเด็คใหม่</button>
 					<a
 						href="/deck/browser"
 						class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10"
 					>
-						Browser
+						ค้นหาเด็ค
 					</a>
 				</div>
 				<div
@@ -1571,14 +1585,14 @@
 					<input
 						bind:value={importCode}
 						class="min-h-11 min-w-0 rounded-md border border-white/10 bg-slate-950/70 px-3 text-xs font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
-						placeholder="Paste deck share code..."
+						placeholder="วางรหัสแชร์เด็ค..."
 					/>
 					<button
 						type="button"
 						class="inline-flex min-h-11 items-center justify-center rounded-md border border-cyan-300/20 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10"
 						onclick={importDeckCode}
 					>
-						Import Deck
+						นำเข้าเด็ค
 					</button>
 				</div>
 				{#if importError}
@@ -1593,7 +1607,7 @@
 				<p class="rt-copy mx-auto mt-3 max-w-lg text-sm">
 					ไปหน้า edit เพื่อเพิ่มการ์ดก่อน แล้วกลับมาดูสรุปหรือ export PNG ได้
 				</p>
-				<button type="button" class="rt-action mt-6" onclick={createNewDeck}>New Deck</button>
+				<button type="button" class="rt-action mt-6" onclick={createNewDeck}>สร้างเด็คใหม่</button>
 			</section>
 		{:else if !isDeckLoading}
 			<section class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -1626,14 +1640,14 @@
 									: 'border-amber-200/30 bg-amber-300/14 text-amber-100'}"
 							>
 								{deckSummary.validation.isReady
-									? 'Ready'
-									: `${deckSummary.validation.errorCount} Fix`}
+									? 'พร้อมเล่น'
+									: `แก้ ${deckSummary.validation.errorCount} จุด`}
 							</span>
 						</div>
 						<a
 							href="/deck/{deck.id}"
 							class="relative flex rounded-l-xl bg-slate-950/80 p-2 sm:p-3"
-							aria-label={`Open ${deck.name}`}
+							aria-label={`เปิด ${deck.name}`}
 						>
 							{#if deckSummary.primaryCover}
 								{@const item = deckSummary.primaryCover}
@@ -1669,7 +1683,7 @@
 										<div
 											class="text-[9px] font-black tracking-[0.25em] text-amber-200/40 uppercase"
 										>
-											Empty
+											ว่าง
 										</div>
 									</div>
 								</div>
@@ -1678,7 +1692,7 @@
 							{#if deckSummary.secondaryCover}
 								{@const item = deckSummary.secondaryCover}
 								<div
-									class="absolute right-2 bottom-2 w-[56%] overflow-hidden rounded-md border border-cyan-300/25 bg-slate-950 shadow-2xl shadow-black/60 sm:right-4 sm:bottom-4 sm:w-[36%] sm:w-[43%] sm:rounded-lg"
+									class="absolute right-2 bottom-2 w-[56%] overflow-hidden rounded-md border border-cyan-300/25 bg-slate-950 shadow-2xl shadow-black/60 sm:right-4 sm:bottom-4 sm:w-[43%] sm:rounded-lg"
 								>
 									<img
 										src={getCardImageUrl(item.card.image_url, 180, 'webp')}
@@ -1696,11 +1710,11 @@
 										{deck.name}
 									</h2>
 									<p class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
-										Updated {new Date(deck.updatedAt).toLocaleDateString()}
+										อัปเดต {new Date(deck.updatedAt).toLocaleDateString('th-TH')}
 									</p>
 								</div>
 								<div class="rt-chip hidden shrink-0 sm:inline-flex">
-									{deckSummary.stats.total} Cards
+									{deckSummary.stats.total} ใบ
 								</div>
 							</div>
 
@@ -1724,7 +1738,7 @@
 										</div>
 									{/each}
 								{:else}
-									<span class="text-xs font-bold text-slate-600">No main domains yet</span>
+									<span class="text-xs font-bold text-slate-600">ยังไม่มี Domain หลัก</span>
 								{/if}
 							</div>
 							<div
@@ -1751,7 +1765,7 @@
 										{deckSummary.stats.battlefieldTotal}
 									</div>
 									<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
-										Field
+										สนาม
 									</div>
 								</div>
 								<div class="rounded-md border border-white/10 bg-black/20 p-2">
@@ -1767,28 +1781,28 @@
 								<div
 									class="mt-3 rounded-lg border border-amber-200/20 bg-amber-300/8 px-3 py-2 text-xs leading-relaxed font-bold text-amber-100"
 								>
-									<span class="font-black tracking-widest uppercase">Check:</span>
+									<span class="font-black tracking-widest uppercase">ตรวจสอบ:</span>
 									{deckSummary.validation.issues[0]?.message}
 								</div>
 							{/if}
 							<div class="relative mt-auto grid grid-cols-[1fr_1fr_auto] gap-1.5 pt-4">
 								<a
 									href="/deck/{deck.id}"
-									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-2 text-[10px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white sm:text-[11px]"
+									class="rt-button rt-button-secondary h-10 min-h-10 w-full px-2 text-[10px] sm:text-[11px]"
 								>
-									List
+									ดูรายการ
 								</a>
 								<button
 									type="button"
-									class="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/10 bg-white/5 px-2 text-[10px] font-black tracking-widest text-slate-200 uppercase transition hover:bg-white/10 hover:text-white sm:text-[11px]"
+									class="rt-button rt-button-primary h-10 min-h-10 w-full px-2 text-[10px] sm:text-[11px]"
 									onclick={() => editDeck(deck.id)}
 								>
-									Edit
+									แก้ไข
 								</button>
 								<button
 									type="button"
 									class="grid h-10 w-10 place-items-center rounded-lg border border-white/10 bg-slate-950/70 text-xl font-black text-slate-300 transition hover:bg-white/10 hover:text-white"
-									aria-label={`Open export actions for ${deck.name}`}
+									aria-label={`เปิดเมนูของ ${deck.name}`}
 									aria-expanded={openDeckMenuId === deck.id}
 									onclick={() => toggleDeckMenu(deck.id)}
 								>
@@ -1805,10 +1819,10 @@
 											onclick={() => saveDeckOnline(deck.id)}
 										>
 											{savingDeckId === deck.id
-												? 'Saving...'
+												? 'กำลังบันทึก...'
 												: isOnlineDeck(deck)
-													? 'Update'
-													: 'Save Online'}
+													? 'อัปเดตออนไลน์'
+													: 'บันทึกออนไลน์'}
 										</button>
 										{#if isOnlineDeck(deck)}
 											<button
@@ -1822,10 +1836,10 @@
 													)}
 											>
 												{publishingDeckId === deck.id
-													? 'Updating...'
+													? 'กำลังอัปเดต...'
 													: deck.visibility === 'public'
-														? 'Set Private'
-														: 'Publish'}
+														? 'ตั้งเป็นส่วนตัว'
+														: 'เผยแพร่'}
 											</button>
 										{/if}
 										<button
@@ -1835,17 +1849,17 @@
 											onclick={() => requestDeleteDeckFromLibrary(deck.id)}
 										>
 											{deletingDeckId === deck.id
-												? 'Deleting...'
+												? 'กำลังลบ...'
 												: isOnlineDeck(deck)
-													? 'Delete Online'
-													: 'Delete Local'}
+													? 'ลบเด็คออนไลน์'
+													: 'ลบเด็คในเครื่อง'}
 										</button>
 										<button
 											type="button"
 											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10"
 											onclick={() => duplicateDeck(deck.id)}
 										>
-											Copy / คัดลอก
+											คัดลอก
 										</button>
 										<button
 											type="button"
@@ -1853,7 +1867,7 @@
 											disabled={deckSummary.stats.total === 0 || isExporting}
 											onclick={() => runDeckAction(deck.id, 'preview')}
 										>
-											Download PNG
+											ดาวน์โหลด PNG
 										</button>
 										<button
 											type="button"
@@ -1861,7 +1875,7 @@
 											disabled={deckSummary.stats.total === 0}
 											onclick={() => runDeckAction(deck.id, 'share')}
 										>
-											Share
+											แชร์
 										</button>
 									</div>
 								{/if}
@@ -1880,7 +1894,7 @@
 					class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"
 				></div>
 				<div class="mt-4 text-sm font-black tracking-widest text-white uppercase">
-					Loading Decks
+					กำลังโหลดเด็ค
 				</div>
 			</div>
 		</div>
@@ -1894,7 +1908,7 @@
 				>
 					<div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 						<div class="min-w-0">
-							<div class="rt-kicker">Deck Detail</div>
+							<div class="rt-kicker">รายละเอียดเด็ค</div>
 							<h2 class="truncate text-3xl font-black text-white uppercase italic">
 								{selectedDeck.name}
 							</h2>
@@ -1911,7 +1925,7 @@
 										: 'text-slate-400 hover:text-white'}"
 									onclick={() => (exportLayout = 'portrait')}
 								>
-									Portrait
+									แนวตั้ง
 								</button>
 								<button
 									type="button"
@@ -1921,7 +1935,7 @@
 										: 'text-slate-400 hover:text-white'}"
 									onclick={() => (exportLayout = 'landscape')}
 								>
-									Landscape
+									แนวนอน
 								</button>
 							</div>
 							<button
@@ -1930,7 +1944,7 @@
 								disabled={!hasDeck || isExporting}
 								onclick={previewPng}
 							>
-								1. Preview
+								1. ดูตัวอย่าง
 							</button>
 							<button
 								type="button"
@@ -1938,7 +1952,7 @@
 								disabled={!hasDeck || isExporting}
 								onclick={downloadPng}
 							>
-								{isExporting ? 'Exporting...' : '2. Download PNG'}
+								{isExporting ? 'กำลังส่งออก...' : '2. ดาวน์โหลด PNG'}
 							</button>
 							<button
 								type="button"
@@ -1946,14 +1960,14 @@
 								disabled={!hasDeck}
 								onclick={shareDeck}
 							>
-								3. Share
+								3. แชร์
 							</button>
 							<button
 								type="button"
 								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
 								onclick={() => editDeck(selectedDeck.id)}
 							>
-								Edit Deck
+								แก้ไขเด็ค
 							</button>
 							{#if hasDeck}
 								<button
@@ -1961,7 +1975,7 @@
 									class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white"
 									onclick={openPlaytest}
 								>
-									Playtest
+									ทดลองเล่น
 								</button>
 							{/if}
 							<button
@@ -1969,7 +1983,7 @@
 								class="inline-flex min-h-11 items-center rounded-lg px-4 text-xs font-black tracking-widest text-slate-400 uppercase transition hover:bg-white/5 hover:text-white"
 								onclick={closeDeck}
 							>
-								Close
+								ปิด
 							</button>
 						</div>
 					</div>
@@ -1986,7 +2000,7 @@
 				{#if shareCode}
 					<div class="mb-5 rounded-xl border border-cyan-300/15 bg-slate-950/80 p-4">
 						<div class="mb-2 text-[10px] font-black tracking-widest text-cyan-100 uppercase">
-							Deck Share Code
+							รหัสแชร์เด็ค
 						</div>
 						<div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
 							<textarea
@@ -1999,7 +2013,7 @@
 								class="inline-flex min-h-11 items-center justify-center rounded-lg bg-cyan-300 px-4 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-200"
 								onclick={copyShareCode}
 							>
-								{shareCopied ? 'Copied' : 'Copy Code'}
+								{shareCopied ? 'คัดลอกแล้ว' : 'คัดลอกรหัส'}
 							</button>
 						</div>
 						<p class="mt-2 text-xs font-semibold text-slate-500">
@@ -2010,7 +2024,7 @@
 
 				{#if !hasDeck}
 					<section class="rt-panel rounded-xl p-8 text-center">
-						<h2 class="text-2xl font-black text-white uppercase italic">Empty Deck</h2>
+						<h2 class="text-2xl font-black text-white uppercase italic">เด็คยังว่าง</h2>
 						<p class="rt-copy mx-auto mt-3 max-w-lg text-sm">เด็คนี้ยังไม่มีการ์ด</p>
 					</section>
 				{:else}
@@ -2030,7 +2044,7 @@
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{stats.battlefieldTotal}</div>
 							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
-								Battlefield
+								สนาม
 							</div>
 						</div>
 						<div class="rt-panel rounded-xl p-4">
@@ -2060,7 +2074,7 @@
 						<div class="rt-panel rounded-xl p-4">
 							<div class="text-2xl font-black text-white">{stats.total}</div>
 							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
-								Total Cards
+								การ์ดทั้งหมด
 							</div>
 						</div>
 					</section>
@@ -2068,9 +2082,9 @@
 					<DeckValidationPanel validation={deckValidation} />
 
 					<section class="mb-6 grid gap-5 lg:grid-cols-3">
-						{@render ChartPanel('Cost Curve', stats.costs)}
-						{@render ChartPanel('Card Types', stats.types)}
-						{@render ChartPanel('Main Domains', stats.domains, true)}
+						{@render ChartPanel('ค่าร่าย', stats.costs)}
+						{@render ChartPanel('ประเภทการ์ด', stats.types)}
+						{@render ChartPanel('Domain หลัก', stats.domains, true)}
 					</section>
 
 					<section class="mb-6 space-y-5">
@@ -2092,7 +2106,7 @@
 						</div>
 
 						<div class="rt-panel rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Main Deck Cards</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">การ์ดใน Main Deck</h2>
 							{@render CardList(zones.main)}
 						</div>
 					</section>
@@ -2106,14 +2120,14 @@
 
 					{#if zones.tokens.length > 0}
 						<section class="rt-panel mb-6 rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Tokens</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">การ์ด Token</h2>
 							{@render CardList(zones.tokens, true)}
 						</section>
 					{/if}
 
 					{#if zones.other.length > 0}
 						<section class="rt-panel rounded-xl p-5">
-							<h2 class="mb-4 text-lg font-black text-white uppercase italic">Other Cards</h2>
+							<h2 class="mb-4 text-lg font-black text-white uppercase italic">การ์ดอื่นๆ</h2>
 							{@render CardList(zones.other)}
 						</section>
 					{/if}
@@ -2128,9 +2142,9 @@
 				<div
 					class="mx-auto mb-5 h-14 w-14 animate-spin rounded-full border-4 border-white/10 border-t-cyan-300"
 				></div>
-				<div class="rt-kicker mb-2">Loading</div>
+				<div class="rt-kicker mb-2">กำลังโหลด</div>
 				<h2 class="text-xl font-black text-white uppercase italic">
-					{exportMode === 'preview' ? 'Preparing Preview' : 'Preparing Download'}
+					{exportMode === 'preview' ? 'กำลังเตรียมตัวอย่าง' : 'กำลังเตรียมไฟล์ดาวน์โหลด'}
 				</h2>
 				<p class="rt-copy mt-3 text-sm">กำลังโหลดรูปการ์ดและสร้าง PNG กรุณารอสักครู่</p>
 			</div>
@@ -2144,8 +2158,8 @@
 					class="mb-4 flex flex-col gap-3 rounded-xl border border-white/10 bg-[#0a0e15]/95 p-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between"
 				>
 					<div>
-						<div class="rt-kicker">Developer Preview</div>
-						<div class="text-sm font-bold text-slate-300">PNG export preview</div>
+						<div class="rt-kicker">ตัวอย่างก่อนส่งออก</div>
+						<div class="text-sm font-bold text-slate-300">ตัวอย่างรูป PNG</div>
 					</div>
 					<div class="flex flex-wrap items-center gap-3">
 						<!-- Segmented Control for Layout -->
@@ -2161,7 +2175,7 @@
 								onclick={() => changeLayout('portrait')}
 								disabled={isExporting}
 							>
-								Portrait
+								แนวตั้ง
 							</button>
 							<button
 								type="button"
@@ -2172,7 +2186,7 @@
 								onclick={() => changeLayout('landscape')}
 								disabled={isExporting}
 							>
-								Landscape
+								แนวนอน
 							</button>
 						</div>
 
@@ -2183,7 +2197,7 @@
 							disabled={isExporting}
 							onclick={downloadPng}
 						>
-							Download PNG
+							ดาวน์โหลด PNG
 						</button>
 
 						<!-- Close Button -->
@@ -2192,7 +2206,7 @@
 							class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-slate-950 px-4 text-xs font-black tracking-widest text-slate-200 uppercase hover:bg-white/5"
 							onclick={() => (previewUrl = '')}
 						>
-							Close
+							ปิด
 						</button>
 					</div>
 				</div>
@@ -2204,30 +2218,25 @@
 									class="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-white/10 border-t-cyan-300"
 								></div>
 								<div class="text-xs font-black tracking-widest text-white uppercase">
-									Regenerating Preview...
+									กำลังสร้างตัวอย่างใหม่...
 								</div>
 							</div>
 						</div>
 					{/if}
-					<img src={previewUrl} alt="Deck export preview" class="w-full" />
+					<img src={previewUrl} alt="ตัวอย่างรูปเด็ค" class="w-full" />
 				</div>
 			</div>
 		</div>
 	{/if}
 
 	{#if selectedDeck}
-		<PlaytestModal
-			deck={selectedDeck}
-			cards={cards}
-			isOpen={isPlaytestOpen}
-			onClose={closePlaytest}
-		/>
+		<PlaytestModal deck={selectedDeck} {cards} isOpen={isPlaytestOpen} onClose={closePlaytest} />
 	{/if}
 
 	{#if selectedPopupCard}
 		<CardModal
 			card={selectedPopupCard}
-			closePopup={() => selectedPopupCard = null}
+			closePopup={() => (selectedPopupCard = null)}
 			canEdit={false}
 		/>
 	{/if}
@@ -2237,20 +2246,18 @@
 			<div
 				class="rt-panel w-full max-w-md rounded-xl border border-rose-300/20 p-5 shadow-2xl shadow-rose-950/30"
 			>
-				<p class="rt-kicker mb-3 text-rose-100">Confirm Delete</p>
-				<h2 class="text-2xl font-black text-white uppercase italic">Delete Deck?</h2>
+				<p class="rt-kicker mb-3 text-rose-100">ยืนยันการลบ</p>
+				<h2 class="text-2xl font-black text-white uppercase italic">ลบเด็คนี้?</h2>
 				<p class="rt-copy mt-3 text-sm">
-					This will delete
+					เด็ค
 					<span class="font-black text-white">{deleteConfirmDeck.name}</span>
-					from your {isOnlineDeck(deleteConfirmDeck)
-						? 'online deck storage'
-						: 'local browser storage'}.
+					จะถูกลบออกจาก {isOnlineDeck(deleteConfirmDeck) ? 'บัญชีออนไลน์' : 'browser เครื่องนี้'} และไม่สามารถกู้คืนได้
 				</p>
 				{#if isOnlineDeck(deleteConfirmDeck)}
 					<p
 						class="mt-3 rounded-lg border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-100"
 					>
-						Online decks will be removed from the server for your account.
+						เด็คออนไลน์จะถูกลบออกจากบัญชีและหน้า Deck Browser ด้วย
 					</p>
 				{/if}
 				<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -2260,16 +2267,13 @@
 						disabled={Boolean(deletingDeckId)}
 						onclick={cancelDeleteDeckFromLibrary}
 					>
-						Cancel
+						ยกเลิก
 					</button>
-					<button
-						type="button"
-						class="inline-flex min-h-11 items-center justify-center rounded-lg bg-rose-300 px-4 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-rose-200 disabled:opacity-50"
+					<HoldToConfirmButton
+						label={deletingDeckId ? 'กำลังลบ…' : 'กดค้าง 3 วิ เพื่อลบ'}
 						disabled={Boolean(deletingDeckId)}
-						onclick={confirmDeleteDeckFromLibrary}
-					>
-						{deletingDeckId ? 'Deleting...' : 'Delete'}
-					</button>
+						onconfirm={confirmDeleteDeckFromLibrary}
+					/>
 				</div>
 			</div>
 		</div>
@@ -2280,14 +2284,14 @@
 			<div
 				class="rt-panel w-full max-w-md rounded-xl border border-orange-300/20 p-5 shadow-2xl shadow-black/40"
 			>
-				<p class="rt-kicker mb-3 text-orange-100">Confirm Visibility</p>
+				<p class="rt-kicker mb-3 text-orange-100">ยืนยันการมองเห็น</p>
 				<h2 class="text-2xl font-black text-white uppercase italic">
-					{visibilityConfirmTarget === 'public' ? 'Publish Deck?' : 'Set Private?'}
+					{visibilityConfirmTarget === 'public' ? 'เผยแพร่เด็คหรือไม่?' : 'ตั้งเป็นส่วนตัวหรือไม่?'}
 				</h2>
 				<p class="rt-copy mt-3 text-sm">
 					{visibilityConfirmTarget === 'public'
-						? 'This deck will appear in the public deck browser.'
-						: 'This deck will be hidden from the public deck browser.'}
+						? 'เด็คนี้จะแสดงในหน้าค้นหาเด็คสาธารณะ'
+						: 'เด็คนี้จะถูกซ่อนจากหน้าค้นหาเด็คสาธารณะ'}
 					<span class="font-black text-white">{visibilityConfirmDeck.name}</span>
 				</p>
 				<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -2297,7 +2301,7 @@
 						disabled={Boolean(publishingDeckId)}
 						onclick={cancelDeckVisibility}
 					>
-						Cancel
+						ยกเลิก
 					</button>
 					<button
 						type="button"
@@ -2306,10 +2310,10 @@
 						onclick={confirmDeckVisibility}
 					>
 						{publishingDeckId
-							? 'Updating...'
+							? 'กำลังอัปเดต...'
 							: visibilityConfirmTarget === 'public'
-								? 'Publish'
-								: 'Set Private'}
+								? 'เผยแพร่'
+								: 'ตั้งเป็นส่วนตัว'}
 					</button>
 				</div>
 			</div>
@@ -2321,7 +2325,7 @@
 			show={true}
 			message={actionNotice.message}
 			type={actionNotice.type}
-			onclose={() => actionNotice = null}
+			onclose={() => (actionNotice = null)}
 		/>
 	{/if}
 </div>
@@ -2355,7 +2359,7 @@
 					</div>
 				</div>
 			{:else}
-				<p class="text-sm font-bold text-slate-500">No data</p>
+				<p class="text-sm font-bold text-slate-500">ไม่มีข้อมูล</p>
 			{/each}
 		</div>
 	</div>
@@ -2372,9 +2376,9 @@
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<article
 				class={horizontal
-					? 'group grid min-h-32 grid-cols-[8.5rem_1fr] gap-3 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35 sm:grid-cols-[10.5rem_1fr] cursor-pointer hover:scale-[1.01]'
-					: 'group min-w-0 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:border-cyan-300/35 cursor-pointer hover:scale-[1.01]'}
-				onclick={() => selectedPopupCard = item.card}
+					? 'group grid min-h-32 cursor-pointer grid-cols-[8.5rem_1fr] gap-3 rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:scale-[1.01] hover:border-cyan-300/35 sm:grid-cols-[10.5rem_1fr]'
+					: 'group min-w-0 cursor-pointer rounded-lg border border-white/10 bg-slate-950/70 p-2 transition hover:scale-[1.01] hover:border-cyan-300/35'}
+				onclick={() => (selectedPopupCard = item.card)}
 			>
 				<div class="relative overflow-hidden rounded-md bg-slate-950">
 					<img
@@ -2382,7 +2386,8 @@
 						class={horizontal
 							? `aspect-[1039/744] h-full w-full ${item.card.name_en === 'Baron Pit' || item.card.name_en === 'Brush' ? 'object-contain' : 'object-cover'}`
 							: `aspect-[744/1039] w-full ${item.card.name_en === 'Baron Pit' || item.card.name_en === 'Brush' ? 'object-contain' : 'object-cover'}`}
-						style={!horizontal && (item.card.name_en === 'Baron Pit' || item.card.name_en === 'Brush')
+						style={!horizontal &&
+						(item.card.name_en === 'Baron Pit' || item.card.name_en === 'Brush')
 							? 'transform: rotate(-90deg) scale(1.4);'
 							: ''}
 						alt={item.card.name_en}
@@ -2426,8 +2431,7 @@
 				</div>
 			</article>
 		{:else}
-			<p class="col-span-full text-sm font-bold text-slate-500">No cards</p>
+			<p class="col-span-full text-sm font-bold text-slate-500">ไม่มีการ์ด</p>
 		{/each}
 	</div>
 {/snippet}
-

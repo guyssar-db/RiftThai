@@ -28,18 +28,24 @@ export const load = async ({ cookies }) => {
 
 	try {
 		// Query users
-		const users = await dbRequest<any[]>('/rest/v1/app_users?select=id,email,display_name,profile_slug,profile_number,role,banned,created_at&order=created_at.desc&limit=100');
-		
+		const users = await dbRequest<any[]>(
+			'/rest/v1/app_users?select=id,email,display_name,profile_slug,profile_number,role,banned,created_at&order=created_at.desc&limit=100'
+		);
+
 		// Query decks
-		const decks = await dbRequest<any[]>('/rest/v1/user_decks?select=*,app_users(id,email,display_name)&order=created_at.desc&limit=100');
+		const decks = await dbRequest<any[]>(
+			'/rest/v1/user_decks?select=*,app_users(id,email,display_name)&order=created_at.desc&limit=100'
+		);
 
 		// Reports
 		const reports = await listCardReports();
-		const openReportsCount = reports.filter(r => r.status === 'open' || r.status === 'reviewing').length;
+		const openReportsCount = reports.filter(
+			(r) => r.status === 'open' || r.status === 'reviewing'
+		).length;
 
 		// Conversations
 		const conversations = await listAdminConversations();
-		const unreadConversationsCount = conversations.filter(c => hasUnreadUserMessage(c)).length;
+		const unreadConversationsCount = conversations.filter((c) => hasUnreadUserMessage(c)).length;
 
 		return {
 			user,
@@ -56,8 +62,7 @@ export const load = async ({ cookies }) => {
 				geminiModel: getRagConfig().geminiModel
 			}
 		};
-	} catch (error) {
-		console.error('Admin loader failed:', error);
+	} catch {
 		return {
 			user,
 			stats: {

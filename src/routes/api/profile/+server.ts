@@ -5,7 +5,7 @@ import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/securit
 
 export const PATCH = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
 	const rateLimit = checkRateLimit(`profile:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 60_000,
@@ -34,7 +34,7 @@ export const PATCH = async ({ cookies, request, getClientAddress }) => {
 		});
 	} catch (error) {
 		return json(
-			{ error: error instanceof Error ? error.message : 'Could not update profile' },
+			{ error: error instanceof Error ? error.message : 'อัปเดตโปรไฟล์ไม่สำเร็จ' },
 			{ status: 400 }
 		);
 	}

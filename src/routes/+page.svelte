@@ -19,6 +19,8 @@
 	import { getUserCollection } from '$lib/utils/collectionCache';
 
 	let { data } = $props();
+	// Route data intentionally seeds mutable filter state once; later changes come from user input.
+	// svelte-ignore state_referenced_locally
 	const initialData = data;
 
 	let cards = $derived((data.cards as Card[]) || []);
@@ -29,7 +31,9 @@
 	let selectedDomains = $state<string[]>(initialData.selectedDomains ?? []);
 	let selectedEnergy = $state<number | null>(initialData.selectedEnergy ?? null);
 	let selectedMight = $state<number | null>(initialData.selectedMight ?? null);
-	let viewMode = $state<'gallery' | 'keywords' | 'phases'>((initialData.viewMode as any) ?? 'gallery');
+	let viewMode = $state<'gallery' | 'keywords' | 'phases'>(
+		(initialData.viewMode as any) ?? 'gallery'
+	);
 	let currentPage = $state(1);
 	let selectedPopupCard = $state<Card | null>(null);
 	let isFiltering = $state(false);
@@ -61,8 +65,7 @@
 				const resData = await res.json();
 				trendingDecks = (resData.decks || []).slice(0, 8);
 			}
-		} catch (err) {
-			console.error('Failed to load trending decks:', err);
+		} catch {
 		} finally {
 			loadingTrending = false;
 		}
@@ -72,7 +75,7 @@
 		const deckCards = buildDeckCards(cards, deck.entries);
 		const champion = getChampionCard(cards, deck.championCode);
 		const legend = getDeckZones(deckCards).legends[0];
-		
+
 		const domains: Record<string, number> = {};
 		for (const item of deckCards) {
 			for (const d of item.card.domains ?? []) {
@@ -100,7 +103,7 @@
 
 	$effect(() => {
 		const currentUrl = new URL(window.location.href);
-		
+
 		const setParam = (key: string, val: string) => {
 			if (val) {
 				currentUrl.searchParams.set(key, val);
@@ -149,30 +152,37 @@
 	);
 
 	let filteredCards = $derived(
-		indexedCards.filter(({ card, searchable }) => {
-			const searchTokens = normalizeForSearch(searchTerm).split(' ').filter(Boolean);
+		indexedCards
+			.filter(({ card, searchable }) => {
+				const searchTokens = normalizeForSearch(searchTerm).split(' ').filter(Boolean);
 
-			const matchesSearch =
-				searchTokens.length === 0 || searchTokens.every((token) => searchable.includes(token));
-			const matchesSet = selectedSet === 'All' || card.set_name === selectedSet;
-			const matchesType = selectedType === 'All' || card.type === selectedType;
-			const matchesDomain =
-				selectedDomains.length === 0 ||
-				selectedDomains.some((domain) => (card.domains ?? []).includes(domain));
-			const matchesEnergy =
-				selectedEnergy === null ||
-				(selectedEnergy === 7
-					? (card.energy ?? 0) >= 7
-					: card.energy === selectedEnergy);
-			const matchesMight =
-				selectedMight === null ||
-				(card.power?.label === 'Might' &&
-					(selectedMight === 7
-						? (card.power?.value?.id ?? 0) >= 7
-						: card.power?.value?.id === selectedMight));
+				const matchesSearch =
+					searchTokens.length === 0 || searchTokens.every((token) => searchable.includes(token));
+				const matchesSet = selectedSet === 'All' || card.set_name === selectedSet;
+				const matchesType = selectedType === 'All' || card.type === selectedType;
+				const matchesDomain =
+					selectedDomains.length === 0 ||
+					selectedDomains.some((domain) => (card.domains ?? []).includes(domain));
+				const matchesEnergy =
+					selectedEnergy === null ||
+					(selectedEnergy === 7 ? (card.energy ?? 0) >= 7 : card.energy === selectedEnergy);
+				const matchesMight =
+					selectedMight === null ||
+					(card.power?.label === 'Might' &&
+						(selectedMight === 7
+							? (card.power?.value?.id ?? 0) >= 7
+							: card.power?.value?.id === selectedMight));
 
-			return matchesSearch && matchesSet && matchesType && matchesDomain && matchesEnergy && matchesMight;
-		}).map(({ card }) => card)
+				return (
+					matchesSearch &&
+					matchesSet &&
+					matchesType &&
+					matchesDomain &&
+					matchesEnergy &&
+					matchesMight
+				);
+			})
+			.map(({ card }) => card)
 	);
 
 	let totalPages = $derived(Math.max(1, Math.ceil(filteredCards.length / cardsPerPage)));
@@ -206,8 +216,7 @@
 			} else {
 				userCollection = null;
 			}
-		} catch (err) {
-			console.error('Failed to load user collection:', err);
+		} catch {
 			userCollection = null;
 		}
 	}
@@ -248,6 +257,15 @@
 		selectedPopupCard = null;
 	}
 
+	function resetCardSearch() {
+		searchTerm = '';
+		selectedSet = 'All';
+		selectedType = 'All';
+		selectedDomains = [];
+		selectedEnergy = null;
+		selectedMight = null;
+	}
+
 	function normalizeForSearch(value: unknown) {
 		const original = Array.isArray(value) ? value.filter(Boolean).join(' ') : String(value ?? '');
 		return original
@@ -262,107 +280,115 @@
 <div class="rt-page-shell pb-24 font-sans selection:bg-cyan-400/30 md:pb-0">
 	<div class="mesh-gradient"></div>
 
-	{#if !!$navigating}
-		<div class="fixed inset-x-0 top-0 z-[200] h-1 overflow-hidden bg-slate-950">
-			<div class="animate-loading-bar h-full bg-cyan-400"></div>
-		</div>
-	{/if}
-
 	<AppNav bind:viewMode />
 
 	<main class="rt-container py-5 sm:py-8 lg:py-10">
 		{#if viewMode === 'gallery'}
 			<header
-				class="rt-hero rt-panel rt-topline rt-scanline relative mb-5 grid overflow-hidden rounded-2xl lg:mb-7 lg:grid-cols-[minmax(0,1fr)_360px]"
+				class="rt-hero rt-panel relative mb-5 grid overflow-hidden rounded-2xl lg:mb-6 lg:grid-cols-[minmax(0,1fr)_280px]"
 			>
 				<div
-					class="pointer-events-none absolute -top-28 right-10 h-64 w-64 rounded-full bg-cyan-300/15 blur-3xl"
-				></div>
-				<div
-					class="pointer-events-none absolute -right-20 -bottom-32 h-72 w-72 rounded-full bg-[#ffb86b]/10 blur-3xl"
-				></div>
-
-				<div class="rt-rule-line rt-hero-copy relative min-w-0 p-5 pl-7 sm:p-7 sm:pl-9 lg:p-10 lg:pl-12">
-					<div class="mb-4 flex flex-wrap items-center gap-2">
-						<p class="rt-kicker">Riftbound Thai Card Database</p>
-						<span
-							class="rounded-md border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black tracking-widest text-cyan-100 uppercase"
-							>Live Index</span
-						>
-					</div>
-					<p class="rt-hero-index">INDEX / 01 · CARD DATABASE</p>
-					<h1 class="rt-heading text-5xl uppercase italic sm:text-7xl lg:text-8xl">
-						Rift<span class="text-cyan-300">Thai</span>
+					class="rt-rule-line rt-hero-copy relative min-w-0 p-5 pl-7 sm:p-7 sm:pl-9 lg:p-9 lg:pl-11"
+				>
+					<p class="rt-kicker mb-2">RIFTBOUND · คลังการ์ดภาษาไทย</p>
+					<h1 class="rt-heading text-5xl sm:text-6xl lg:text-7xl">
+						Rift<span class="rt-brand-accent">Thai</span>
 					</h1>
 					<p class="rt-copy mt-4 max-w-2xl text-sm sm:text-base">
 						ค้นการ์ด, อ่านคำแปลไทย, กรองตาม set, type และ domain ได้จากหน้าเดียว พร้อมข้อมูล keyword
 						และลำดับ phase สำหรับใช้เตรียมเล่น
 					</p>
-
 				</div>
 
-				<div class="rt-hero-metrics relative border-t border-white/10 bg-slate-950/32 p-4 lg:border-t-0 lg:border-l">
+				<div
+					class="rt-hero-metrics relative border-t border-white/8 bg-slate-950/25 p-4 lg:border-t-0 lg:border-l"
+				>
 					<div class="grid h-full grid-cols-3 gap-2 text-center lg:h-auto lg:grid-cols-1">
 						<div
-							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-cyan-300/15 bg-black/20 p-2.5 shadow-inner shadow-cyan-300/5 sm:p-3 lg:flex-row lg:justify-between"
+							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/8 bg-black/15 p-2.5 sm:p-3 lg:flex-row lg:justify-between"
 						>
-							<div class="text-[9px] font-black tracking-widest text-slate-500 uppercase sm:text-[10px]">
-								Cards
+							<div
+								class="text-[9px] font-black tracking-widest text-slate-500 uppercase sm:text-[10px]"
+							>
+								การ์ด
 							</div>
 							<div class="text-base font-black text-white sm:text-xl">{cards.length}</div>
 						</div>
 						<div
-							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-cyan-300/15 bg-black/20 p-2.5 shadow-inner shadow-cyan-300/5 sm:p-3 lg:flex-row lg:justify-between"
+							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/8 bg-black/15 p-2.5 sm:p-3 lg:flex-row lg:justify-between"
 						>
-							<div class="text-[9px] font-black tracking-widest text-slate-500 uppercase sm:text-[10px]">
-								Sets
+							<div
+								class="text-[9px] font-black tracking-widest text-slate-500 uppercase sm:text-[10px]"
+							>
+								ชุด
 							</div>
 							<div class="text-base font-black text-white sm:text-xl">{sets.length - 1}</div>
 						</div>
 						<div
-							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-cyan-300/15 bg-black/20 p-2.5 shadow-inner shadow-cyan-300/5 sm:p-3 lg:flex-row lg:justify-between"
+							class="flex flex-col items-center justify-center gap-1 rounded-lg border border-white/8 bg-black/15 p-2.5 sm:p-3 lg:flex-row lg:justify-between"
 						>
-							<div class="text-[9px] font-black tracking-widest text-slate-500 uppercase sm:text-[10px]">
-								Domains
+							<div
+								class="text-[9px] font-black tracking-widest text-slate-500 uppercase sm:text-[10px]"
+							>
+								โดเมน
 							</div>
 							<div class="text-base font-black text-white sm:text-xl">{domains.length - 2}</div>
 						</div>
 					</div>
-
-
 				</div>
 			</header>
 
+			<SearchBar
+				bind:searchTerm
+				bind:selectedSet
+				bind:selectedType
+				bind:selectedDomains
+				bind:selectedEnergy
+				bind:selectedMight
+				{sets}
+				{types}
+				{domains}
+				resultsCount={filteredCards.length}
+			/>
+
 			{#if trendingDecks.length > 0}
-				<section class="rt-panel mb-6 rounded-xl p-5 relative overflow-hidden">
-					<div class="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-cyan-300/5 blur-3xl"></div>
+				<section class="rt-panel relative mb-6 overflow-hidden rounded-xl p-5">
+					<div
+						class="pointer-events-none absolute -top-20 -right-20 h-48 w-48 rounded-full bg-cyan-300/5 blur-3xl"
+					></div>
 					<div class="mb-4 flex items-center justify-between">
 						<div>
-							<p class="rt-kicker">Trending Decks</p>
+							<p class="rt-kicker">เด็คยอดนิยม</p>
 							<h2 class="text-xl font-black text-white uppercase italic sm:text-2xl">
 								เด็คยอดนิยมจากชุมชน
 							</h2>
 						</div>
 						<a
 							href="/deck/browser"
-							class="text-xs font-black tracking-widest text-cyan-300 uppercase hover:text-cyan-100 transition"
+							class="text-xs font-black tracking-widest text-cyan-300 uppercase transition hover:text-cyan-100"
 						>
-							ดูทั้งหมด (Browse All) &rarr;
+							ดูเด็คทั้งหมด &rarr;
 						</a>
 					</div>
 
-					<div class="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent snap-x">
+					<div
+						class="flex snap-x scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent gap-4 overflow-x-auto pb-2"
+					>
 						{#each trendingDecks as deck}
 							{@const summary = getTrendingDeckSummary(deck)}
 							<a
 								href="/deck/{deck.id}"
-								class="group relative flex w-72 flex-shrink-0 snap-start items-center gap-3.5 rounded-lg border border-white/5 bg-slate-950/50 p-3 transition-all duration-200 hover:border-cyan-300/25 hover:bg-slate-900/60 hover:scale-[1.01]"
+								class="group relative flex w-72 flex-shrink-0 snap-start items-center gap-3.5 rounded-lg border border-white/5 bg-slate-950/50 p-3 transition-all duration-200 hover:scale-[1.01] hover:border-cyan-300/25 hover:bg-slate-900/60"
 							>
 								<!-- Background Glow -->
-								<div class="absolute inset-0 -z-10 bg-gradient-to-br from-cyan-400/0 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+								<div
+									class="absolute inset-0 -z-10 bg-gradient-to-br from-cyan-400/0 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+								></div>
 
 								<!-- Cover Image -->
-								<div class="relative w-16 aspect-[744/1039] shrink-0 overflow-hidden rounded bg-black/40 border border-white/10">
+								<div
+									class="relative aspect-[744/1039] w-16 shrink-0 overflow-hidden rounded border border-white/10 bg-black/40"
+								>
 									{#if summary.coverCard?.image_url}
 										<img
 											src={getCardImageUrl(summary.coverCard.image_url, 180, 'webp')}
@@ -371,20 +397,24 @@
 											loading="lazy"
 										/>
 									{:else}
-										<div class="grid h-full w-full place-items-center text-[8px] font-black text-slate-600 uppercase">
-											No Cover
+										<div
+											class="grid h-full w-full place-items-center text-[8px] font-black text-slate-600 uppercase"
+										>
+											ไม่มีภาพปก
 										</div>
 									{/if}
 								</div>
 
 								<!-- Info -->
-								<div class="min-w-0 flex-1 flex flex-col justify-between h-full py-0.5">
+								<div class="flex h-full min-w-0 flex-1 flex-col justify-between py-0.5">
 									<div>
-										<h3 class="truncate text-sm font-black text-white uppercase group-hover:text-cyan-300 transition">
+										<h3
+											class="truncate text-sm font-black text-white uppercase transition group-hover:text-cyan-300"
+										>
 											{deck.name}
 										</h3>
 										<p class="mt-0.5 truncate text-[10px] font-bold text-slate-500 uppercase">
-											By {deck.owner?.profileHandle || 'Anonymous'}
+											โดย {deck.owner?.profileHandle || 'ไม่ระบุชื่อ'}
 										</p>
 									</div>
 
@@ -396,7 +426,7 @@
 														{#if getDomainIcon(dom.label)}
 															<img
 																src={getDomainIcon(dom.label)}
-																class="h-[18px] w-[18px] object-contain rounded-full bg-slate-950 ring-1 ring-white/10"
+																class="h-[18px] w-[18px] rounded-full bg-slate-950 object-contain ring-1 ring-white/10"
 																alt={dom.label}
 																title={dom.label}
 															/>
@@ -412,13 +442,20 @@
 												/>
 											{/if}
 											<span class="text-[9px] font-black tracking-widest text-slate-400 uppercase">
-												{summary.cardCount} Cards
+												{summary.cardCount} ใบ
 											</span>
 										</div>
 
-										<div class="flex items-center gap-1 text-pink-400 text-xs font-black">
-											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5">
-												<path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
+										<div class="flex items-center gap-1 text-xs font-black text-pink-400">
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 20 20"
+												fill="currentColor"
+												class="h-3.5 w-3.5"
+											>
+												<path
+													d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"
+												/>
 											</svg>
 											<span>{deck.likesCount ?? 0}</span>
 										</div>
@@ -430,23 +467,20 @@
 				</section>
 			{/if}
 
-			<SearchBar
-				bind:searchTerm
-				bind:selectedSet
-				bind:selectedType
-				bind:selectedDomains
-				bind:selectedEnergy
-				bind:selectedMight
-				{sets}
-				{types}
-				{domains}
-				resultsCount={filteredCards.length}
-			/>
-
-			<CardGrid cards={paginatedCards} {isLoading} {openPopup} userCollection={userCollection} />
+			<CardGrid cards={paginatedCards} {isLoading} {openPopup} {userCollection} />
 
 			{#if filteredCards.length === 0 && !isLoading}
-				<EmptyState />
+				<EmptyState
+					showReset={Boolean(
+						searchTerm ||
+						selectedSet !== 'All' ||
+						selectedType !== 'All' ||
+						selectedDomains.length ||
+						selectedEnergy !== null ||
+						selectedMight !== null
+					)}
+					onreset={resetCardSearch}
+				/>
 			{/if}
 
 			<Pagination bind:currentPage {totalPages} />
@@ -463,22 +497,3 @@
 {#if selectedPopupCard}
 	<CardModal card={selectedPopupCard} {closePopup} canEdit={data.canEdit} />
 {/if}
-
-<style>
-	@keyframes loading-bar {
-		0% {
-			transform: translateX(-100%);
-		}
-		50% {
-			transform: translateX(0);
-		}
-		100% {
-			transform: translateX(100%);
-		}
-	}
-
-	.animate-loading-bar {
-		animation: loading-bar 1.5s infinite linear;
-	}
-
-</style>

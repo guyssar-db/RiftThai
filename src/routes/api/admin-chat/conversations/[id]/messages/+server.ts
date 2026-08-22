@@ -6,8 +6,8 @@ import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/securit
 
 export const POST = async ({ request, cookies, params, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
-	if (!user.isAdmin) return json({ error: 'admin required' }, { status: 403 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
+	if (!user.isAdmin) return json({ error: 'ต้องมีสิทธิ์ผู้ดูแลระบบ' }, { status: 403 });
 
 	const ip = clientKey(getClientAddress());
 	const rateLimit = checkRateLimit(`admin-support:${ip}:${user.id}`, { windowMs: 60_000, max: 30 });
@@ -19,7 +19,7 @@ export const POST = async ({ request, cookies, params, getClientAddress }) => {
 	}
 
 	const conversation = await getConversation(params.id);
-	if (!conversation) return json({ error: 'conversation not found' }, { status: 404 });
+	if (!conversation) return json({ error: 'ไม่พบบทสนทนา' }, { status: 404 });
 
 	const body = (await request.json()) as { body?: unknown };
 	const messageBody = typeof body.body === 'string' ? body.body : '';

@@ -73,11 +73,11 @@ export type PublicUserProfile = {
 export async function registerUser(emailInput: string, password: string, displayNameInput = '') {
 	const email = normalizeEmail(emailInput);
 	if (!email || password.length < 8) {
-		throw new Error('Email is required and password must be at least 8 characters');
+		throw new Error('กรุณากรอกอีเมล และรหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
 	}
 
 	const existing = await findUserByEmail(email);
-	if (existing) throw new Error('Email already exists');
+	if (existing) throw new Error('อีเมลนี้ถูกใช้งานแล้ว');
 
 	const displayName = normalizeDisplayName(displayNameInput) || defaultDisplayName(email);
 	const profile = await createUniqueProfileSlug(displayName);
@@ -102,7 +102,7 @@ export async function registerUser(emailInput: string, password: string, display
 		})
 	});
 
-	if (!user) throw new Error('Could not create user');
+	if (!user) throw new Error('สร้างบัญชีไม่สำเร็จ');
 	await createAndSendVerification(user);
 	return toAuthUser(user);
 }
@@ -110,10 +110,10 @@ export async function registerUser(emailInput: string, password: string, display
 export async function loginUser(emailInput: string, password: string) {
 	const email = normalizeEmail(emailInput);
 	const user = await findUserByEmail(email);
-	if (!user) throw new Error('Invalid email or password');
+	if (!user) throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
 
 	const passwordOk = await verifyPassword(password, user.password_hash);
-	if (!passwordOk) throw new Error('Invalid email or password');
+	if (!passwordOk) throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
 	if (user.banned) throw new Error('บัญชีนี้ถูกระงับการใช้งาน');
 	if (!user.email_verified_at) throw new Error('Please verify your email before logging in');
 
@@ -142,12 +142,13 @@ export async function loginUser(emailInput: string, password: string) {
 
 export async function verifyEmailToken(token: string) {
 	const tokenHash = hashToken(token);
-	const tokens = await authRequest<Array<{ id: string; user_id: string; expires_at: string; used_at: string | null }>>(
-		`/rest/v1/email_verification_tokens?token_hash=eq.${encodeURIComponent(tokenHash)}&select=*`
-	);
+	const tokens = await authRequest<
+		Array<{ id: string; user_id: string; expires_at: string; used_at: string | null }>
+	>(`/rest/v1/email_verification_tokens?token_hash=eq.${encodeURIComponent(tokenHash)}&select=*`);
 	const verification = tokens[0];
-	if (!verification || verification.used_at) throw new Error('Verification link is invalid');
-	if (new Date(verification.expires_at).getTime() < Date.now()) throw new Error('Verification link expired');
+	if (!verification || verification.used_at) throw new Error('ลิงก์ยืนยันไม่ถูกต้อง');
+	if (new Date(verification.expires_at).getTime() < Date.now())
+		throw new Error('ลิงก์ยืนยันหมดอายุแล้ว');
 
 	await authRequest(`/rest/v1/email_verification_tokens?id=eq.${verification.id}`, {
 		method: 'PATCH',
@@ -157,19 +158,24 @@ export async function verifyEmailToken(token: string) {
 		body: JSON.stringify({ used_at: new Date().toISOString() })
 	});
 
-	const [user] = await authRequest<AppUserRow[]>(`/rest/v1/app_users?id=eq.${verification.user_id}&select=*`);
-	if (!user) throw new Error('User not found');
+	const [user] = await authRequest<AppUserRow[]>(
+		`/rest/v1/app_users?id=eq.${verification.user_id}&select=*`
+	);
+	if (!user) throw new Error('ไม่พบบัญชีผู้ใช้');
 
-	const [updated] = await authRequest<AppUserRow[]>(`/rest/v1/app_users?id=eq.${user.id}&select=*`, {
-		method: 'PATCH',
-		headers: {
-			Prefer: 'return=representation'
-		},
-		body: JSON.stringify({
-			email_verified_at: user.email_verified_at ?? new Date().toISOString(),
-			updated_at: new Date().toISOString()
-		})
-	});
+	const [updated] = await authRequest<AppUserRow[]>(
+		`/rest/v1/app_users?id=eq.${user.id}&select=*`,
+		{
+			method: 'PATCH',
+			headers: {
+				Prefer: 'return=representation'
+			},
+			body: JSON.stringify({
+				email_verified_at: user.email_verified_at ?? new Date().toISOString(),
+				updated_at: new Date().toISOString()
+			})
+		}
+	);
 
 	return toAuthUser(updated ?? user);
 }
@@ -189,7 +195,9 @@ export async function getAuthenticatedUser(cookies: Cookies): Promise<AuthUser |
 		return null;
 	}
 
-	const [user] = await authRequest<AppUserRow[]>(`/rest/v1/app_users?id=eq.${session.user_id}&select=*`);
+	const [user] = await authRequest<AppUserRow[]>(
+		`/rest/v1/app_users?id=eq.${session.user_id}&select=*`
+	);
 	if (!user || !user.email_verified_at || user.banned) {
 		if (user?.banned) {
 			await deleteSession(sessionHash);
@@ -219,9 +227,7 @@ export async function getAuthenticatedUser(cookies: Cookies): Promise<AuthUser |
 				body: JSON.stringify({ expires_at: newExpiresAt })
 			});
 			setSessionCookie(cookies, token, newExpiresAt);
-		} catch (e) {
-			console.error('Failed to extend session token:', e);
-		}
+		} catch {}
 	}
 
 	return toAuthUser(user);
@@ -235,28 +241,36 @@ export async function logoutUser(cookies: Cookies) {
 
 export async function updateUserDisplayName(userId: string, displayNameInput: string) {
 	const displayName = normalizeDisplayName(displayNameInput);
-	if (!displayName) throw new Error('Display name is required');
+	if (!displayName) throw new Error('กรุณากรอกชื่อที่แสดง');
 	const currentUser = await findUserById(userId);
-	if (!currentUser) throw new Error('User not found');
-	if (currentUser.display_name_locked) throw new Error('Display name cannot be changed after it is saved');
+	if (!currentUser) throw new Error('ไม่พบบัญชีผู้ใช้');
+	if (currentUser.display_name_locked)
+		throw new Error('Display name cannot be changed after it is saved');
 
-	const profile = await createUniqueProfileSlug(displayName, userId, currentUser?.profile_number ?? '');
+	const profile = await createUniqueProfileSlug(
+		displayName,
+		userId,
+		currentUser?.profile_number ?? ''
+	);
 
-	const [updated] = await authRequest<AppUserRow[]>(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}&select=*`, {
-		method: 'PATCH',
-		headers: {
-			Prefer: 'return=representation'
-		},
-		body: JSON.stringify({
-			display_name: displayName,
-			display_name_locked: true,
-			profile_number: profile.number,
-			profile_slug: profile.slug,
-			updated_at: new Date().toISOString()
-		})
-	});
+	const [updated] = await authRequest<AppUserRow[]>(
+		`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}&select=*`,
+		{
+			method: 'PATCH',
+			headers: {
+				Prefer: 'return=representation'
+			},
+			body: JSON.stringify({
+				display_name: displayName,
+				display_name_locked: true,
+				profile_number: profile.number,
+				profile_slug: profile.slug,
+				updated_at: new Date().toISOString()
+			})
+		}
+	);
 
-	if (!updated) throw new Error('User not found');
+	if (!updated) throw new Error('ไม่พบบัญชีผู้ใช้');
 	return toAuthUser(updated);
 }
 
@@ -276,25 +290,32 @@ export async function updateUserSettings(userId: string, input: Partial<UserSett
 		payload.default_export_layout = input.defaultExportLayout;
 	}
 
-	const [updated] = await authRequest<AppUserRow[]>(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}&select=*`, {
-		method: 'PATCH',
-		headers: {
-			Prefer: 'return=representation'
-		},
-		body: JSON.stringify(payload)
-	});
+	const [updated] = await authRequest<AppUserRow[]>(
+		`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}&select=*`,
+		{
+			method: 'PATCH',
+			headers: {
+				Prefer: 'return=representation'
+			},
+			body: JSON.stringify(payload)
+		}
+	);
 
-	if (!updated) throw new Error('User not found');
+	if (!updated) throw new Error('ไม่พบบัญชีผู้ใช้');
 	return toAuthUser(updated);
 }
 
-export async function changeUserPassword(userId: string, currentPassword: string, nextPassword: string) {
-	if (nextPassword.length < 8) throw new Error('New password must be at least 8 characters');
+export async function changeUserPassword(
+	userId: string,
+	currentPassword: string,
+	nextPassword: string
+) {
+	if (nextPassword.length < 8) throw new Error('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร');
 	const user = await findUserById(userId);
-	if (!user) throw new Error('User not found');
+	if (!user) throw new Error('ไม่พบบัญชีผู้ใช้');
 
 	const passwordOk = await verifyPassword(currentPassword, user.password_hash);
-	if (!passwordOk) throw new Error('Current password is incorrect');
+	if (!passwordOk) throw new Error('รหัสผ่านปัจจุบันไม่ถูกต้อง');
 
 	const password_hash = await hashPassword(nextPassword);
 	await authRequest(`/rest/v1/app_users?id=eq.${encodeURIComponent(userId)}`, {
@@ -327,7 +348,9 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
 	};
 }
 
-export async function getPublicUserProfileBySlug(slugInput: string): Promise<PublicUserProfile | null> {
+export async function getPublicUserProfileBySlug(
+	slugInput: string
+): Promise<PublicUserProfile | null> {
 	const slug = normalizeProfileSlug(slugInput);
 	if (!slug) return null;
 	const [user] = await authRequest<AppUserRow[]>(
@@ -397,12 +420,19 @@ export function getUserDisplayName(user: Pick<AppUserRow, 'email' | 'display_nam
 	return normalizeDisplayName(user.display_name ?? '') || defaultDisplayName(user.email);
 }
 
-export function getUserProfileHandle(user: Pick<AppUserRow, 'email' | 'display_name' | 'profile_number'>) {
+export function getUserProfileHandle(
+	user: Pick<AppUserRow, 'email' | 'display_name' | 'profile_number'>
+) {
 	return `${getUserDisplayName(user)}#${getUserProfileNumber(user)}`;
 }
 
-export function getUserProfileSlug(user: Pick<AppUserRow, 'email' | 'display_name' | 'profile_slug' | 'profile_number'>) {
-	return normalizeProfileSlug(user.profile_slug ?? '') || createProfileSlug(getUserDisplayName(user), getUserProfileNumber(user));
+export function getUserProfileSlug(
+	user: Pick<AppUserRow, 'email' | 'display_name' | 'profile_slug' | 'profile_number'>
+) {
+	return (
+		normalizeProfileSlug(user.profile_slug ?? '') ||
+		createProfileSlug(getUserDisplayName(user), getUserProfileNumber(user))
+	);
 }
 
 async function createAndSendVerification(user: AppUserRow) {
@@ -468,9 +498,12 @@ async function findUserById(userId: string) {
 }
 
 async function deleteSession(sessionHash: string) {
-	await authRequest(`/rest/v1/user_sessions?session_token_hash=eq.${encodeURIComponent(sessionHash)}`, {
-		method: 'DELETE'
-	});
+	await authRequest(
+		`/rest/v1/user_sessions?session_token_hash=eq.${encodeURIComponent(sessionHash)}`,
+		{
+			method: 'DELETE'
+		}
+	);
 }
 
 async function hashPassword(password: string) {
@@ -538,11 +571,17 @@ function normalizeProfileSlug(value: unknown) {
 }
 
 function getUserProfileNumber(user: Pick<AppUserRow, 'profile_number'>) {
-	const number = String(user.profile_number ?? '').replace(/\D/g, '').slice(0, 5);
+	const number = String(user.profile_number ?? '')
+		.replace(/\D/g, '')
+		.slice(0, 5);
 	return number.length === 5 ? number : '00001';
 }
 
-async function createUniqueProfileSlug(displayName: string, currentUserId = '', preferredNumber = '') {
+async function createUniqueProfileSlug(
+	displayName: string,
+	currentUserId = '',
+	preferredNumber = ''
+) {
 	const numbers = [
 		String(preferredNumber).replace(/\D/g, '').slice(0, 5),
 		...Array.from({ length: 24 }, () => randomProfileNumber())
@@ -558,7 +597,10 @@ async function createUniqueProfileSlug(displayName: string, currentUserId = '', 
 	}
 
 	const fallbackNumber = randomProfileNumber();
-	return { slug: `${createProfileBase(displayName)}-${fallbackNumber}-${randomBytes(2).toString('hex')}`, number: fallbackNumber };
+	return {
+		slug: `${createProfileBase(displayName)}-${fallbackNumber}-${randomBytes(2).toString('hex')}`,
+		number: fallbackNumber
+	};
 }
 
 function randomProfileNumber() {

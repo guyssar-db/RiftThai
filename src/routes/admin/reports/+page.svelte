@@ -12,6 +12,19 @@
 	let errorMessage = $state('');
 	let didHydrate = $state(false);
 	let selectedPopupCard = $state<Card | null>(null);
+	const statusLabels: Record<string, string> = {
+		open: 'เปิดอยู่',
+		reviewing: 'กำลังตรวจสอบ',
+		resolved: 'แก้ไขแล้ว',
+		dismissed: 'ยกเลิก'
+	};
+	const reportTypeLabels: Record<string, string> = {
+		translation: 'คำแปล',
+		card_data: 'ข้อมูลการ์ด',
+		image: 'รูปภาพ',
+		rules_text: 'ข้อความกติกา',
+		other: 'อื่นๆ'
+	};
 
 	let filteredReports = $derived(
 		statusFilter === 'all' ? reports : reports.filter((report) => report.status === statusFilter)
@@ -37,10 +50,10 @@
 				body: JSON.stringify({ reportId: report.id, status, adminNote: report.admin_note })
 			});
 			const payload = await response.json().catch(() => ({}));
-			if (!response.ok) throw new Error(payload.error || 'Could not update report');
+			if (!response.ok) throw new Error(payload.error || 'อัปเดตรายงานไม่สำเร็จ');
 			reports = reports.map((item) => (item.id === report.id ? payload.report : item));
 		} catch (error) {
-			errorMessage = error instanceof Error ? error.message : 'Could not update report';
+			errorMessage = error instanceof Error ? error.message : 'อัปเดตรายงานไม่สำเร็จ';
 		} finally {
 			updatingId = '';
 		}
@@ -56,7 +69,7 @@
 				href="/"
 				class="shrink-0 border-l-2 border-cyan-300/60 pl-3 text-xl font-black text-white uppercase italic"
 			>
-				Rift<span class="text-cyan-300">Thai</span>
+				Rift<span class="rt-brand-accent">Thai</span>
 			</a>
 			<SiteMenu />
 		</div>
@@ -64,23 +77,23 @@
 
 	<main class="rt-container py-6 sm:py-10">
 		<header class="rt-panel rt-topline mb-6 rounded-xl p-5 sm:p-7">
-			<p class="rt-kicker mb-3">Admin</p>
+			<p class="rt-kicker mb-3">ผู้ดูแลระบบ</p>
 			<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 				<div>
-					<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">Card Reports</h1>
+					<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">รายงานข้อมูลการ์ด</h1>
 					<p class="rt-copy mt-3 max-w-2xl text-sm">
-						Review translation, image, and card data reports from users.
+						ตรวจสอบรายงานคำแปล รูปภาพ และข้อมูลการ์ดจากผู้ใช้
 					</p>
 				</div>
 				<select
 					bind:value={statusFilter}
 					class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-xs font-black tracking-widest text-white uppercase focus:border-cyan-300/50 focus:outline-none"
 				>
-					<option value="all">All</option>
-					<option value="open">Open</option>
-					<option value="reviewing">Reviewing</option>
-					<option value="resolved">Resolved</option>
-					<option value="dismissed">Dismissed</option>
+					<option value="all">ทั้งหมด</option>
+					<option value="open">เปิดอยู่</option>
+					<option value="reviewing">กำลังตรวจสอบ</option>
+					<option value="resolved">แก้ไขแล้ว</option>
+					<option value="dismissed">ยกเลิก</option>
 				</select>
 			</div>
 		</header>
@@ -97,27 +110,36 @@
 			{#each filteredReports as report}
 				{@const card = findCardByCode(report.card_code)}
 				<article class="rt-panel rounded-xl p-4 sm:p-5">
-					<div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between w-full">
-						<div class="flex flex-col sm:flex-row gap-4 min-w-0 flex-1">
+					<div class="flex w-full flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+						<div class="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row">
 							{#if card}
 								<button
 									type="button"
-									onclick={() => selectedPopupCard = card}
-									class="group relative w-20 sm:w-24 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-slate-950 transition hover:border-cyan-300/50 self-start {card.type === 'Battlefield' ? 'aspect-[184/132]' : 'aspect-[132/184]'}"
+									onclick={() => (selectedPopupCard = card)}
+									class="group relative w-20 shrink-0 self-start overflow-hidden rounded-lg border border-white/10 bg-slate-950 transition hover:border-cyan-300/50 sm:w-24 {card.type ===
+									'Battlefield'
+										? 'aspect-[184/132]'
+										: 'aspect-[132/184]'}"
 								>
 									{#if card.image_url}
 										<img
 											src={getCardImageUrl(card.image_url, 140, 'webp')}
 											alt={card.name_en}
-											class="h-full w-full {card.name_en === 'Baron Pit' || card.name_en === 'Brush' ? 'object-contain' : 'object-cover'} transition duration-300 group-hover:scale-105"
+											class="h-full w-full {card.name_en === 'Baron Pit' || card.name_en === 'Brush'
+												? 'object-contain'
+												: 'object-cover'} transition duration-300 group-hover:scale-105"
 										/>
 									{:else}
-										<div class="p-1 h-full flex items-center justify-center text-[8px] font-black uppercase text-slate-400 text-center">
+										<div
+											class="flex h-full items-center justify-center p-1 text-center text-[8px] font-black text-slate-400 uppercase"
+										>
 											{card.name_en}
 										</div>
 									{/if}
-									<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-[10px] font-black uppercase tracking-wider text-white transition">
-										View
+									<div
+										class="absolute inset-0 flex items-center justify-center bg-black/60 text-[10px] font-black tracking-wider text-white uppercase opacity-0 transition group-hover:opacity-100"
+									>
+										ดู
 									</div>
 								</button>
 							{/if}
@@ -127,26 +149,28 @@
 									<span
 										class="rounded-md border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-black tracking-widest text-cyan-100 uppercase"
 									>
-										{report.report_type.replace('_', ' ')}
+										{reportTypeLabels[report.report_type] ?? report.report_type}
 									</span>
 									<span
 										class="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-[10px] font-black tracking-widest text-slate-300 uppercase"
 									>
-										{report.status}
+										{statusLabels[report.status] ?? report.status}
 									</span>
 									<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
 										{new Date(report.created_at).toLocaleString()}
 									</span>
 								</div>
-								<h2 class="mt-3 text-xl font-black text-white uppercase italic flex flex-wrap items-center gap-2">
+								<h2
+									class="mt-3 flex flex-wrap items-center gap-2 text-xl font-black text-white uppercase italic"
+								>
 									<span>{report.card_name}</span>
 									{#if card}
-										<button 
-											type="button" 
-											onclick={() => selectedPopupCard = card} 
-											class="text-[9px] normal-case not-italic font-bold px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 hover:bg-cyan-500/20 transition cursor-pointer flex items-center gap-1"
+										<button
+											type="button"
+											onclick={() => (selectedPopupCard = card)}
+											class="flex cursor-pointer items-center gap-1 rounded border border-cyan-400/20 bg-cyan-500/10 px-2 py-0.5 text-[9px] font-bold text-cyan-300 normal-case not-italic transition hover:bg-cyan-500/20"
 										>
-											View Card
+											ดูการ์ด
 										</button>
 									{/if}
 								</h2>
@@ -159,12 +183,14 @@
 									{report.message}
 								</p>
 								<p class="mt-3 text-xs font-bold text-slate-500">
-									From: {report.app_users?.display_name || report.app_users?.email?.split('@')[0] || 'Anonymous'}
+									จาก: {report.app_users?.display_name ||
+										report.app_users?.email?.split('@')[0] ||
+										'ไม่ระบุชื่อ'}
 								</p>
 							</div>
 						</div>
-						
-						<div class="grid min-w-48 gap-2 shrink-0">
+
+						<div class="grid min-w-48 shrink-0 gap-2">
 							{#each ['open', 'reviewing', 'resolved', 'dismissed'] as nextStatus}
 								<button
 									type="button"
@@ -176,8 +202,8 @@
 									onclick={() => updateReport(report, nextStatus as CardReportStatus)}
 								>
 									{updatingId === report.id && report.status !== nextStatus
-										? 'Updating...'
-										: nextStatus}
+										? 'กำลังอัปเดต...'
+										: statusLabels[nextStatus]}
 								</button>
 							{/each}
 						</div>
@@ -185,8 +211,8 @@
 				</article>
 			{:else}
 				<section class="rt-panel rounded-xl p-8 text-center">
-					<h2 class="text-2xl font-black text-white uppercase italic">No Reports</h2>
-					<p class="rt-copy mx-auto mt-3 max-w-lg text-sm">No reports match this filter.</p>
+					<h2 class="text-2xl font-black text-white uppercase italic">ไม่พบรายงาน</h2>
+					<p class="rt-copy mx-auto mt-3 max-w-lg text-sm">ไม่มีรายงานตรงกับตัวกรองนี้</p>
 				</section>
 			{/each}
 		</section>
@@ -195,7 +221,7 @@
 	{#if selectedPopupCard}
 		<CardModal
 			card={selectedPopupCard}
-			closePopup={() => selectedPopupCard = null}
+			closePopup={() => (selectedPopupCard = null)}
 			canEdit={false}
 		/>
 	{/if}

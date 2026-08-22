@@ -6,7 +6,7 @@ import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/securit
 
 export const GET = async ({ cookies }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
 	const conversation = await getOrCreateConversation(user);
 	const messages = await getMessages(conversation.id);
@@ -16,7 +16,7 @@ export const GET = async ({ cookies }) => {
 
 export const POST = async ({ request, cookies, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
 	const ip = clientKey(getClientAddress());
 	const ipLimit = checkRateLimit(`support-chat:ip:${ip}`, { windowMs: 60_000, max: 20 });

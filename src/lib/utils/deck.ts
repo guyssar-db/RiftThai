@@ -71,10 +71,33 @@ export const deckCollectionStorageKey = 'riftthai.decks.v1';
 export const maxMainCopiesPerName = 3;
 export const maxMainDeckCards = 39;
 export const maxBattlefieldCopiesPerName = 1;
+export const requiredBattlefieldCards = 3;
 export const maxLegendCards = 1;
 export const maxChampionCards = 1;
 export const maxRuneCards = 12;
-export const maxSideboardCards = 8;
+export const maxSideboardCards = 10;
+
+export const standardRulesMetadata = {
+	lastCheckedLabel: '22 ส.ค. 2026',
+	effectiveLabel: '24 ก.ค. 2026',
+	rulesHubUrl: 'https://playriftbound.com/en-us/rules-hub/',
+	changelogUrl:
+		'https://playriftbound.com/en-us/news/announcements/july-2026-tournament-rules-update-changelog/'
+} as const;
+
+export const standardBannedCardNames = new Set([
+	'Called Shot',
+	'Draven, Vanquisher',
+	'Fight or Flight',
+	'Scrapheap',
+	'Stealthy Pursuer',
+	"The Arena's Greatest",
+	"Aspirant's Climb",
+	'The Dreaming Tree',
+	'Obelisk of Power',
+	"Reaver's Row"
+]);
+const unlimitedCopyCardNames = new Set(['Spiderling']);
 
 const mainExclusions = new Set(['Rune', 'Battlefield', 'Legend']);
 const tokenCardNames = new Set([
@@ -398,10 +421,26 @@ export function validateDeck(
 			issues.push({
 				id: `unknown-${entry.code}`,
 				severity: 'error',
-				label: 'Unknown card',
-				message: `${entry.code} is not in the card database.`
+				label: 'ไม่พบการ์ด',
+				message: `ไม่พบรหัส ${entry.code} ในฐานข้อมูลการ์ด`
 			});
 		}
+	}
+
+	const bannedNamesFound = new Set<string>();
+	for (const { card } of [...deckCards, ...sideboardCards]) {
+		if (standardBannedCardNames.has(card.name_en)) bannedNamesFound.add(card.name_en);
+	}
+	if (champion && standardBannedCardNames.has(champion.name_en)) {
+		bannedNamesFound.add(champion.name_en);
+	}
+	for (const name of bannedNamesFound) {
+		issues.push({
+			id: `banned-${name}`,
+			severity: 'error',
+			label: 'การ์ดถูกแบน',
+			message: `${name} ถูกแบนในการแข่งขันรูปแบบ Standard Constructed`
+		});
 	}
 
 	if (stats.legendTotal !== maxLegendCards) {
@@ -411,8 +450,8 @@ export function validateDeck(
 			label: 'Legend',
 			message:
 				stats.legendTotal === 0
-					? 'Choose exactly 1 Legend.'
-					: `Use exactly 1 Legend. Current: ${stats.legendTotal}.`
+					? 'เลือก Legend ให้ครบ 1 ใบ'
+					: `เด็คต้องมี Legend 1 ใบเท่านั้น ขณะนี้มี ${stats.legendTotal} ใบ`
 		});
 	}
 
@@ -421,14 +460,23 @@ export function validateDeck(
 			id: 'champion-missing',
 			severity: 'error',
 			label: 'Champion',
-			message: 'Choose exactly 1 Champion that matches your Legend tag.'
+			message: 'เลือก Champion 1 ใบที่มีแท็กตรงกับ Legend'
 		});
 	} else if (!isChampionCandidate(champion, legend)) {
 		issues.push({
 			id: 'champion-invalid',
 			severity: 'error',
 			label: 'Champion',
-			message: `${champion.name_en} does not match the selected Legend.`
+			message: `${champion.name_en} มีแท็กไม่ตรงกับ Legend ที่เลือก`
+		});
+	}
+
+	if (stats.battlefieldTotal !== requiredBattlefieldCards) {
+		issues.push({
+			id: 'battlefield-count',
+			severity: 'error',
+			label: 'Battlefield',
+			message: `เลือก Battlefield ชื่อไม่ซ้ำกันให้ครบ ${requiredBattlefieldCards} ใบ ขณะนี้มี ${stats.battlefieldTotal} ใบ`
 		});
 	}
 
@@ -436,24 +484,17 @@ export function validateDeck(
 		issues.push({
 			id: 'main-count',
 			severity: 'error',
-			label: 'Main deck',
-			message: `Main deck must be ${maxMainDeckCards} cards. Current: ${stats.mainTotal}.`
+			label: 'Main Deck',
+			message: `Main Deck ต้องมี ${maxMainDeckCards} ใบ ขณะนี้มี ${stats.mainTotal} ใบ`
 		});
 	}
 
-	if (stats.runeTotal > maxRuneCards) {
+	if (stats.runeTotal !== maxRuneCards) {
 		issues.push({
 			id: 'rune-count',
 			severity: 'error',
-			label: 'Rune deck',
-			message: `Rune deck can have at most ${maxRuneCards} cards. Current: ${stats.runeTotal}.`
-		});
-	} else if (stats.runeTotal === 0) {
-		issues.push({
-			id: 'rune-empty',
-			severity: 'warning',
-			label: 'Rune deck',
-			message: 'No runes selected yet.'
+			label: 'Rune Deck',
+			message: `Rune Deck ต้องมี ${maxRuneCards} ใบ ขณะนี้มี ${stats.runeTotal} ใบ`
 		});
 	}
 
@@ -462,11 +503,22 @@ export function validateDeck(
 			id: 'sideboard-count',
 			severity: 'error',
 			label: 'Sideboard',
-			message: `Sideboard can have at most ${maxSideboardCards} cards. Current: ${stats.sideboardTotal}.`
+			message: `Sideboard ใส่ได้ไม่เกิน ${maxSideboardCards} ใบ ขณะนี้มี ${stats.sideboardTotal} ใบ`
 		});
 	}
 
-	for (const issue of getCopyLimitIssues(deckCards, sideboardCards)) issues.push(issue);
+	for (const { card } of sideboardCards) {
+		if (!isMainDeckCard(card)) {
+			issues.push({
+				id: `sideboard-type-${card.code}`,
+				severity: 'error',
+				label: 'Sideboard',
+				message: `${card.name_en} ไม่สามารถใส่ใน Sideboard ของ Constructed ได้`
+			});
+		}
+	}
+
+	for (const issue of getCopyLimitIssues(deckCards, sideboardCards, champion)) issues.push(issue);
 
 	if (legend) {
 		for (const { card } of [...deckCards, ...sideboardCards]) {
@@ -475,7 +527,7 @@ export function validateDeck(
 					id: `domain-${card.code}`,
 					severity: 'error',
 					label: 'Domain',
-					message: `${card.name_en} is outside ${legend.name_en}'s domains.`
+					message: `${card.name_en} อยู่นอก Domain ของ ${legend.name_en}`
 				});
 			}
 		}
@@ -501,17 +553,22 @@ export function validateDeck(
 				value: champion ? '1/1' : '0/1'
 			},
 			{
+				label: 'สนาม',
+				status: stats.battlefieldTotal === requiredBattlefieldCards ? 'pass' : 'fail',
+				value: `${stats.battlefieldTotal}/${requiredBattlefieldCards}`
+			},
+			{
 				label: 'Main',
 				status: stats.mainTotal === maxMainDeckCards ? 'pass' : 'fail',
 				value: `${stats.mainTotal}/${maxMainDeckCards}`
 			},
 			{
 				label: 'Rune',
-				status: stats.runeTotal > maxRuneCards ? 'fail' : stats.runeTotal === 0 ? 'warn' : 'pass',
+				status: stats.runeTotal === maxRuneCards ? 'pass' : 'fail',
 				value: `${stats.runeTotal}/${maxRuneCards}`
 			},
 			{
-				label: 'Side',
+				label: 'สำรอง',
 				status: stats.sideboardTotal > maxSideboardCards ? 'fail' : 'pass',
 				value: `${stats.sideboardTotal}/${maxSideboardCards}`
 			}
@@ -537,6 +594,10 @@ export function isTokenCard(card: Card) {
 
 export function isMainDeckCard(card: Card) {
 	return !mainExclusions.has(card.type) && !isTokenCard(card);
+}
+
+export function hasUnlimitedDeckCopies(card: Card) {
+	return unlimitedCopyCardNames.has(card.name_en);
 }
 
 export function isChampionCandidate(card: Card, legend: Card | null) {
@@ -615,13 +676,17 @@ function sortNumberLabels(values: Map<string, number>) {
 		});
 }
 
-function getCopyLimitIssues(deckCards: DeckCard[], sideboardCards: DeckCard[]) {
+function getCopyLimitIssues(
+	deckCards: DeckCard[],
+	sideboardCards: DeckCard[],
+	champion: Card | null
+) {
 	const issues: DeckValidationIssue[] = [];
 	const mainCopies = new Map<string, number>();
 	const battlefieldCopies = new Map<string, number>();
 
 	for (const { card, quantity } of [...deckCards, ...sideboardCards]) {
-		if (isMainDeckCard(card)) {
+		if (isMainDeckCard(card) && !hasUnlimitedDeckCopies(card)) {
 			mainCopies.set(card.name_en, (mainCopies.get(card.name_en) ?? 0) + quantity);
 		}
 		if (isBattlefieldCard(card)) {
@@ -629,13 +694,17 @@ function getCopyLimitIssues(deckCards: DeckCard[], sideboardCards: DeckCard[]) {
 		}
 	}
 
+	if (champion && !hasUnlimitedDeckCopies(champion)) {
+		mainCopies.set(champion.name_en, (mainCopies.get(champion.name_en) ?? 0) + 1);
+	}
+
 	for (const [name, quantity] of mainCopies) {
 		if (quantity > maxMainCopiesPerName) {
 			issues.push({
 				id: `copy-main-${name}`,
 				severity: 'error',
-				label: 'Copy limit',
-				message: `${name} has ${quantity} copies across main deck and sideboard. Max: ${maxMainCopiesPerName}.`
+				label: 'จำนวนการ์ดซ้ำ',
+				message: `${name} มีรวม ${quantity} ใบใน Main Deck และ Sideboard ใส่ได้สูงสุด ${maxMainCopiesPerName} ใบ`
 			});
 		}
 	}
@@ -646,7 +715,7 @@ function getCopyLimitIssues(deckCards: DeckCard[], sideboardCards: DeckCard[]) {
 				id: `copy-field-${name}`,
 				severity: 'error',
 				label: 'Battlefield',
-				message: `${name} has ${quantity} copies. Max: ${maxBattlefieldCopiesPerName}.`
+				message: `${name} มี ${quantity} ใบ ใส่ได้สูงสุด ${maxBattlefieldCopiesPerName} ใบ`
 			});
 		}
 	}
@@ -686,14 +755,15 @@ function normalizeStoredDeck(value: unknown): StoredDeck | null {
 			value.visibility === 'private'
 				? value.visibility
 				: undefined,
-		likesCount: typeof (value as any).likesCount === 'number' ? (value as any).likesCount : undefined,
+		likesCount:
+			typeof (value as any).likesCount === 'number' ? (value as any).likesCount : undefined,
 		isLiked: typeof (value as any).isLiked === 'boolean' ? (value as any).isLiked : undefined
 	};
 }
 
 function normalizeDeckName(value: unknown) {
 	const name = String(value ?? '').trim();
-	return name ? name.slice(0, 48) : 'Untitled Deck';
+	return name ? name.slice(0, 48) : 'เด็คไม่มีชื่อ';
 }
 
 function decrementDeckEntry(entries: DeckEntry[], code: string) {

@@ -20,25 +20,25 @@
 			></span>
 			<div class="min-w-0">
 				<div class="flex flex-wrap items-center gap-2">
-					<h2 class="text-sm font-black tracking-widest text-white uppercase">Deck Check</h2>
+					<h2 class="text-sm font-black tracking-widest text-white uppercase">ตรวจสอบเด็ค</h2>
 					<span
 						class="rounded-md px-2 py-0.5 text-[10px] font-black tracking-widest uppercase {validation.isReady
 							? 'bg-emerald-300 text-slate-950'
 							: 'bg-amber-200 text-slate-950'}"
 					>
-						{validation.isReady ? 'Ready' : `${validation.errorCount} Fix`}
+						{validation.isReady ? 'พร้อมเล่น' : `ต้องแก้ ${validation.errorCount} จุด`}
 					</span>
 					{#if validation.warningCount > 0}
 						<span
 							class="rounded-md border border-amber-200/20 bg-amber-300/10 px-2 py-0.5 text-[10px] font-black tracking-widest text-amber-100 uppercase"
 						>
-							{validation.warningCount} Warn
+							เตือน {validation.warningCount} จุด
 						</span>
 					{/if}
 				</div>
 				<p class="mt-1 truncate text-xs font-semibold text-slate-400">
 					{validation.isReady
-						? 'ผ่านเงื่อนไขหลักแล้ว พร้อม save / share / export'
+						? 'ผ่านเงื่อนไขหลักแล้ว พร้อมบันทึก แชร์ และส่งออก'
 						: topIssue?.message}
 				</p>
 			</div>
@@ -73,7 +73,7 @@
 			<summary
 				class="cursor-pointer text-xs font-black tracking-widest text-slate-400 uppercase hover:text-white"
 			>
-				Show all issues ({validation.issues.length})
+				ดูปัญหาทั้งหมด ({validation.issues.length})
 			</summary>
 			<div class="mt-3 grid gap-2">
 				{#each validation.issues as issue}

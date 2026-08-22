@@ -5,12 +5,15 @@
 	import DeckProgressStrip from '$lib/components/DeckProgressStrip.svelte';
 	import DeckValidationPanel from '$lib/components/DeckValidationPanel.svelte';
 	import IconSelect from '$lib/components/IconSelect.svelte';
+	import HoldToConfirmButton from '$lib/components/ui/HoldToConfirmButton.svelte';
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
 	import { getDomainIcon } from '$lib/data/domainIcons';
 	import { getRarityIcon } from '$lib/data/rarityIcons';
+	import { getSetIcon } from '$lib/data/setIcons';
 	import { getTypeIcons } from '$lib/data/typeIcons';
 	import type { Card } from '$lib/types/card';
 	import { getCardImageUrl } from '$lib/utils/cardImages';
+	import { usesLandscapeCardFrame } from '$lib/utils/cardPresentation';
 	import {
 		buildDeckCards,
 		calculateDeckStats,
@@ -22,6 +25,7 @@
 		getChampionCard,
 		getCardQuantity,
 		getSelectedLegend,
+		hasUnlimitedDeckCopies,
 		isBattlefieldCard,
 		isCardAllowedForLegend,
 		isChampionCandidate,
@@ -60,12 +64,14 @@
 	let entries = $state<DeckEntry[]>([]);
 	let sideboardEntries = $state<DeckEntry[]>([]);
 	let isEditingSideboard = $state(false);
+	let legendSearchTerm = $state('');
 	let searchTerm = $state('');
 	let zoneFilter = $state<
 		'all' | 'unit' | 'spell' | 'gear' | 'rune' | 'battlefield' | 'legend' | 'token'
 	>('all');
 	let domainFilter = $state('All');
 	let setFilter = $state('All');
+	let ownershipFilter = $state<'all' | 'owned' | 'missing' | 'in-deck'>('all');
 	let cardPage = $state(1);
 	const cardsPerPage = 24;
 	let deckNameInput = $state('My Deck');
@@ -88,15 +94,22 @@
 		void loadUserCollection();
 	});
 
+	$effect(() => {
+		if (!browser || !undoSnapshot) return;
+		const timeoutId = window.setTimeout(() => {
+			undoSnapshot = null;
+			undoMessage = '';
+		}, 4000);
+		return () => window.clearTimeout(timeoutId);
+	});
+
 	async function loadUserCollection() {
 		try {
 			const session = await getAuthSession<{ user?: unknown }>();
 			if (session.user) {
 				userCardCollection = await getUserCollection();
 			}
-		} catch (err) {
-			console.error('Failed to load user collection:', err);
-		}
+		} catch {}
 	}
 
 	let activeDeck = $derived(getActiveStoredDeck(collection));
@@ -116,14 +129,42 @@
 	);
 	let activeFilterCount = $derived(
 		[zoneFilter, domainFilter, setFilter].filter((value) => value !== 'all' && value !== 'All')
-			.length
+			.length + (ownershipFilter !== 'all' ? 1 : 0)
 	);
 	let legendCards = $derived(cards.filter(isLegendCard));
+	let filteredLegendCards = $derived.by(() => {
+		const query = legendSearchTerm.trim().toLocaleLowerCase();
+		if (!query) return legendCards;
+
+		const tokens = query.split(/\s+/).filter(Boolean);
+		return legendCards.filter((card) => {
+			const searchable = [
+				card.name_en,
+				card.name_th,
+				card.code,
+				card.set_name,
+				card.type,
+				...(card.tags ?? []),
+				...(card.domains ?? [])
+			]
+				.filter(Boolean)
+				.join(' ')
+				.toLocaleLowerCase();
+			return tokens.every((token) => searchable.includes(token));
+		});
+	});
 	let setFilterOptions = $derived([
-		{ label: 'All Sets', value: 'All' },
+		{ label: 'ทุกชุด', value: 'All' },
 		...[...new Set(cards.map((card) => card.set_name).filter(Boolean))]
 			.sort((a, b) => a.localeCompare(b))
-			.map((set) => ({ label: set, value: set }))
+			.map((set) => {
+				const icon = getSetIcon(set);
+				return {
+					label: set,
+					value: set,
+					icons: icon ? [{ label: set, src: icon }] : undefined
+				};
+			})
 	]);
 	let domainFilterValues = $derived(
 		selectedLegend
@@ -133,7 +174,7 @@
 				)
 	);
 	let domainFilterOptions = $derived([
-		{ label: 'All Colors', value: 'All' },
+		{ label: 'ทุก Domain', value: 'All' },
 		...domainFilterValues.map((domain) => {
 			const icon = getDomainIcon(domain);
 			return {
@@ -145,13 +186,13 @@
 	]);
 	let zoneFilterOptions = $derived(
 		[
-			{ label: 'All Types', value: 'all', type: '' },
-			{ label: 'Unit', value: 'unit', type: 'Unit' },
-			{ label: 'Spell', value: 'spell', type: 'Spell' },
-			{ label: 'Gear', value: 'gear', type: 'Gear' },
+			{ label: 'ทุกประเภท', value: 'all', type: '' },
+			{ label: 'ยูนิต', value: 'unit', type: 'Unit' },
+			{ label: 'เวท', value: 'spell', type: 'Spell' },
+			{ label: 'อุปกรณ์', value: 'gear', type: 'Gear' },
 			{ label: 'Rune', value: 'rune', type: 'Rune' },
-			{ label: 'Battlefield', value: 'battlefield', type: 'Battlefield' },
-			{ label: 'Token', value: 'token', type: '' }
+			{ label: 'สนาม', value: 'battlefield', type: 'Battlefield' },
+			{ label: 'การ์ด Token', value: 'token', type: '' }
 		].map((option) => ({
 			label: option.label,
 			value: option.value,
@@ -163,6 +204,12 @@
 				: []
 		}))
 	);
+	const ownershipFilterOptions = [
+		{ label: 'การ์ดสะสมทั้งหมด', value: 'all' },
+		{ label: 'มีการ์ด', value: 'owned' },
+		{ label: 'ยังขาด', value: 'missing' },
+		{ label: 'อยู่ในเด็ค', value: 'in-deck' }
+	];
 	let indexedCards = $derived(
 		cards.map((card) => ({
 			card,
@@ -173,6 +220,8 @@
 				card.type,
 				card.rarity,
 				card.set_name,
+				card.ability_en,
+				card.ability_th,
 				...(card.domains ?? []),
 				...(card.tags ?? [])
 			])
@@ -194,6 +243,15 @@
 				if (zoneFilter === 'token' && !isTokenCard(card)) return false;
 				if (setFilter !== 'All' && card.set_name !== setFilter) return false;
 				if (domainFilter !== 'All' && !(card.domains ?? []).includes(domainFilter)) return false;
+				const owned =
+					(userCardCollection[card.code] ?? 0) + (userCardCollection[`${card.code}_foil`] ?? 0);
+				const deckQuantity = isEditingSideboard
+					? getCardQuantity(sideboardEntries, card.code)
+					: getCardQuantity(entries, card.code);
+				if (ownershipFilter === 'owned' && owned <= 0) return false;
+				if (ownershipFilter === 'missing' && !(deckQuantity > 0 && owned < deckQuantity))
+					return false;
+				if (ownershipFilter === 'in-deck' && deckQuantity <= 0) return false;
 				// if (
 				// 	zoneFilter === 'other' &&
 				// 	(isMainDeckCard(card) ||
@@ -242,6 +300,8 @@
 		zoneFilter;
 		domainFilter;
 		setFilter;
+		ownershipFilter;
+		isEditingSideboard;
 		selectedLegend?.code;
 		cardPage = 1;
 	});
@@ -375,7 +435,7 @@
 	function saveCollection(nextCollection: DeckCollection) {
 		if (!isDeckLoading) {
 			undoSnapshot = collection;
-			undoMessage = 'Deck updated';
+			undoMessage = 'อัปเดตเด็คแล้ว';
 		}
 		collection = normalizeDeckCollection(nextCollection);
 		deckNameInput = getActiveStoredDeck(collection).name;
@@ -477,6 +537,10 @@
 		selectedPopupCard = null;
 	}
 
+	function getChosenChampionCopyCount(card: Card) {
+		return championCard?.name_en === card.name_en ? 1 : 0;
+	}
+
 	function clampQuantity(card: Card, quantity: number) {
 		const safeQuantity = Math.max(0, Math.floor(Number(quantity) || 0));
 		const current = getCardQuantity(entries, card.code);
@@ -485,13 +549,13 @@
 			const sideboardCount = sideboardCards
 				.filter((item) => item.card.name_en === card.name_en)
 				.reduce((total, item) => total + item.quantity, 0);
-			const usedBySameName = getQuantityByName(card) - current + sideboardCount;
+			const usedBySameName =
+				getQuantityByName(card) - current + sideboardCount + getChosenChampionCopyCount(card);
 			const currentMainTotal = stats.mainTotal - current;
-			return Math.min(
-				safeQuantity,
-				Math.max(0, maxMainCopiesPerName - usedBySameName),
-				Math.max(0, maxMainDeckCards - currentMainTotal)
-			);
+			const copyLimit = hasUnlimitedDeckCopies(card)
+				? Number.POSITIVE_INFINITY
+				: Math.max(0, maxMainCopiesPerName - usedBySameName);
+			return Math.min(safeQuantity, copyLimit, Math.max(0, maxMainDeckCards - currentMainTotal));
 		}
 
 		if (isTokenCard(card)) {
@@ -523,13 +587,14 @@
 
 		let limit = maxSideboardCards - currentSideboardTotal;
 
-		const maxAllowed = maxMainCopiesPerName;
-		const mainCount = getQuantityByName(card);
+		const mainCount = getQuantityByName(card) + getChosenChampionCopyCount(card);
 		const sideboardCount = sideboardCards
 			.filter((item) => item.card.name_en === card.name_en && item.card.code !== card.code)
 			.reduce((total, item) => total + item.quantity, 0);
 
-		limit = Math.min(limit, Math.max(0, maxAllowed - (mainCount + sideboardCount)));
+		if (!hasUnlimitedDeckCopies(card)) {
+			limit = Math.min(limit, Math.max(0, maxMainCopiesPerName - (mainCount + sideboardCount)));
+		}
 
 		return Math.min(safeQuantity, limit);
 	}
@@ -542,7 +607,8 @@
 
 	function getQuantityLimit(card: Card) {
 		if (isEditingSideboard) return isMainDeckCard(card) ? maxSideboardCards : 0;
-		if (isMainDeckCard(card)) return maxMainCopiesPerName;
+		if (isMainDeckCard(card))
+			return hasUnlimitedDeckCopies(card) ? maxMainDeckCards : maxMainCopiesPerName;
 		if (isBattlefieldCard(card)) return maxBattlefieldCopiesPerName;
 		if (isRuneCard(card)) return maxRuneCards;
 		if (isLegendCard(card)) return maxLegendCards;
@@ -566,17 +632,17 @@
 
 	function getLimitLabel(card: Card) {
 		if (isEditingSideboard) {
-			if (!isMainDeckCard(card)) return 'main deck cards only';
-			return `sideboard ${stats.sideboardTotal}/${maxSideboardCards}`;
+			if (!isMainDeckCard(card)) return 'ใส่ได้เฉพาะการ์ด Main Deck';
+			return `Sideboard ${stats.sideboardTotal}/${maxSideboardCards}`;
 		}
-		if (card.code === activeDeck.championCode) return 'champion zone';
+		if (card.code === activeDeck.championCode) return 'อยู่ในช่อง Champion';
 		if (isChampionCandidate(card, selectedLegend))
 			return `main ${stats.mainTotal}/${maxMainDeckCards}`;
 		if (isMainDeckCard(card)) return `main ${stats.mainTotal}/${maxMainDeckCards}`;
-		if (isBattlefieldCard(card)) return `max ${maxBattlefieldCopiesPerName}/name`;
-		if (isRuneCard(card)) return `${stats.runeTotal}/${maxRuneCards} runes`;
-		if (isLegendCard(card)) return '1 legend';
-		if (isTokenCard(card)) return 'token, unlimited';
+		if (isBattlefieldCard(card)) return `สูงสุด ${maxBattlefieldCopiesPerName} ใบต่อชื่อ`;
+		if (isRuneCard(card)) return `Rune ${stats.runeTotal}/${maxRuneCards}`;
+		if (isLegendCard(card)) return 'Legend 1 ใบ';
+		if (isTokenCard(card)) return 'Token ไม่จำกัดจำนวน';
 		return '';
 	}
 
@@ -620,13 +686,15 @@
 <div class="rt-page-shell min-h-dvh pb-16 text-slate-100">
 	<div class="mesh-gradient"></div>
 
-	<nav class="design-nav sticky top-0 z-50 border-b border-amber-200/10 bg-[#0a0e15]/90 backdrop-blur-xl">
+	<nav
+		class="design-nav sticky top-0 z-50 border-b border-amber-200/10 bg-[#0a0e15]/90 backdrop-blur-xl"
+	>
 		<div class="rt-container flex items-center justify-between gap-4 py-3">
 			<a
 				href="/"
 				class="shrink-0 border-l-2 border-amber-200/50 pl-3 text-xl font-black text-white uppercase italic"
 			>
-				Rift<span class="text-cyan-300">Thai</span>
+				Rift<span class="rt-brand-accent">Thai</span>
 			</a>
 			<SiteMenu active="deck" />
 		</div>
@@ -635,10 +703,10 @@
 	<main class="rt-container py-6 sm:py-10">
 		<header class="design-hero rt-panel rt-topline mb-6 overflow-hidden rounded-2xl">
 			<div class="rt-rule-line p-5 pl-7 sm:p-7 sm:pl-9">
-				<p class="rt-kicker mb-3">Deck Editor</p>
+				<p class="rt-kicker mb-3">หน้าจัดเด็ค</p>
 				<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 					<div>
-						<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">Build Deck</h1>
+						<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">จัดเด็ค</h1>
 						<p class="rt-copy mt-3 max-w-2xl text-sm">
 							ค้นหาการ์ดแล้วกดเพิ่มหรือลดจำนวน เด็คจะบันทึกไว้ใน browser เครื่องนี้อัตโนมัติ
 						</p>
@@ -647,7 +715,7 @@
 						<div class="flex flex-wrap items-end gap-2">
 							<label class="grid min-w-[220px] flex-1 gap-1 sm:flex-none">
 								<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase"
-									>Deck Name</span
+									>ชื่อเด็ค</span
 								>
 								<input
 									bind:value={deckNameInput}
@@ -659,16 +727,21 @@
 									}}
 								/>
 							</label>
-							<a href="/deck" class="rt-action">View Deck</a>
+							<a href="/deck" class="rt-action">ดูเด็ค</a>
 							<button
 								type="button"
 								class="inline-flex min-h-11 items-center rounded-lg border border-rose-300/20 px-4 text-xs font-black tracking-widest text-rose-100 uppercase transition hover:bg-rose-500/10 disabled:opacity-40"
 								disabled={entries.length === 0}
 								onclick={requestClearDeck}
 							>
-								Clear
+								ล้างเด็ค
 							</button>
 						</div>
+						<p class="text-right text-[10px] font-bold tracking-wide text-slate-500">
+							{activeDeck.onlineId
+								? 'บันทึกการแก้ไขไว้ในเครื่องก่อน · ไปที่เด็คของฉันเพื่อซิงก์ออนไลน์'
+								: 'เด็คในเครื่อง · ไปที่เด็คของฉันเมื่อต้องการบันทึกออนไลน์'}
+						</p>
 						{#if selectedLegend}
 							<div class="flex flex-wrap justify-end gap-2">
 								{#each allowedDomains as domain}
@@ -702,7 +775,9 @@
 					class="grid min-h-16 min-w-36 place-items-center rounded-lg border border-dashed border-cyan-300/30 bg-cyan-300/5 px-4 text-center transition hover:bg-cyan-300/10"
 					onclick={createDeck}
 				>
-					<span class="text-xs font-black tracking-widest text-cyan-100 uppercase">+ New Deck</span>
+					<span class="text-xs font-black tracking-widest text-cyan-100 uppercase"
+						>+ สร้างเด็คใหม่</span
+					>
 				</button>
 				{#each collection.decks as deck}
 					<div class="relative min-w-48">
@@ -720,7 +795,7 @@
 							<span
 								class="mt-1 block text-[10px] font-black tracking-widest text-slate-500 uppercase"
 							>
-								{deck.entries.reduce((total, entry) => total + entry.quantity, 0)} Cards
+								{deck.entries.reduce((total, entry) => total + entry.quantity, 0)} ใบ
 							</span>
 						</button>
 						<button
@@ -730,7 +805,7 @@
 								event.stopPropagation();
 								toggleDeckMenu(deck.id, event.currentTarget);
 							}}
-							aria-label={`Open actions for ${deck.name}`}
+							aria-label={`เปิดเมนูของ ${deck.name}`}
 						>
 							&vellip;
 						</button>
@@ -740,7 +815,7 @@
 		</section>
 
 		{#if !deckValidation.isReady}
-			<div class="sticky top-[4.75rem] z-30">
+			<div>
 				<DeckProgressStrip {stats} validation={deckValidation} />
 			</div>
 		{/if}
@@ -792,52 +867,130 @@
 		{/if} -->
 
 		{#if !selectedLegend}
-			<section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-				{#each legendCards as card}
-					<button
-						type="button"
-						class="rt-panel flex gap-3 rounded-xl p-3 text-left transition hover:border-amber-200/40"
-						onclick={() => selectLegend(card)}
-					>
-						<img
-							src={getCardImageUrl(card.image_url, 180, 'webp')}
-							class="pointer-events-none aspect-[744/1039] w-20 shrink-0 rounded-md object-cover"
-							alt={card.name_en}
-							loading="lazy"
-						/>
-						<div class="min-w-0">
-							<div class="truncate text-sm font-black text-white">{card.name_en}</div>
-							<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
-								{card.code}
-							</div>
-							<div class="mt-3 flex flex-wrap gap-1">
-								{#each card.domains ?? [] as domain}
-									<span
-										class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black tracking-widest text-slate-300 uppercase"
-									>
-										{domain}
-									</span>
-								{/each}
-							</div>
+			<section class="space-y-4">
+				<div class="rt-panel rt-topline rounded-xl p-3 sm:p-4">
+					<div class="mb-3 flex items-end justify-between gap-3 px-1">
+						<div>
+							<p class="rt-kicker">เลือก Legend ของคุณ</p>
+							<p class="mt-1 text-xs font-semibold text-slate-500">
+								ค้นหาด้วยชื่อ Legend, รหัส หรือแท็ก Unit / Champion
+							</p>
 						</div>
-					</button>
-				{/each}
+						<span class="rt-chip">Legend {filteredLegendCards.length} ใบ</span>
+					</div>
+					<div class="group relative">
+						<svg
+							class="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-slate-500 transition group-focus-within:text-amber-200"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							aria-hidden="true"
+						>
+							<circle cx="11" cy="11" r="7" />
+							<path d="m20 20-3.5-3.5" />
+						</svg>
+						<input
+							bind:value={legendSearchTerm}
+							class="min-h-12 w-full rounded-lg border border-white/10 bg-[#080b12]/80 pr-14 pl-12 text-sm font-semibold text-white shadow-inner shadow-black/20 transition placeholder:text-slate-600 focus:border-amber-200/50 focus:ring-4 focus:ring-amber-200/10 focus:outline-none"
+							placeholder="ค้นหาชื่อ Legend แท็ก Champion หรือรหัส..."
+							aria-label="ค้นหา Legend"
+						/>
+						{#if legendSearchTerm}
+							<button
+								type="button"
+								class="absolute top-1/2 right-1.5 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-lg text-slate-500 transition hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-200/20"
+								onclick={() => (legendSearchTerm = '')}
+								aria-label="ล้างคำค้นหา Legend"
+							>
+								<svg
+									class="h-5 w-5"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2.5"
+									aria-hidden="true"
+								>
+									<path d="M18 6 6 18M6 6l12 12" />
+								</svg>
+							</button>
+						{/if}
+					</div>
+				</div>
+
+				<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					{#each filteredLegendCards as card}
+						<button
+							type="button"
+							class="rt-panel flex min-h-28 gap-3 rounded-xl p-3 text-left transition hover:border-amber-200/40 focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-200/20"
+							onclick={() => selectLegend(card)}
+						>
+							<img
+								src={getCardImageUrl(card.image_url, 180, 'webp')}
+								class="pointer-events-none aspect-[744/1039] w-20 shrink-0 rounded-md object-cover"
+								alt={card.name_en}
+								loading="lazy"
+							/>
+							<div class="min-w-0">
+								<div class="truncate text-sm font-black text-white">{card.name_en}</div>
+								{#if card.name_th && card.name_th !== card.name_en}
+									<div class="mt-1 truncate text-xs font-semibold text-slate-400">
+										{card.name_th}
+									</div>
+								{/if}
+								<div class="mt-1 text-[10px] font-black tracking-widest text-slate-500 uppercase">
+									{card.code}
+								</div>
+								<div class="mt-3 flex flex-wrap gap-1">
+									{#each card.tags ?? [] as tag}
+										<span
+											class="rounded-md border border-amber-200/15 bg-amber-200/8 px-2 py-1 text-[10px] font-black tracking-widest text-amber-100 uppercase"
+										>
+											{tag}
+										</span>
+									{/each}
+									{#each card.domains ?? [] as domain}
+										<span
+											class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black tracking-widest text-slate-300 uppercase"
+										>
+											{domain}
+										</span>
+									{/each}
+								</div>
+							</div>
+						</button>
+					{:else}
+						<div class="rt-panel col-span-full rounded-xl p-8 text-center">
+							<p class="text-sm font-black text-white">ไม่พบ Legend</p>
+							<p class="mt-2 text-xs font-semibold text-slate-500">
+								ลองค้นหาด้วยชื่อภาษาอังกฤษ ภาษาไทย รหัส หรือแท็ก Champion
+							</p>
+							<button
+								type="button"
+								class="mt-4 min-h-11 rounded-lg border border-amber-200/20 bg-amber-200/10 px-4 text-xs font-black tracking-widest text-amber-100 uppercase transition hover:bg-amber-200/15 focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-200/20"
+								onclick={() => (legendSearchTerm = '')}
+							>
+								ล้างคำค้นหา
+							</button>
+						</div>
+					{/each}
+				</div>
 			</section>
 		{:else}
 			<section class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
 				<div class="min-w-0">
-					<div class="rt-panel rt-topline sticky top-[4.75rem] z-40 mb-5 rounded-xl p-3">
+					<div class="rt-panel rt-topline top-[4.75rem] z-40 mb-5 rounded-xl p-3 lg:sticky">
 						<div class="flex flex-col gap-3 xl:flex-row">
 							<div class="flex min-w-0 flex-1 gap-2">
 								<input
 									bind:value={searchTerm}
 									class="min-h-12 min-w-0 flex-1 rounded-md border border-white/10 bg-[#080b12]/80 px-4 text-sm font-medium text-white placeholder:text-slate-600 focus:border-amber-200/50 focus:ring-4 focus:ring-amber-200/10 focus:outline-none"
-									placeholder="Search card name, code, type, domain..."
+									placeholder="ค้นหาชื่อ สกิล แท็ก รหัส หรือประเภท..."
 								/>
 								<button
 									type="button"
 									class="relative grid min-h-12 w-12 shrink-0 place-items-center rounded-md border border-white/10 bg-[#080b12]/80 text-white transition focus:border-amber-200/50 focus:ring-4 focus:ring-amber-200/10 focus:outline-none active:scale-95 xl:hidden"
-									aria-label="Toggle filters"
+									aria-label="เปิดหรือปิดตัวกรอง"
 									aria-expanded={filtersOpen}
 									onclick={() => (filtersOpen = !filtersOpen)}
 								>
@@ -863,25 +1016,37 @@
 									{/if}
 								</button>
 							</div>
-							<div class="hidden gap-2 sm:grid-cols-3 xl:grid xl:min-w-[620px]">
-								<IconSelect bind:value={zoneFilter} label="All Types" options={zoneFilterOptions} />
+							<div class="hidden gap-2 sm:grid-cols-4 xl:grid xl:min-w-[760px]">
+								<IconSelect bind:value={zoneFilter} label="ทุกประเภท" options={zoneFilterOptions} />
 								<IconSelect
 									bind:value={domainFilter}
-									label="All Colors"
+									label="ทุก Domain"
 									options={domainFilterOptions}
 								/>
-								<IconSelect bind:value={setFilter} label="All Sets" options={setFilterOptions} />
+								<IconSelect bind:value={setFilter} label="ทุกชุด" options={setFilterOptions} />
+								<IconSelect
+									bind:value={ownershipFilter}
+									label="การ์ดสะสมทั้งหมด"
+									options={ownershipFilterOptions}
+									disabled={!hasCollection}
+								/>
 							</div>
 						</div>
 						{#if filtersOpen}
 							<div class="mt-3 grid grid-cols-1 gap-2 border-t border-white/10 pt-3 xl:hidden">
-								<IconSelect bind:value={zoneFilter} label="All Types" options={zoneFilterOptions} />
+								<IconSelect bind:value={zoneFilter} label="ทุกประเภท" options={zoneFilterOptions} />
 								<IconSelect
 									bind:value={domainFilter}
-									label="All Colors"
+									label="ทุก Domain"
 									options={domainFilterOptions}
 								/>
-								<IconSelect bind:value={setFilter} label="All Sets" options={setFilterOptions} />
+								<IconSelect bind:value={setFilter} label="ทุกชุด" options={setFilterOptions} />
+								<IconSelect
+									bind:value={ownershipFilter}
+									label="การ์ดสะสมทั้งหมด"
+									options={ownershipFilterOptions}
+									disabled={!hasCollection}
+								/>
 							</div>
 						{/if}
 					</div>
@@ -890,24 +1055,42 @@
 						class="mb-4 flex flex-col gap-3 rounded-xl border border-white/10 bg-black/15 p-3 sm:flex-row sm:items-center sm:justify-between"
 					>
 						<div class="text-xs font-black tracking-widest text-slate-500 uppercase">
-							Showing {(cardPage - 1) * cardsPerPage +
-								(paginatedCards.length > 0 ? 1 : 0)}-{Math.min(
+							แสดง {(cardPage - 1) * cardsPerPage + (paginatedCards.length > 0 ? 1 : 0)}-{Math.min(
 								cardPage * cardsPerPage,
 								filteredCards.length
 							)}
-							of {filteredCards.length} cards
+							จาก {filteredCards.length} ใบ
 						</div>
-						{@render CardPagination(false)}
+						<div class="flex flex-wrap items-center justify-end gap-2">
+							{#if activeFilterCount > 0 || searchTerm}
+								<button
+									type="button"
+									class="rt-button rt-button-ghost h-10 min-h-10 px-3 text-[10px]"
+									onclick={() => {
+										searchTerm = '';
+										zoneFilter = 'all';
+										domainFilter = 'All';
+										setFilter = 'All';
+										ownershipFilter = 'all';
+									}}
+								>
+									ล้างตัวกรอง
+								</button>
+							{/if}
+							{@render CardPagination(false)}
+						</div>
 					</div>
 
 					<div
 						class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4 2xl:grid-cols-5"
 					>
-						{#each paginatedCards as card}
+						{#each paginatedCards as card (card.code)}
 							{@const quantity = isEditingSideboard
 								? getCardQuantity(sideboardEntries, card.code)
 								: getCardQuantity(entries, card.code)}
-							{@const owned = (userCardCollection[card.code] ?? 0) + (userCardCollection[card.code + '_foil'] ?? 0)}
+							{@const owned =
+								(userCardCollection[card.code] ?? 0) +
+								(userCardCollection[card.code + '_foil'] ?? 0)}
 							{@const isMissing = hasCollection && quantity > 0 && owned < quantity}
 							<article
 								class="group overflow-hidden rounded-xl border transition hover:-translate-y-1 hover:border-cyan-300/35 hover:shadow-[0_0_36px_rgba(45,212,191,0.10)]
@@ -919,8 +1102,9 @@
 									{#if card.image_url}
 										<img
 											src={getCardImageUrl(card.image_url, 320, 'webp')}
-											class="h-full w-full object-contain transition duration-500 {card.type ===
-											'Battlefield'
+											class="h-full w-full object-contain transition duration-500 {usesLandscapeCardFrame(
+												card
+											)
 												? 'scale-135 -rotate-90 group-hover:scale-140'
 												: 'group-hover:scale-105'}"
 											alt={card.name_en}
@@ -954,8 +1138,8 @@
 										type="button"
 										class="absolute top-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-slate-950/85 text-sm font-black text-cyan-100 shadow-lg backdrop-blur transition hover:bg-cyan-300 hover:text-slate-950"
 										onclick={() => openCardInfo(card)}
-										aria-label={`View ${card.name_en} details`}
-										title="Card info"
+										aria-label={`ดูรายละเอียด ${card.name_en}`}
+										title="ข้อมูลการ์ด"
 									>
 										i
 									</button>
@@ -970,15 +1154,19 @@
 
 									{#if hasCollection}
 										<div
-											class="absolute bottom-2 left-2 rounded-md px-1.5 py-0.5 text-[9.5px] font-black tracking-wider uppercase shadow-md backdrop-blur border z-10
+											class="absolute top-2 left-1/2 z-10 -translate-x-1/2 rounded-full border px-2 py-1 text-[9.5px] font-black tracking-wider whitespace-nowrap uppercase shadow-md backdrop-blur
 											{quantity > 0
-												? (owned >= quantity
-													? 'bg-emerald-500/80 border-emerald-400 text-white'
-													: (owned > 0 ? 'bg-amber-500/80 border-amber-400 text-white' : 'bg-rose-500/80 border-rose-400 text-white'))
-												: (owned > 0 ? 'bg-slate-950/90 border-cyan-400/40 text-cyan-300' : 'bg-slate-950/90 border-white/5 text-slate-500')}"
-											title="Owned: {owned}"
+												? owned >= quantity
+													? 'border-emerald-400 bg-emerald-500/80 text-white'
+													: owned > 0
+														? 'border-amber-400 bg-amber-500/80 text-white'
+														: 'border-rose-400 bg-rose-500/80 text-white'
+												: owned > 0
+													? 'border-cyan-400/40 bg-slate-950/90 text-cyan-300'
+													: 'border-white/5 bg-slate-950/90 text-slate-500'}"
+											title="มีอยู่: {owned}"
 										>
-											Own: {owned}
+											มี: {owned}
 										</div>
 									{/if}
 
@@ -1032,7 +1220,7 @@
 												disabled={card.code === activeDeck.championCode}
 												onclick={() => setChampion(card)}
 											>
-												{card.code === activeDeck.championCode ? 'Champion' : 'Set Champion'}
+												{card.code === activeDeck.championCode ? 'Champion' : 'ตั้งเป็น Champion'}
 											</button>
 										{/if}
 
@@ -1044,7 +1232,7 @@
 												class="grid h-9 place-items-center rounded-md border border-white/15 bg-slate-950/85 text-lg font-black text-slate-200 backdrop-blur transition hover:bg-white/10 disabled:opacity-30 sm:h-10"
 												disabled={quantity === 0 || isLegendCard(card)}
 												onclick={() => changeQuantity(card, -1)}
-												aria-label="Remove card"
+												aria-label="ลดจำนวนการ์ด"
 											>
 												-
 											</button>
@@ -1056,7 +1244,7 @@
 												value={quantity}
 												disabled={isLegendCard(card)}
 												oninput={(event) => setQuantity(card, Number(event.currentTarget.value))}
-												aria-label="Card quantity"
+												aria-label="จำนวนการ์ด"
 											/>
 											<button
 												type="button"
@@ -1064,7 +1252,7 @@
 												disabled={!canIncrease(card)}
 												onclick={() =>
 													isLegendCard(card) ? selectLegend(card) : changeQuantity(card, 1)}
-												aria-label="Add card"
+												aria-label="เพิ่มการ์ด"
 											>
 												+
 											</button>
@@ -1083,7 +1271,7 @@
 						type="button"
 						class="fixed inset-0 z-[920] bg-slate-950/70 backdrop-blur-sm lg:hidden"
 						onclick={() => (isDeckDrawerOpen = false)}
-						aria-label="Close current deck panel"
+						aria-label="ปิดแผงเด็คปัจจุบัน"
 					></button>
 				{/if}
 
@@ -1093,12 +1281,12 @@
 						: '-translate-x-full'} lg:sticky lg:top-[4.75rem] lg:z-auto lg:h-fit lg:w-auto lg:translate-x-0 lg:rounded-xl lg:border-r-0"
 				>
 					<div class="mb-4 flex items-center justify-between gap-3">
-						<h2 class="text-lg font-black text-white uppercase italic">Current Deck</h2>
+						<h2 class="text-lg font-black text-white uppercase italic">เด็คปัจจุบัน</h2>
 						<button
 							type="button"
 							class="grid h-9 w-9 place-items-center rounded-md border border-white/10 text-lg font-black text-slate-300 transition hover:bg-white/5 hover:text-white lg:hidden"
 							onclick={() => (isDeckDrawerOpen = false)}
-							aria-label="Close current deck"
+							aria-label="ปิดเด็คปัจจุบัน"
 						>
 							x
 						</button>
@@ -1138,7 +1326,7 @@
 						</div>
 						<div class="rounded-md border border-white/10 bg-black/20 p-2">
 							<div class="text-[11px] text-white sm:text-xs">{stats.battlefieldTotal}</div>
-							<div class="mt-1 text-slate-500">Field</div>
+							<div class="mt-1 text-slate-500">สนาม</div>
 						</div>
 						<div class="rounded-md border border-white/10 bg-black/20 p-2">
 							<div class="text-[11px] text-white sm:text-xs">
@@ -1182,8 +1370,8 @@
 									type="button"
 									class="absolute top-2 right-2 z-10 grid h-8 w-8 place-items-center rounded-md border border-rose-300/25 bg-slate-950/85 text-sm font-black text-rose-100 shadow-lg backdrop-blur transition hover:bg-rose-500/20 hover:text-white"
 									onclick={clearChampion}
-									aria-label="Clear champion"
-									title="Clear champion"
+									aria-label="นำ Champion ออก"
+									title="นำ Champion ออก"
 								>
 									x
 								</button>
@@ -1200,7 +1388,7 @@
 							<div
 								class="grid aspect-[744/1039] place-items-center rounded-lg border border-dashed border-white/10 bg-black/20 p-3 text-center text-[10px] font-black tracking-widest text-slate-500 uppercase"
 							>
-								No Champion
+								ยังไม่มี Champion
 							</div>
 						{/if}
 					</div>
@@ -1208,19 +1396,21 @@
 						class="h-[calc(100dvh-22rem)] space-y-2 overflow-y-auto pr-1 lg:h-auto lg:max-h-[70dvh]"
 					>
 						{#each (isEditingSideboard ? sideboardCards : deckCards).filter((item) => !isLegendCard(item.card)) as item}
-							{@const owned = (userCardCollection[item.card.code] ?? 0) + (userCardCollection[item.card.code + '_foil'] ?? 0)}
+							{@const owned =
+								(userCardCollection[item.card.code] ?? 0) +
+								(userCardCollection[item.card.code + '_foil'] ?? 0)}
 							{@const isMissing = hasCollection && owned < item.quantity}
 							<div
-								class="relative overflow-hidden rounded-lg border bg-black/20 {isMissing ? 'border-amber-500/30' : 'border-white/10'} {item
-									.card.type === 'Battlefield'
-									? 'sm:col-span-1'
-									: ''}"
+								class="relative overflow-hidden rounded-lg border bg-black/20 {isMissing
+									? 'border-amber-500/30'
+									: 'border-white/10'} {usesLandscapeCardFrame(item.card) ? 'sm:col-span-1' : ''}"
 							>
 								{#if item.card.image_url}
 									<img
 										src={getCardImageUrl(item.card.image_url, 260, 'webp')}
-										class="absolute inset-0 h-full w-full object-cover opacity-100 {item.card
-											.type === 'Battlefield'
+										class="absolute inset-0 h-full w-full object-cover opacity-100 {usesLandscapeCardFrame(
+											item.card
+										)
 											? 'translate-x-6 object-center'
 											: 'translate-x-6 object-[55%_15%]'}"
 										alt=""
@@ -1234,7 +1424,7 @@
 									class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-950/0 to-transparent"
 								></div>
 								<div
-									class="relative flex {item.card.type === 'Battlefield'
+									class="relative flex {usesLandscapeCardFrame(item.card)
 										? 'min-h-15'
 										: 'min-h-15'} items-center justify-between gap-3 p-3"
 								>
@@ -1242,8 +1432,13 @@
 										<div class="truncate text-sm font-black text-white drop-shadow">
 											{item.card.name_en}
 										</div>
-									{#if hasCollection}
-											<div class="mt-0.5 text-[9px] font-black uppercase tracking-widest {owned >= item.quantity ? 'text-emerald-400' : 'text-amber-400'}">
+										{#if hasCollection}
+											<div
+												class="mt-0.5 text-[9px] font-black tracking-widest uppercase {owned >=
+												item.quantity
+													? 'text-emerald-400'
+													: 'text-amber-400'}"
+											>
 												มีอยู่: {owned} / ต้องการ: {item.quantity}
 											</div>
 										{/if}
@@ -1259,11 +1454,11 @@
 												disabled={item.card.code === activeDeck.championCode}
 												onclick={() => setChampion(item.card)}
 												aria-label={item.card.code === activeDeck.championCode
-													? 'Current champion'
-													: 'Set as champion'}
+													? 'Champion ปัจจุบัน'
+													: 'ตั้งเป็น Champion'}
 												title={item.card.code === activeDeck.championCode
-													? 'Current champion'
-													: 'Set as champion'}
+													? 'Champion ปัจจุบัน'
+													: 'ตั้งเป็น Champion'}
 											>
 												♛
 											</button>
@@ -1306,7 +1501,7 @@
 			<div
 				class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"
 			></div>
-			<div class="mt-4 text-sm font-black tracking-widest text-white uppercase">Loading Deck</div>
+			<div class="mt-4 text-sm font-black tracking-widest text-white uppercase">กำลังโหลดเด็ค</div>
 		</div>
 	</div>
 {/if}
@@ -1320,7 +1515,7 @@
 		type="button"
 		class="fixed inset-0 z-[940] cursor-default bg-transparent"
 		onclick={() => (openDeckMenuId = '')}
-		aria-label="Close deck actions"
+		aria-label="ปิดเมนูเด็ค"
 	></button>
 	<div
 		class="fixed z-[945] w-44 overflow-hidden rounded-lg border border-white/10 bg-slate-950/95 p-1 shadow-2xl shadow-black/40"
@@ -1334,14 +1529,14 @@
 			class="block min-h-10 w-full rounded-md px-3 text-left text-xs font-black tracking-widest text-slate-200 uppercase transition hover:bg-white/10 hover:text-white"
 			onclick={() => duplicateDeck(openDeckMenuDeck.id)}
 		>
-			Duplicate
+			ทำสำเนา
 		</button>
 		<button
 			type="button"
 			class="block min-h-10 w-full rounded-md px-3 text-left text-xs font-black tracking-widest text-rose-100 uppercase transition hover:bg-rose-500/15"
 			onclick={() => requestDeleteDeck(openDeckMenuDeck.id)}
 		>
-			Delete
+			ลบเด็ค
 		</button>
 	</div>
 {/if}
@@ -1350,8 +1545,9 @@
 	<button
 		type="button"
 		class="fixed bottom-5 left-5 z-[930] grid h-14 w-14 place-items-center rounded-full border border-cyan-300/30 bg-slate-950/95 text-cyan-100 shadow-2xl shadow-black/40 backdrop-blur transition hover:bg-cyan-300/10 lg:hidden"
+		style="bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));"
 		onclick={() => (isDeckDrawerOpen = !isDeckDrawerOpen)}
-		aria-label="Toggle current deck"
+		aria-label="เปิดหรือปิดเด็คปัจจุบัน"
 		aria-expanded={isDeckDrawerOpen}
 	>
 		<span class="grid gap-1">
@@ -1369,14 +1565,15 @@
 
 {#if undoSnapshot}
 	<div
-		class="fixed right-4 bottom-5 z-[960] w-[calc(100vw-2rem)] max-w-sm rounded-xl border border-cyan-300/20 bg-slate-950/95 p-3 shadow-2xl shadow-black/50 backdrop-blur-xl"
+		class="fixed right-3 bottom-5 left-24 z-[960] w-auto max-w-sm rounded-xl border border-cyan-300/20 bg-slate-950/95 p-3 shadow-2xl shadow-black/50 backdrop-blur-xl sm:right-4 sm:left-auto sm:w-[calc(100vw-2rem)]"
+		style="bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));"
 		role="status"
 		aria-live="polite"
 	>
 		<div class="flex items-center justify-between gap-3">
 			<div class="min-w-0">
 				<div class="text-[10px] font-black tracking-widest text-cyan-100 uppercase">
-					Saved locally
+					บันทึกในเครื่องแล้ว
 				</div>
 				<div class="mt-0.5 truncate text-sm font-bold text-white">{undoMessage}</div>
 			</div>
@@ -1385,7 +1582,7 @@
 				class="shrink-0 rounded-lg bg-cyan-300 px-3 py-2 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-200"
 				onclick={undoLastDeckChange}
 			>
-				Undo
+				เลิกทำ
 			</button>
 		</div>
 	</div>
@@ -1396,12 +1593,11 @@
 		<div
 			class="rt-panel w-full max-w-md rounded-xl border border-rose-300/20 p-5 shadow-2xl shadow-rose-950/30"
 		>
-			<p class="rt-kicker mb-3 text-rose-100">Confirm Delete</p>
-			<h2 class="text-2xl font-black text-white uppercase italic">Delete Deck?</h2>
+			<p class="rt-kicker mb-3 text-rose-100">ยืนยันการลบ</p>
+			<h2 class="text-2xl font-black text-white uppercase italic">ลบเด็คนี้?</h2>
 			<p class="rt-copy mt-3 text-sm">
-				This will permanently delete <span class="font-black text-white"
-					>{deleteDeckTarget.name}</span
-				> from this browser.
+				เด็ค <span class="font-black text-white">{deleteDeckTarget.name}</span>
+				จะถูกลบออกจาก browser เครื่องนี้และไม่สามารถกู้คืนได้
 			</p>
 			<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 				<button
@@ -1409,15 +1605,9 @@
 					class="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
 					onclick={cancelDeleteDeck}
 				>
-					Cancel
+					ยกเลิก
 				</button>
-				<button
-					type="button"
-					class="inline-flex min-h-11 items-center justify-center rounded-lg border border-rose-300/25 bg-rose-500/15 px-4 text-xs font-black tracking-widest text-rose-50 uppercase transition hover:bg-rose-500/25"
-					onclick={confirmDeleteDeck}
-				>
-					Delete Deck
-				</button>
+				<HoldToConfirmButton label="กดค้าง 3 วิ เพื่อลบ" onconfirm={confirmDeleteDeck} />
 			</div>
 		</div>
 	</div>
@@ -1428,12 +1618,11 @@
 		<div
 			class="rt-panel w-full max-w-md rounded-xl border border-rose-300/20 p-5 shadow-2xl shadow-rose-950/30"
 		>
-			<p class="rt-kicker mb-3 text-rose-100">Confirm Clear</p>
-			<h2 class="text-2xl font-black text-white uppercase italic">Clear Current Deck?</h2>
+			<p class="rt-kicker mb-3 text-rose-100">ยืนยันการเคลียร์</p>
+			<h2 class="text-2xl font-black text-white uppercase italic">เคลียร์การ์ดในเด็ค?</h2>
 			<p class="rt-copy mt-3 text-sm">
-				This will remove all cards, legend, and champion from <span class="font-black text-white"
-					>{activeDeck.name}</span
-				>.
+				การ์ด, Legend และ Champion ทั้งหมดจะถูกนำออกจาก
+				<span class="font-black text-white">{activeDeck.name}</span> โดยสามารถกด Undo ได้ภายใน 4 วินาที
 			</p>
 			<div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 				<button
@@ -1441,14 +1630,10 @@
 					class="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
 					onclick={cancelClearDeck}
 				>
-					Cancel
+					ยกเลิก
 				</button>
-				<button
-					type="button"
-					class="inline-flex min-h-11 items-center justify-center rounded-lg border border-rose-300/25 bg-rose-500/15 px-4 text-xs font-black tracking-widest text-rose-50 uppercase transition hover:bg-rose-500/25"
-					onclick={clearDeck}
-				>
-					Clear Deck
+				<button type="button" class="rt-button rt-button-danger" onclick={clearDeck}>
+					เคลียร์เด็ค
 				</button>
 			</div>
 		</div>

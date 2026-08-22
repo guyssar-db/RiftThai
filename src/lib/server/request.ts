@@ -13,7 +13,6 @@ export function boundedInteger(value: unknown, min: number, max: number) {
 	return value >= min && value <= max ? value : null;
 }
 
-export function safeServerError(label: string, error: unknown) {
-	console.error(label, error);
+export function safeServerError(_label: string, _error: unknown) {
 	return { error: 'Internal server error' };
 }

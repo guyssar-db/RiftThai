@@ -115,16 +115,18 @@
 	<div class="fixed inset-0 z-[950] overflow-y-auto bg-black/82 p-4 backdrop-blur-md">
 		<div class="mesh-gradient opacity-30"></div>
 		<div class="mx-auto my-8 max-w-5xl">
-			<div class="rt-panel rt-topline relative rounded-xl border border-white/10 bg-[#0a0e15]/95 p-5 shadow-2xl backdrop-blur-xl sm:p-6">
+			<div
+				class="rt-panel rt-topline relative rounded-xl border border-white/10 bg-[#0a0e15]/95 p-5 shadow-2xl backdrop-blur-xl sm:p-6"
+			>
 				<!-- Header -->
 				<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div>
-						<div class="rt-kicker">Simulator</div>
+						<div class="rt-kicker">สนามจำลอง</div>
 						<h2 class="text-2xl font-black text-white uppercase italic">
-							Playtest & Hand Draw
+							ทดลองเล่นและจั่วมือเริ่มต้น
 						</h2>
-						<p class="rt-copy text-xs mt-1">
-							การ์ดเหลือในเด็ค: <span class="font-bold text-cyan-300">{library.length} ใบ</span> · 
+						<p class="rt-copy mt-1 text-xs">
+							การ์ดเหลือในเด็ค: <span class="font-bold text-cyan-300">{library.length} ใบ</span> ·
 							การ์ดบนมือ: <span class="font-bold text-slate-100">{hand.length} ใบ</span>
 						</p>
 					</div>
@@ -137,14 +139,14 @@
 								disabled={selectedIndices.length === 0}
 								onclick={executeMulligan}
 							>
-								Mulligan ({selectedIndices.length}/2)
+								มัลลิแกน ({selectedIndices.length}/2)
 							</button>
 							<button
 								type="button"
 								class="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5"
 								onclick={skipMulligan}
 							>
-								Keep Hand (เล่นมือนี้)
+								เก็บมือนี้
 							</button>
 						{:else}
 							<button
@@ -153,7 +155,7 @@
 								disabled={library.length === 0}
 								onclick={drawCard}
 							>
-								Draw Card (จั่วการ์ด)
+								จั่วการ์ด
 							</button>
 						{/if}
 
@@ -162,7 +164,7 @@
 							class="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5"
 							onclick={resetSimulator}
 						>
-							Restart (เริ่มใหม่)
+							เริ่มใหม่
 						</button>
 
 						<button
@@ -170,15 +172,18 @@
 							class="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/10 bg-slate-950 px-4 text-xs font-black tracking-widest text-slate-200 uppercase hover:bg-white/5"
 							onclick={onClose}
 						>
-							Close
+							ปิด
 						</button>
 					</div>
 				</div>
 
 				<!-- Instructions -->
 				{#if !hasMulliganed}
-					<div class="mb-5 rounded-lg border border-amber-300/20 bg-amber-400/5 p-3 text-xs text-amber-200">
-						<strong>กติกามัลลิแกน (Mulligan):</strong> จั่ว 4 ใบแรก เลือกการ์ดบนมือไม่เกิน 2 ใบเพื่อเปลี่ยนคืนเด็คแล้วสับจั่วชดเชยใหม่ (คลิกที่การ์ดเพื่อเลือก)
+					<div
+						class="mb-5 rounded-lg border border-amber-300/20 bg-amber-400/5 p-3 text-xs text-amber-200"
+					>
+						<strong>กติกามัลลิแกน (Mulligan):</strong> จั่ว 4 ใบแรก เลือกการ์ดบนมือไม่เกิน 2 ใบเพื่อเปลี่ยนคืนเด็คแล้วสับจั่วชดเชยใหม่
+						(คลิกที่การ์ดเพื่อเลือก)
 					</div>
 				{/if}
 
@@ -199,48 +204,77 @@
 									disabled={hasMulliganed}
 								>
 									<!-- Card Container -->
-									<div class="relative w-full overflow-hidden rounded-lg border transition duration-200 group-hover:scale-[1.03] {isSelected ? 'border-amber-400 shadow-lg shadow-amber-950/40' : 'border-white/10 bg-slate-950'}">
+									<div
+										class="relative w-full overflow-hidden rounded-lg border transition duration-200 group-hover:scale-[1.03] {isSelected
+											? 'border-amber-400 shadow-lg shadow-amber-950/40'
+											: 'border-white/10 bg-slate-950'}"
+									>
 										<!-- Card Image -->
 										{#if card.image_url}
 											<img
 												src={getCardImageUrl(card.image_url, 260, 'webp')}
 												alt={card.name_en}
-												class="block h-auto w-full transition duration-300 {isSelected ? 'brightness-[0.4]' : ''}"
+												class="block h-auto w-full transition duration-300 {isSelected
+													? 'brightness-[0.4]'
+													: ''}"
 											/>
 										{:else}
-											<div class="flex aspect-[132/184] w-full flex-col items-center justify-center p-3 text-center border-2 border-dashed border-white/5 bg-slate-900">
+											<div
+												class="flex aspect-[132/184] w-full flex-col items-center justify-center border-2 border-dashed border-white/5 bg-slate-900 p-3 text-center"
+											>
 												<span class="text-xs font-bold text-slate-400">{card.name_en}</span>
 											</div>
 										{/if}
 
 										<!-- Mulligan Selection Overlay -->
 										{#if isSelected}
-											<div class="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-2 bg-amber-950/20 text-center">
-												<div class="rounded-full h-[30px] w-[30px] bg-amber-400 p-1.5 text-slate-950">
-													<svg class="w-5 -translate-x-[1px]  h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-														<path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-													  </svg>
-													  
+											<div
+												class="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-amber-950/20 p-2 text-center"
+											>
+												<div
+													class="h-[30px] w-[30px] rounded-full bg-amber-400 p-1.5 text-slate-950"
+												>
+													<svg
+														class="h-5 w-5 -translate-x-[1px]"
+														xmlns="http://www.w3.org/2000/svg"
+														width="24"
+														height="24"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="4"
+														stroke-linecap="round"
+														stroke-linejoin="round"
+													>
+														<path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+													</svg>
 												</div>
-												<span class="text-[10px] font-black uppercase tracking-wider text-amber-200 bg-black/80 px-2 py-0.5 rounded">เปลี่ยน (Replace)</span>
+												<span
+													class="rounded bg-black/80 px-2 py-0.5 text-[10px] font-black tracking-wider text-amber-200 uppercase"
+													>เปลี่ยน (Replace)</span
+												>
 											</div>
 										{/if}
 
 										<!-- Action Hint on Hover -->
 										{#if !hasMulliganed}
-											<div class="absolute inset-x-0 bottom-0 translate-y-full bg-black/80 py-1.5 text-center text-[9px] font-black tracking-widest text-white uppercase transition-transform duration-200 group-hover:translate-y-0 group-focus:translate-y-0">
+											<div
+												class="absolute inset-x-0 bottom-0 translate-y-full bg-black/80 py-1.5 text-center text-[9px] font-black tracking-widest text-white uppercase transition-transform duration-200 group-hover:translate-y-0 group-focus:translate-y-0"
+											>
 												{isSelected ? 'Deselect' : 'Mulligan'}
 											</div>
 										{/if}
 									</div>
 
 									<!-- Card Details -->
-									<div class="mt-2 w-full text-center px-1">
-										<p class="truncate text-xs font-black text-slate-300 group-hover:text-white transition">
+									<div class="mt-2 w-full px-1 text-center">
+										<p
+											class="truncate text-xs font-black text-slate-300 transition group-hover:text-white"
+										>
 											{card.name_en}
 										</p>
 										{#if card.name_th}
-											<p class="truncate text-[10px] font-medium text-slate-500 mt-0.5">
+											<p class="mt-0.5 truncate text-[10px] font-medium text-slate-500">
 												{card.name_th}
 											</p>
 										{/if}

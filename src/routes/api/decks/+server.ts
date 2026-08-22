@@ -23,7 +23,7 @@ export const GET = async ({ cookies, url }) => {
 
 	if (deckId) {
 		const deck = await getDeckById(deckId);
-		if (!deck) return json({ error: 'deck not found' }, { status: 404 });
+		if (!deck) return json({ error: 'ไม่พบเด็ค' }, { status: 404 });
 
 		if (deck.hidden && (!user || (!user.isAdmin && user.id !== deck.owner?.id))) {
 			return json({ error: 'access denied (moderated)' }, { status: 403 });
@@ -63,7 +63,7 @@ export const GET = async ({ cookies, url }) => {
 		return json({ decks });
 	}
 
-	if (!user) return json({ error: 'login required' }, { status: 401 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
 	const decks = await listUserDecks(user.id);
 	if (user) {
@@ -79,13 +79,20 @@ export const GET = async ({ cookies, url }) => {
 
 export const POST = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
-	const limit = checkRateLimit(`deck-save:${clientKey(getClientAddress())}:${user.id}`, { windowMs: 60_000, max: 60 });
-	if (limit.limited) return json({ error: 'too many deck updates' }, { status: 429, headers: rateLimitHeaders(limit.retryAfter) });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
+	const limit = checkRateLimit(`deck-save:${clientKey(getClientAddress())}:${user.id}`, {
+		windowMs: 60_000,
+		max: 60
+	});
+	if (limit.limited)
+		return json(
+			{ error: 'too many deck updates' },
+			{ status: 429, headers: rateLimitHeaders(limit.retryAfter) }
+		);
 
 	const body = await request.json().catch(() => null);
 	const deck = isRecord(body) ? normalizeDeckInput(body.deck) : null;
-	if (!deck) return json({ error: 'invalid deck' }, { status: 400 });
+	if (!deck) return json({ error: 'ข้อมูลเด็คไม่ถูกต้อง' }, { status: 400 });
 	deck.visibility = deck.visibility ?? user.settings.defaultDeckVisibility;
 
 	try {
@@ -98,21 +105,25 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 
 export const PATCH = async ({ cookies, request }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
 	const body = await request.json().catch(() => null);
 	const deckId = typeof body?.deckId === 'string' ? body.deckId.trim() : '';
-	if (!deckId) return json({ error: 'deckId required' }, { status: 400 });
+	if (!deckId) return json({ error: 'กรุณาระบุเด็ค' }, { status: 400 });
 
 	const deck = await getDeckById(deckId);
-	if (!deck) return json({ error: 'deck not found' }, { status: 404 });
+	if (!deck) return json({ error: 'ไม่พบเด็ค' }, { status: 404 });
 
 	if (user.isAdmin) {
 		let updatedDeck = deck;
 		if (typeof body.hidden === 'boolean') {
 			updatedDeck = await adminSetDeckHidden(deck.onlineId!, body.hidden);
 		}
-		if (body.visibility === 'public' || body.visibility === 'private' || body.visibility === 'unlisted') {
+		if (
+			body.visibility === 'public' ||
+			body.visibility === 'private' ||
+			body.visibility === 'unlisted'
+		) {
 			updatedDeck = await adminSetDeckVisibility(deck.onlineId!, body.visibility);
 		}
 		return json({ deck: updatedDeck });
@@ -122,8 +133,9 @@ export const PATCH = async ({ cookies, request }) => {
 		return json({ error: 'access denied' }, { status: 403 });
 	}
 
-	const visibility = body?.visibility === 'public' ? 'public' : body?.visibility === 'private' ? 'private' : '';
-	if (!visibility) return json({ error: 'invalid visibility update' }, { status: 400 });
+	const visibility =
+		body?.visibility === 'public' ? 'public' : body?.visibility === 'private' ? 'private' : '';
+	if (!visibility) return json({ error: 'ค่าการมองเห็นไม่ถูกต้อง' }, { status: 400 });
 
 	const updatedDeck = await setUserDeckVisibility(user.id, deckId, visibility);
 	return json({ deck: updatedDeck });
@@ -131,13 +143,13 @@ export const PATCH = async ({ cookies, request }) => {
 
 export const DELETE = async ({ cookies, url }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
 	const deckId = url.searchParams.get('deckId')?.trim() ?? '';
-	if (!deckId) return json({ error: 'deckId required' }, { status: 400 });
+	if (!deckId) return json({ error: 'กรุณาระบุเด็ค' }, { status: 400 });
 
 	const deck = await getDeckById(deckId);
-	if (!deck) return json({ error: 'deck not found' }, { status: 404 });
+	if (!deck) return json({ error: 'ไม่พบเด็ค' }, { status: 404 });
 
 	if (user.isAdmin) {
 		await adminDeleteDeck(deck.onlineId!);
@@ -158,14 +170,23 @@ function normalizeDeckInput(value: unknown): StoredDeck | null {
 	const id = boundedString(deck.id, 80, 1) ?? '';
 	if (!id) return null;
 	if (!Array.isArray(deck.entries) || deck.entries.length > 500) return null;
-	if (deck.sideboardEntries !== undefined && (!Array.isArray(deck.sideboardEntries) || deck.sideboardEntries.length > 200)) return null;
+	if (
+		deck.sideboardEntries !== undefined &&
+		(!Array.isArray(deck.sideboardEntries) || deck.sideboardEntries.length > 200)
+	)
+		return null;
 
 	return {
 		id,
-		name: String(deck.name ?? 'Untitled Deck').trim().slice(0, 48) || 'Untitled Deck',
+		name:
+			String(deck.name ?? 'Untitled Deck')
+				.trim()
+				.slice(0, 48) || 'Untitled Deck',
 		championCode: boundedString(deck.championCode, 80) ?? '',
 		entries: normalizeDeck(Array.isArray(deck.entries) ? deck.entries : []),
-		sideboardEntries: normalizeDeck(Array.isArray(deck.sideboardEntries) ? deck.sideboardEntries : []),
+		sideboardEntries: normalizeDeck(
+			Array.isArray(deck.sideboardEntries) ? deck.sideboardEntries : []
+		),
 		updatedAt:
 			typeof deck.updatedAt === 'string' && deck.updatedAt.trim()
 				? deck.updatedAt
@@ -173,7 +194,9 @@ function normalizeDeckInput(value: unknown): StoredDeck | null {
 		source: 'local',
 		onlineId: typeof deck.onlineId === 'string' && deck.onlineId.trim() ? deck.onlineId : undefined,
 		visibility:
-			deck.visibility === 'public' || deck.visibility === 'unlisted' || deck.visibility === 'private'
+			deck.visibility === 'public' ||
+			deck.visibility === 'unlisted' ||
+			deck.visibility === 'private'
 				? deck.visibility
 				: undefined
 	};

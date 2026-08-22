@@ -43,7 +43,7 @@
 	}>();
 
 	let activeTab = $state<'users' | 'decks' | 'system'>('users');
-	
+
 	// Toast message state
 	let toast = $state<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 	function showToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
@@ -62,6 +62,7 @@
 	let decks = $state<Deck[]>([]);
 	let deckQuery = $state('');
 	let decksLoading = $state(false);
+	const visibilityLabels = { private: 'ส่วนตัว', unlisted: 'ไม่แสดงในรายการ', public: 'สาธารณะ' };
 
 	let didHydrate = $state(false);
 	$effect(() => {
@@ -70,8 +71,6 @@
 		decks = data.decks ?? [];
 		didHydrate = true;
 	});
-
-
 
 	// Ban/Unban processing state
 	let processingUserId = $state('');
@@ -84,10 +83,10 @@
 		try {
 			const res = await fetch(`/api/admin/users?q=${encodeURIComponent(userQuery)}`);
 			const resData = await res.json();
-			if (!res.ok) throw new Error(resData.error || 'Failed to search users');
+			if (!res.ok) throw new Error(resData.error || 'ค้นหาผู้ใช้ไม่สำเร็จ');
 			users = resData.users ?? [];
 		} catch (err) {
-			showToast(err instanceof Error ? err.message : 'Search failed', 'error');
+			showToast(err instanceof Error ? err.message : 'ค้นหาไม่สำเร็จ', 'error');
 		} finally {
 			usersLoading = false;
 		}
@@ -98,10 +97,10 @@
 		try {
 			const res = await fetch(`/api/admin/decks?q=${encodeURIComponent(deckQuery)}`);
 			const resData = await res.json();
-			if (!res.ok) throw new Error(resData.error || 'Failed to search decks');
+			if (!res.ok) throw new Error(resData.error || 'ค้นหาเด็คไม่สำเร็จ');
 			decks = resData.decks ?? [];
 		} catch (err) {
-			showToast(err instanceof Error ? err.message : 'Search failed', 'error');
+			showToast(err instanceof Error ? err.message : 'ค้นหาไม่สำเร็จ', 'error');
 		} finally {
 			decksLoading = false;
 		}
@@ -118,12 +117,15 @@
 			});
 			const resData = await res.json();
 			if (!res.ok) throw new Error(resData.error || `Failed to ${action} user`);
-			
+
 			// Update local list
-			users = users.map(u => u.id === targetUser.id ? { ...u, banned: !targetUser.banned } : u);
-			showToast(action === 'ban' ? 'แบนผู้ใช้สำเร็จและตัดการเชื่อมต่อแล้ว' : 'ปลดแบนผู้ใช้สำเร็จ', 'success');
+			users = users.map((u) => (u.id === targetUser.id ? { ...u, banned: !targetUser.banned } : u));
+			showToast(
+				action === 'ban' ? 'แบนผู้ใช้สำเร็จและตัดการเชื่อมต่อแล้ว' : 'ปลดแบนผู้ใช้สำเร็จ',
+				'success'
+			);
 		} catch (err) {
-			showToast(err instanceof Error ? err.message : 'Action failed', 'error');
+			showToast(err instanceof Error ? err.message : 'ดำเนินการไม่สำเร็จ', 'error');
 		} finally {
 			processingUserId = '';
 		}
@@ -139,19 +141,17 @@
 				body: JSON.stringify({ deckId: targetDeck.id, hidden: nextHidden })
 			});
 			const resData = await res.json();
-			if (!res.ok) throw new Error(resData.error || 'Failed to update deck');
-			
+			if (!res.ok) throw new Error(resData.error || 'อัปเดตเด็คไม่สำเร็จ');
+
 			// Update local list
-			decks = decks.map(d => d.id === targetDeck.id ? { ...d, hidden: nextHidden } : d);
+			decks = decks.map((d) => (d.id === targetDeck.id ? { ...d, hidden: nextHidden } : d));
 			showToast(nextHidden ? 'ซ่อนเด็คสำเร็จ' : 'ยกเลิกซ่อนเด็คสำเร็จ', 'success');
 		} catch (err) {
-			showToast(err instanceof Error ? err.message : 'Action failed', 'error');
+			showToast(err instanceof Error ? err.message : 'ดำเนินการไม่สำเร็จ', 'error');
 		} finally {
 			processingDeckId = '';
 		}
 	}
-
-
 </script>
 
 <div class="rt-page-shell min-h-dvh pb-16 text-slate-100">
@@ -163,7 +163,7 @@
 				href="/"
 				class="shrink-0 border-l-2 border-cyan-300/60 pl-3 text-xl font-black text-white uppercase italic"
 			>
-				Rift<span class="text-cyan-300">Thai</span>
+				Rift<span class="rt-brand-accent">Thai</span>
 			</a>
 			<SiteMenu />
 		</div>
@@ -171,10 +171,10 @@
 
 	<main class="rt-container py-6 sm:py-10">
 		<header class="rt-panel rt-topline mb-6 rounded-xl p-5 sm:p-7">
-			<p class="rt-kicker mb-3">Admin Portal</p>
+			<p class="rt-kicker mb-3">ระบบผู้ดูแล</p>
 			<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 				<div>
-					<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">Dashboard</h1>
+					<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">แดชบอร์ด</h1>
 					<p class="rt-copy mt-3 max-w-2xl text-sm leading-relaxed">
 						ยินดีต้อนรับผู้ดูแลระบบ จัดการผู้ใช้ รายงาน และระบบฐานข้อมูลหลักของ RiftThai
 					</p>
@@ -186,13 +186,15 @@
 		<section class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
 			<article class="rt-panel flex flex-col justify-between rounded-xl p-4 sm:p-5">
 				<div>
-					<span class="text-[10px] font-black uppercase tracking-widest text-slate-500">ผู้ใช้ทั้งหมด</span>
+					<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase"
+						>ผู้ใช้ทั้งหมด</span
+					>
 					<h2 class="mt-2 text-3xl font-black text-white italic">{data.stats.usersCount}+</h2>
 				</div>
-				<button 
+				<button
 					type="button"
-					onclick={() => activeTab = 'users'}
-					class="mt-4 text-left text-xs font-black uppercase tracking-widest text-cyan-300 transition hover:text-cyan-200"
+					onclick={() => (activeTab = 'users')}
+					class="mt-4 text-left text-xs font-black tracking-widest text-cyan-300 uppercase transition hover:text-cyan-200"
 				>
 					จัดการผู้ใช้ &rarr;
 				</button>
@@ -200,45 +202,60 @@
 
 			<article class="rt-panel flex flex-col justify-between rounded-xl p-4 sm:p-5">
 				<div>
-					<span class="text-[10px] font-black uppercase tracking-widest text-slate-500">เด็คออนไลน์</span>
+					<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase"
+						>เด็คออนไลน์</span
+					>
 					<h2 class="mt-2 text-3xl font-black text-white italic">{data.stats.decksCount}+</h2>
 				</div>
-				<button 
+				<button
 					type="button"
-					onclick={() => activeTab = 'decks'}
-					class="mt-4 text-left text-xs font-black uppercase tracking-widest text-cyan-300 transition hover:text-cyan-200"
+					onclick={() => (activeTab = 'decks')}
+					class="mt-4 text-left text-xs font-black tracking-widest text-cyan-300 uppercase transition hover:text-cyan-200"
 				>
 					จัดการเด็ค &rarr;
 				</button>
 			</article>
 
-			<a 
-				href="/admin/reports" 
-				class="rt-panel flex flex-col justify-between rounded-xl p-4 sm:p-5 transition hover:border-cyan-300/20"
+			<a
+				href="/admin/reports"
+				class="rt-panel flex flex-col justify-between rounded-xl p-4 transition hover:border-cyan-300/20 sm:p-5"
 			>
 				<div>
-					<span class="text-[10px] font-black uppercase tracking-widest text-slate-500">รายงานค้างคา (Reports)</span>
-					<h2 class="mt-2 text-3xl font-black text-white italic {data.stats.openReportsCount > 0 ? 'text-amber-300' : ''}">
+					<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase"
+						>รายงานที่รอตรวจ</span
+					>
+					<h2
+						class="mt-2 text-3xl font-black text-white italic {data.stats.openReportsCount > 0
+							? 'text-amber-300'
+							: ''}"
+					>
 						{data.stats.openReportsCount}
 					</h2>
 				</div>
-				<span class="mt-4 text-xs font-black uppercase tracking-widest text-cyan-300">
+				<span class="mt-4 text-xs font-black tracking-widest text-cyan-300 uppercase">
 					เปิดหน้าตรวจสอบ &rarr;
 				</span>
 			</a>
 
-			<a 
-				href="/admin/chat" 
-				class="rt-panel flex flex-col justify-between rounded-xl p-4 sm:p-5 transition hover:border-cyan-300/20"
+			<a
+				href="/admin/chat"
+				class="rt-panel flex flex-col justify-between rounded-xl p-4 transition hover:border-cyan-300/20 sm:p-5"
 			>
 				<div>
-					<span class="text-[10px] font-black uppercase tracking-widest text-slate-500">แชตยังไม่ได้อ่าน (Inbox)</span>
-					<h2 class="mt-2 text-3xl font-black text-white italic {data.stats.unreadConversationsCount > 0 ? 'text-cyan-300' : ''}">
+					<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase"
+						>แชตที่ยังไม่ได้อ่าน</span
+					>
+					<h2
+						class="mt-2 text-3xl font-black text-white italic {data.stats.unreadConversationsCount >
+						0
+							? 'text-cyan-300'
+							: ''}"
+					>
 						{data.stats.unreadConversationsCount}
 					</h2>
 				</div>
-				<span class="mt-4 text-xs font-black uppercase tracking-widest text-cyan-300">
-					เปิด Inbox แชต &rarr;
+				<span class="mt-4 text-xs font-black tracking-widest text-cyan-300 uppercase">
+					เปิดกล่องข้อความ &rarr;
 				</span>
 			</a>
 		</section>
@@ -247,24 +264,33 @@
 		<div class="mb-6 flex gap-2 border-b border-white/10 pb-px">
 			<button
 				type="button"
-				onclick={() => activeTab = 'users'}
-				class="border-b-2 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all {activeTab === 'users' ? 'border-cyan-300 text-white' : 'border-transparent text-slate-500 hover:text-slate-200'}"
+				onclick={() => (activeTab = 'users')}
+				class="border-b-2 px-4 py-2.5 text-xs font-black tracking-widest uppercase transition-all {activeTab ===
+				'users'
+					? 'border-cyan-300 text-white'
+					: 'border-transparent text-slate-500 hover:text-slate-200'}"
 			>
-				จัดการผู้ใช้ (Users)
+				จัดการผู้ใช้
 			</button>
 			<button
 				type="button"
-				onclick={() => activeTab = 'decks'}
-				class="border-b-2 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all {activeTab === 'decks' ? 'border-cyan-300 text-white' : 'border-transparent text-slate-500 hover:text-slate-200'}"
+				onclick={() => (activeTab = 'decks')}
+				class="border-b-2 px-4 py-2.5 text-xs font-black tracking-widest uppercase transition-all {activeTab ===
+				'decks'
+					? 'border-cyan-300 text-white'
+					: 'border-transparent text-slate-500 hover:text-slate-200'}"
 			>
-				จัดการเด็ค (Decks)
+				จัดการเด็ค
 			</button>
 			<button
 				type="button"
-				onclick={() => activeTab = 'system'}
-				class="border-b-2 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all {activeTab === 'system' ? 'border-cyan-300 text-white' : 'border-transparent text-slate-500 hover:text-slate-200'}"
+				onclick={() => (activeTab = 'system')}
+				class="border-b-2 px-4 py-2.5 text-xs font-black tracking-widest uppercase transition-all {activeTab ===
+				'system'
+					? 'border-cyan-300 text-white'
+					: 'border-transparent text-slate-500 hover:text-slate-200'}"
 			>
-				ข้อมูลระบบ (System Health)
+				สถานะระบบ
 			</button>
 		</div>
 
@@ -283,7 +309,7 @@
 						type="button"
 						onclick={searchUsers}
 						disabled={usersLoading}
-						class="min-h-11 rounded-lg bg-cyan-300 px-6 text-xs font-black uppercase tracking-widest text-slate-950 transition hover:bg-cyan-200 disabled:opacity-50"
+						class="min-h-11 rounded-lg bg-cyan-300 px-6 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-200 disabled:opacity-50"
 					>
 						{usersLoading ? 'กำลังค้นหา...' : 'ค้นหา'}
 					</button>
@@ -292,49 +318,65 @@
 				<div class="overflow-x-auto">
 					<table class="w-full border-collapse text-left text-xs font-bold text-slate-300">
 						<thead>
-							<tr class="border-b border-white/10 text-slate-500 uppercase tracking-wider">
-								<th class="py-3 px-4">Display Name / Email</th>
-								<th class="py-3 px-4">Role</th>
-								<th class="py-3 px-4">Status</th>
-								<th class="py-3 px-4 text-right">Actions</th>
+							<tr class="border-b border-white/10 tracking-wider text-slate-500 uppercase">
+								<th class="px-4 py-3">ชื่อที่แสดง / อีเมล</th>
+								<th class="px-4 py-3">สิทธิ์</th>
+								<th class="px-4 py-3">สถานะ</th>
+								<th class="px-4 py-3 text-right">คำสั่ง</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-white/5">
 							{#each users as user (user.id)}
 								<tr class="hover:bg-white/2">
-									<td class="py-4 px-4">
+									<td class="px-4 py-4">
 										<div class="text-sm font-black text-white">
-											{user.display_name || 'No Name'}
+											{user.display_name || 'ไม่ระบุชื่อ'}
 											{#if user.profile_number}
 												<span class="text-xs text-slate-500">#{user.profile_number}</span>
 											{/if}
 										</div>
-										<div class="mt-1 text-[10px] text-slate-400 font-semibold">{user.email}</div>
-										<div class="mt-1 text-[9px] text-slate-500">สมัครเมื่อ {new Date(user.created_at).toLocaleDateString()}</div>
+										<div class="mt-1 text-[10px] font-semibold text-slate-400">{user.email}</div>
+										<div class="mt-1 text-[9px] text-slate-500">
+											สมัครเมื่อ {new Date(user.created_at).toLocaleDateString()}
+										</div>
 									</td>
-									<td class="py-4 px-4 uppercase tracking-wider text-[10px]">
-										<span class="rounded px-2 py-0.5 border {user.role === 'admin' ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-200' : 'border-slate-700 bg-slate-800 text-slate-400'}">
+									<td class="px-4 py-4 text-[10px] tracking-wider uppercase">
+										<span
+											class="rounded border px-2 py-0.5 {user.role === 'admin'
+												? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-200'
+												: 'border-slate-700 bg-slate-800 text-slate-400'}"
+										>
 											{user.role}
 										</span>
 									</td>
-									<td class="py-4 px-4 uppercase tracking-wider text-[10px]">
+									<td class="px-4 py-4 text-[10px] tracking-wider uppercase">
 										{#if user.banned}
-											<span class="rounded bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 text-rose-300">Banned</span>
+											<span
+												class="rounded border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-rose-300"
+												>ถูกแบน</span
+											>
 										{:else}
-											<span class="rounded bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-emerald-300">Active</span>
+											<span
+												class="rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-300"
+												>ใช้งานอยู่</span
+											>
 										{/if}
 									</td>
-									<td class="py-4 px-4 text-right">
+									<td class="px-4 py-4 text-right">
 										<button
 											type="button"
 											onclick={() => toggleBan(user)}
 											disabled={processingUserId === user.id || user.role === 'admin'}
-											class="rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border transition disabled:opacity-50
-											{user.banned 
-												? 'border-emerald-300/20 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20' 
+											class="rounded-lg border px-3 py-1.5 text-[10px] font-black tracking-widest uppercase transition disabled:opacity-50
+											{user.banned
+												? 'border-emerald-300/20 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20'
 												: 'border-rose-300/20 bg-rose-400/10 text-rose-300 hover:bg-rose-400/20'}"
 										>
-											{processingUserId === user.id ? 'กำลังดำเนินการ...' : user.banned ? 'ปลดแบน' : 'แบนผู้ใช้'}
+											{processingUserId === user.id
+												? 'กำลังดำเนินการ...'
+												: user.banned
+													? 'ปลดแบน'
+													: 'แบนผู้ใช้'}
 										</button>
 									</td>
 								</tr>
@@ -361,7 +403,7 @@
 						type="button"
 						onclick={searchDecks}
 						disabled={decksLoading}
-						class="min-h-11 rounded-lg bg-cyan-300 px-6 text-xs font-black uppercase tracking-widest text-slate-950 transition hover:bg-cyan-200 disabled:opacity-50"
+						class="min-h-11 rounded-lg bg-cyan-300 px-6 text-xs font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-200 disabled:opacity-50"
 					>
 						{decksLoading ? 'กำลังค้นหา...' : 'ค้นหา'}
 					</button>
@@ -370,58 +412,76 @@
 				<div class="overflow-x-auto">
 					<table class="w-full border-collapse text-left text-xs font-bold text-slate-300">
 						<thead>
-							<tr class="border-b border-white/10 text-slate-500 uppercase tracking-wider">
-								<th class="py-3 px-4">Deck Name</th>
-								<th class="py-3 px-4">Creator</th>
-								<th class="py-3 px-4">Visibility</th>
-								<th class="py-3 px-4">Status</th>
-								<th class="py-3 px-4 text-right">Actions</th>
+							<tr class="border-b border-white/10 tracking-wider text-slate-500 uppercase">
+								<th class="px-4 py-3">ชื่อเด็ค</th>
+								<th class="px-4 py-3">ผู้สร้าง</th>
+								<th class="px-4 py-3">การมองเห็น</th>
+								<th class="px-4 py-3">สถานะ</th>
+								<th class="px-4 py-3 text-right">คำสั่ง</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-white/5">
 							{#each decks as deck (deck.id)}
 								<tr class="hover:bg-white/2">
-									<td class="py-4 px-4">
-										<a 
-											href="/deck/{deck.id}" 
+									<td class="px-4 py-4">
+										<a
+											href="/deck/{deck.id}"
 											target="_blank"
 											class="text-sm font-black text-white hover:text-cyan-300 hover:underline"
 										>
-											{deck.name || 'Unnamed Deck'}
+											{deck.name || 'เด็คไม่มีชื่อ'}
 										</a>
-										<div class="mt-1 text-[10px] text-slate-500">สร้างเมื่อ {new Date(deck.created_at).toLocaleDateString()}</div>
+										<div class="mt-1 text-[10px] text-slate-500">
+											สร้างเมื่อ {new Date(deck.created_at).toLocaleDateString()}
+										</div>
 									</td>
-									<td class="py-4 px-4 font-semibold">
+									<td class="px-4 py-4 font-semibold">
 										{#if deck.app_users}
-											<div class="text-white font-black">{deck.app_users.display_name || 'No Display Name'}</div>
-											<div class="text-[10px] text-slate-500 mt-0.5">{deck.app_users.email}</div>
+											<div class="font-black text-white">
+												{deck.app_users.display_name || 'ไม่ระบุชื่อ'}
+											</div>
+											<div class="mt-0.5 text-[10px] text-slate-500">{deck.app_users.email}</div>
 										{:else}
-											<span class="text-slate-500">Anonymous</span>
+											<span class="text-slate-500">ไม่ระบุชื่อ</span>
 										{/if}
 									</td>
-									<td class="py-4 px-4 uppercase tracking-wider text-[10px]">
-										<span class="rounded px-2 py-0.5 border {deck.visibility === 'public' ? 'border-emerald-300/30 bg-emerald-300/10 text-emerald-200' : 'border-slate-700 bg-slate-800 text-slate-400'}">
-											{deck.visibility}
+									<td class="px-4 py-4 text-[10px] tracking-wider uppercase">
+										<span
+											class="rounded border px-2 py-0.5 {deck.visibility === 'public'
+												? 'border-emerald-300/30 bg-emerald-300/10 text-emerald-200'
+												: 'border-slate-700 bg-slate-800 text-slate-400'}"
+										>
+											{visibilityLabels[deck.visibility]}
 										</span>
 									</td>
-									<td class="py-4 px-4 uppercase tracking-wider text-[10px]">
+									<td class="px-4 py-4 text-[10px] tracking-wider uppercase">
 										{#if deck.hidden}
-											<span class="rounded bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 text-rose-300">Hidden by Admin</span>
+											<span
+												class="rounded border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-rose-300"
+												>ผู้ดูแลซ่อน</span
+											>
 										{:else}
-											<span class="rounded bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-emerald-300">Visible</span>
+											<span
+												class="rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-300"
+												>มองเห็นได้</span
+											>
 										{/if}
 									</td>
-									<td class="py-4 px-4 text-right">
+									<td class="px-4 py-4 text-right">
 										<button
 											type="button"
 											onclick={() => toggleDeckHidden(deck)}
 											disabled={processingDeckId === deck.id}
-											class="rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border transition disabled:opacity-50
-											{deck.hidden 
-												? 'border-emerald-300/20 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20' 
+											class="rounded-lg border px-3 py-1.5 text-[10px] font-black tracking-widest uppercase transition disabled:opacity-50
+											{deck.hidden
+												? 'border-emerald-300/20 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20'
 												: 'border-rose-300/20 bg-rose-400/10 text-rose-300 hover:bg-rose-400/20'}"
 										>
-											{processingDeckId === deck.id ? 'กำลังดำเนินการ...' : deck.hidden ? 'ยกเลิกซ่อน' : 'ซ่อนเด็ค'}
+											{processingDeckId === deck.id
+												? 'กำลังดำเนินการ...'
+												: deck.hidden
+													? 'ยกเลิกซ่อน'
+													: 'ซ่อนเด็ค'}
 										</button>
 									</td>
 								</tr>
@@ -437,51 +497,55 @@
 		{:else if activeTab === 'system'}
 			<section class="grid gap-6 lg:grid-cols-2">
 				<article class="rt-panel rounded-xl p-5 sm:p-6">
-					<h3 class="text-lg font-black text-white uppercase italic mb-4">AI System Status</h3>
-					
+					<h3 class="mb-4 text-lg font-black text-white uppercase italic">สถานะระบบ AI</h3>
+
 					<div class="space-y-4 text-sm font-semibold">
 						<div class="flex justify-between border-b border-white/5 pb-2">
-							<span class="text-slate-400">Gemini API Status</span>
+							<span class="text-slate-400">สถานะ Gemini API</span>
 							<span class={data.aiConfig?.geminiConfigured ? 'text-emerald-300' : 'text-rose-300'}>
-								{data.aiConfig?.geminiConfigured ? 'Connected & Configured' : 'Offline'}
+								{data.aiConfig?.geminiConfigured ? 'เชื่อมต่อและตั้งค่าแล้ว' : 'ออฟไลน์'}
 							</span>
 						</div>
 						<div class="flex justify-between border-b border-white/5 pb-2">
-							<span class="text-slate-400">Gemini LLM Model</span>
-							<span class="text-white font-black">{data.aiConfig?.geminiModel || 'N/A'}</span>
+							<span class="text-slate-400">โมเดล Gemini LLM</span>
+							<span class="font-black text-white">{data.aiConfig?.geminiModel || 'N/A'}</span>
 						</div>
 						<div class="flex justify-between border-b border-white/5 pb-2">
-							<span class="text-slate-400">AI Deck Critique</span>
+							<span class="text-slate-400">ระบบวิเคราะห์เด็คด้วย AI</span>
 							<span class={data.aiConfig?.geminiConfigured ? 'text-emerald-300' : 'text-rose-300'}>
-								{data.aiConfig?.geminiConfigured ? 'Ready' : 'Not Ready'}
+								{data.aiConfig?.geminiConfigured ? 'พร้อมใช้งาน' : 'ยังไม่พร้อม'}
 							</span>
 						</div>
 					</div>
 				</article>
 
 				<article class="rt-panel rounded-xl p-5 sm:p-6">
-					<h3 class="text-lg font-black text-white uppercase italic mb-4">Quick Links & Utilities</h3>
+					<h3 class="mb-4 text-lg font-black text-white uppercase italic">ทางลัดและเครื่องมือ</h3>
 					<div class="grid gap-3">
-						<a 
-							href="/admin/reports" 
-							class="flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/20 p-4 transition hover:bg-white/5 hover:border-cyan-300/30"
+						<a
+							href="/admin/reports"
+							class="flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/20 p-4 transition hover:border-cyan-300/30 hover:bg-white/5"
 						>
 							<div>
 								<h4 class="text-sm font-black text-white">ตรวจสอบ Card Reports</h4>
-								<p class="text-xs text-slate-400 mt-1">ดูรายงานแปลผิดพลาด, ภาพไม่ขึ้น, หรือปัญหาอื่นๆ</p>
+								<p class="mt-1 text-xs text-slate-400">
+									ดูรายงานแปลผิดพลาด, ภาพไม่ขึ้น, หรือปัญหาอื่นๆ
+								</p>
 							</div>
-							<span class="text-cyan-300 font-bold">&rarr;</span>
+							<span class="font-bold text-cyan-300">&rarr;</span>
 						</a>
 
-						<a 
-							href="/admin/chat" 
-							class="flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/20 p-4 transition hover:bg-white/5 hover:border-cyan-300/30"
+						<a
+							href="/admin/chat"
+							class="flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/20 p-4 transition hover:border-cyan-300/30 hover:bg-white/5"
 						>
 							<div>
 								<h4 class="text-sm font-black text-white">กล่องข้อความผู้ใช้ (Inbox)</h4>
-								<p class="text-xs text-slate-400 mt-1">ตอบกลับความช่วยเหลือ และติดต่อสื่อสารกับผู้เล่น</p>
+								<p class="mt-1 text-xs text-slate-400">
+									ตอบกลับความช่วยเหลือ และติดต่อสื่อสารกับผู้เล่น
+								</p>
 							</div>
-							<span class="text-cyan-300 font-bold">&rarr;</span>
+							<span class="font-bold text-cyan-300">&rarr;</span>
 						</a>
 					</div>
 				</article>
@@ -491,10 +555,5 @@
 </div>
 
 {#if toast}
-	<Toast
-		show={true}
-		message={toast.message}
-		type={toast.type}
-		onclose={() => toast = null}
-	/>
+	<Toast show={true} message={toast.message} type={toast.type} onclose={() => (toast = null)} />
 {/if}

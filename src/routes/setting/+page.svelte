@@ -68,16 +68,16 @@
 				body: JSON.stringify({ displayName })
 			});
 			const payload = await response.json().catch(() => ({}));
-			if (!response.ok) throw new Error(payload.error || 'Could not update profile');
+			if (!response.ok) throw new Error(payload.error || 'อัปเดตโปรไฟล์ไม่สำเร็จ');
 			displayName = payload.user?.displayName ?? displayName;
 			displayNameLocked = payload.user?.displayNameLocked ?? true;
 			profileHandle = payload.user?.profileHandle ?? profileHandle;
 			profileSlug = payload.user?.profileSlug ?? profileSlug;
-			showActionNotice('Display Name locked', 'success');
+			showActionNotice('ล็อกชื่อที่แสดงแล้ว', 'success');
 			displayNameConfirmOpen = false;
 			window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 		} catch (err) {
-			showActionNotice(err instanceof Error ? err.message : 'Could not update profile', 'error');
+			showActionNotice(err instanceof Error ? err.message : 'อัปเดตโปรไฟล์ไม่สำเร็จ', 'error');
 		} finally {
 			savingProfile = false;
 		}
@@ -92,13 +92,13 @@
 				body: JSON.stringify(settings)
 			});
 			const payload = await response.json().catch(() => ({}));
-			if (!response.ok) throw new Error(payload.error || 'Could not update settings');
+			if (!response.ok) throw new Error(payload.error || 'บันทึกการตั้งค่าไม่สำเร็จ');
 			settings = payload.settings ?? settings;
 			localStorage.setItem('riftthai-export-layout', settings.defaultExportLayout);
-			showActionNotice('Settings updated', 'success');
+			showActionNotice('บันทึกการตั้งค่าแล้ว', 'success');
 			window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 		} catch (err) {
-			showActionNotice(err instanceof Error ? err.message : 'Could not update settings', 'error');
+			showActionNotice(err instanceof Error ? err.message : 'บันทึกการตั้งค่าไม่สำเร็จ', 'error');
 		} finally {
 			savingSettings = false;
 		}
@@ -106,7 +106,7 @@
 
 	async function changePassword() {
 		if (nextPassword !== confirmPassword) {
-			showActionNotice('New passwords do not match', 'error');
+			showActionNotice('รหัสผ่านใหม่ไม่ตรงกัน', 'error');
 			return;
 		}
 		changingPassword = true;
@@ -117,13 +117,13 @@
 				body: JSON.stringify({ currentPassword, nextPassword })
 			});
 			const payload = await response.json().catch(() => ({}));
-			if (!response.ok) throw new Error(payload.error || 'Could not change password');
+			if (!response.ok) throw new Error(payload.error || 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
 			currentPassword = '';
 			nextPassword = '';
 			confirmPassword = '';
-			showActionNotice('Password changed', 'success');
+			showActionNotice('เปลี่ยนรหัสผ่านแล้ว', 'success');
 		} catch (err) {
-			showActionNotice(err instanceof Error ? err.message : 'Could not change password', 'error');
+			showActionNotice(err instanceof Error ? err.message : 'เปลี่ยนรหัสผ่านไม่สำเร็จ', 'error');
 		} finally {
 			changingPassword = false;
 		}
@@ -139,10 +139,15 @@
 
 <div class="rt-page-shell min-h-dvh pb-16 text-slate-100">
 	<div class="mesh-gradient"></div>
-	<nav class="sticky top-0 z-50 border-b border-cyan-300/10 bg-[#070a12]/82 shadow-[0_14px_42px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+	<nav
+		class="sticky top-0 z-50 border-b border-cyan-300/10 bg-[#070a12]/82 shadow-[0_14px_42px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
+	>
 		<div class="rt-container flex items-center justify-between gap-4 py-3">
-			<a href="/" class="shrink-0 border-l-2 border-cyan-300/60 pl-3 text-xl font-black text-white uppercase italic">
-				Rift<span class="text-cyan-300">Thai</span>
+			<a
+				href="/"
+				class="shrink-0 border-l-2 border-cyan-300/60 pl-3 text-xl font-black text-white uppercase italic"
+			>
+				Rift<span class="rt-brand-accent">Thai</span>
 			</a>
 			<SiteMenu />
 		</div>
@@ -150,18 +155,26 @@
 
 	<main class="rt-container py-6 sm:py-10">
 		<header class="rt-panel rt-topline rt-scanline mb-6 rounded-xl p-5 sm:p-7">
-			<p class="rt-kicker mb-3">Account</p>
-			<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">Setting</h1>
+			<p class="rt-kicker mb-3">บัญชี</p>
+			<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">การตั้งค่า</h1>
 			<p class="rt-copy mt-3 text-sm">{profileHandle} / /profile/{profileSlug}</p>
-			<a href="/profile/{profileSlug}" class="rt-action mt-5">View Profile</a>
+			<a href="/profile/{profileSlug}" class="rt-action mt-5">ดูโปรไฟล์</a>
 		</header>
 
 		<div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.75fr)]">
 			<section class="rt-panel rounded-xl p-5">
-				<h2 class="text-xl font-black text-white uppercase italic">Profile</h2>
-				<form class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]" onsubmit={(e) => { e.preventDefault(); requestSaveProfile(); }}>
+				<h2 class="text-xl font-black text-white uppercase italic">โปรไฟล์</h2>
+				<form
+					class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+					onsubmit={(e) => {
+						e.preventDefault();
+						requestSaveProfile();
+					}}
+				>
 					<label class="min-w-0">
-						<span class="mb-2 block text-[10px] font-black tracking-widest text-cyan-200 uppercase">Display Name</span>
+						<span class="mb-2 block text-[10px] font-black tracking-widest text-cyan-200 uppercase"
+							>ชื่อที่แสดง</span
+						>
 						<input
 							bind:value={displayName}
 							maxlength="32"
@@ -169,27 +182,40 @@
 							class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white focus:border-cyan-300/50 focus:outline-none disabled:cursor-not-allowed disabled:opacity-55"
 						/>
 					</label>
-					<button class="rt-action self-end disabled:opacity-50" disabled={savingProfile || displayNameLocked} type="submit">{displayNameLocked ? 'Locked' : savingProfile ? 'Saving...' : 'Save Once'}</button>
+					<button
+						class="rt-action self-end disabled:opacity-50"
+						disabled={savingProfile || displayNameLocked}
+						type="submit"
+						>{displayNameLocked
+							? 'ล็อกแล้ว'
+							: savingProfile
+								? 'กำลังบันทึก...'
+								: 'บันทึกครั้งเดียว'}</button
+					>
 				</form>
 				<p class="mt-3 text-xs font-bold {displayNameLocked ? 'text-amber-200' : 'text-slate-500'}">
 					{displayNameLocked
-						? 'Display Name is locked and cannot be changed.'
-						: 'Display Name can be saved only once. You will be asked to confirm before locking it.'}
+						? 'ชื่อที่แสดงถูกล็อกแล้วและไม่สามารถเปลี่ยนได้'
+						: 'ชื่อที่แสดงบันทึกได้เพียงครั้งเดียว ระบบจะให้ยืนยันก่อนล็อกชื่อ'}
 				</p>
 				<div class="mt-4 grid gap-3 sm:grid-cols-2">
 					<div class="rounded-lg border border-white/10 bg-black/20 p-3">
-						<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">Handle</div>
+						<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+							ชื่อผู้ใช้
+						</div>
 						<div class="mt-1 font-black text-white">{profileHandle}</div>
 					</div>
 					<div class="rounded-lg border border-white/10 bg-black/20 p-3">
-						<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">Public URL</div>
+						<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+							ลิงก์สาธารณะ
+						</div>
 						<div class="mt-1 truncate font-black text-cyan-100">/profile/{profileSlug}</div>
 					</div>
 				</div>
 			</section>
 
 			<section class="rt-panel rounded-xl p-5">
-				<h2 class="text-xl font-black text-white uppercase italic">Account</h2>
+				<h2 class="text-xl font-black text-white uppercase italic">บัญชี</h2>
 				<div class="mt-4 space-y-3">
 					<div class="rounded-lg border border-white/10 bg-black/20 p-3">
 						<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">Email</div>
@@ -197,65 +223,133 @@
 					</div>
 					<div class="grid grid-cols-2 gap-3">
 						<div class="rounded-lg border border-white/10 bg-black/20 p-3">
-							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">Verify</div>
-							<div class="mt-1 font-black {user.emailVerified ? 'text-emerald-200' : 'text-amber-200'}">{user.emailVerified ? 'Verified' : 'Pending'}</div>
+							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								การยืนยัน
+							</div>
+							<div
+								class="mt-1 font-black {user.emailVerified ? 'text-emerald-200' : 'text-amber-200'}"
+							>
+								{user.emailVerified ? 'ยืนยันแล้ว' : 'รอยืนยัน'}
+							</div>
 						</div>
 						<div class="rounded-lg border border-white/10 bg-black/20 p-3">
-							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">Joined</div>
-							<div class="mt-1 font-black text-white">{new Date(user.createdAt).toLocaleDateString()}</div>
+							<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								สมัครเมื่อ
+							</div>
+							<div class="mt-1 font-black text-white">
+								{new Date(user.createdAt).toLocaleDateString('th-TH')}
+							</div>
 						</div>
 					</div>
 				</div>
 			</section>
 
 			<section class="rt-panel rounded-xl p-5">
-				<h2 class="text-xl font-black text-white uppercase italic">Privacy</h2>
+				<h2 class="text-xl font-black text-white uppercase italic">ความเป็นส่วนตัว</h2>
 				<div class="mt-4 space-y-3">
-					<label class="flex min-h-14 items-center justify-between gap-4 rounded-lg border border-white/10 bg-black/20 px-4">
+					<label
+						class="flex min-h-14 items-center justify-between gap-4 rounded-lg border border-white/10 bg-black/20 px-4"
+					>
 						<span class="min-w-0">
-							<span class="block text-sm font-black text-white">Public profile</span>
-							<span class="block text-xs font-bold text-slate-500">Allow others to open your profile page.</span>
+							<span class="block text-sm font-black text-white">โปรไฟล์สาธารณะ</span>
+							<span class="block text-xs font-bold text-slate-500"
+								>อนุญาตให้ผู้อื่นเปิดดูหน้าโปรไฟล์ของคุณ</span
+							>
 						</span>
-						<input type="checkbox" bind:checked={settings.profilePublic} class="h-5 w-5 accent-cyan-300" />
+						<input
+							type="checkbox"
+							bind:checked={settings.profilePublic}
+							class="h-5 w-5 accent-cyan-300"
+						/>
 					</label>
-					<label class="flex min-h-14 items-center justify-between gap-4 rounded-lg border border-white/10 bg-black/20 px-4">
+					<label
+						class="flex min-h-14 items-center justify-between gap-4 rounded-lg border border-white/10 bg-black/20 px-4"
+					>
 						<span class="min-w-0">
-							<span class="block text-sm font-black text-white">Show public decks</span>
-							<span class="block text-xs font-bold text-slate-500">Email is never shown publicly.</span>
+							<span class="block text-sm font-black text-white">แสดงเด็คสาธารณะ</span>
+							<span class="block text-xs font-bold text-slate-500">อีเมลจะไม่แสดงต่อสาธารณะ</span>
 						</span>
-						<input type="checkbox" bind:checked={settings.publicDecksVisible} class="h-5 w-5 accent-cyan-300" />
+						<input
+							type="checkbox"
+							bind:checked={settings.publicDecksVisible}
+							class="h-5 w-5 accent-cyan-300"
+						/>
 					</label>
 				</div>
 			</section>
 
 			<section class="rt-panel rounded-xl p-5">
-				<h2 class="text-xl font-black text-white uppercase italic">Deck Defaults</h2>
+				<h2 class="text-xl font-black text-white uppercase italic">ค่าเริ่มต้นของเด็ค</h2>
 				<div class="mt-4 grid gap-3">
 					<label>
-						<span class="mb-2 block text-[10px] font-black tracking-widest text-cyan-200 uppercase">Online deck visibility</span>
-						<select bind:value={settings.defaultDeckVisibility} class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white focus:border-cyan-300/50 focus:outline-none">
-							<option value="private">Private</option>
-							<option value="public">Public</option>
+						<span class="mb-2 block text-[10px] font-black tracking-widest text-cyan-200 uppercase"
+							>การมองเห็นเด็คออนไลน์</span
+						>
+						<select
+							bind:value={settings.defaultDeckVisibility}
+							class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white focus:border-cyan-300/50 focus:outline-none"
+						>
+							<option value="private">ส่วนตัว</option>
+							<option value="public">สาธารณะ</option>
 						</select>
 					</label>
 					<label>
-						<span class="mb-2 block text-[10px] font-black tracking-widest text-cyan-200 uppercase">Export layout</span>
-						<select bind:value={settings.defaultExportLayout} class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white focus:border-cyan-300/50 focus:outline-none">
-							<option value="portrait">Portrait</option>
-							<option value="landscape">Landscape</option>
+						<span class="mb-2 block text-[10px] font-black tracking-widest text-cyan-200 uppercase"
+							>แนวรูปที่ส่งออก</span
+						>
+						<select
+							bind:value={settings.defaultExportLayout}
+							class="min-h-11 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white focus:border-cyan-300/50 focus:outline-none"
+						>
+							<option value="portrait">แนวตั้ง</option>
+							<option value="landscape">แนวนอน</option>
 						</select>
 					</label>
-					<button class="rt-action justify-center disabled:opacity-50" disabled={savingSettings} type="button" onclick={saveSettings}>{savingSettings ? 'Saving...' : 'Save Defaults & Privacy'}</button>
+					<button
+						class="rt-action justify-center disabled:opacity-50"
+						disabled={savingSettings}
+						type="button"
+						onclick={saveSettings}
+						>{savingSettings ? 'กำลังบันทึก...' : 'บันทึกค่าเริ่มต้นและความเป็นส่วนตัว'}</button
+					>
 				</div>
 			</section>
 
 			<section class="rt-panel rounded-xl p-5 lg:col-span-2">
-				<h2 class="text-xl font-black text-white uppercase italic">Change Password</h2>
-				<form class="mt-4 grid gap-3 md:grid-cols-3" onsubmit={(e) => { e.preventDefault(); void changePassword(); }}>
-					<input bind:value={currentPassword} type="password" autocomplete="current-password" placeholder="Current password" class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none" />
-					<input bind:value={nextPassword} type="password" autocomplete="new-password" placeholder="New password" class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none" />
-					<input bind:value={confirmPassword} type="password" autocomplete="new-password" placeholder="Confirm new password" class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none" />
-					<button class="rt-action justify-center disabled:opacity-50 md:col-span-3" disabled={changingPassword} type="submit">{changingPassword ? 'Updating...' : 'Change Password'}</button>
+				<h2 class="text-xl font-black text-white uppercase italic">เปลี่ยนรหัสผ่าน</h2>
+				<form
+					class="mt-4 grid gap-3 md:grid-cols-3"
+					onsubmit={(e) => {
+						e.preventDefault();
+						void changePassword();
+					}}
+				>
+					<input
+						bind:value={currentPassword}
+						type="password"
+						autocomplete="current-password"
+						placeholder="รหัสผ่านปัจจุบัน"
+						class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
+					/>
+					<input
+						bind:value={nextPassword}
+						type="password"
+						autocomplete="new-password"
+						placeholder="รหัสผ่านใหม่"
+						class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
+					/>
+					<input
+						bind:value={confirmPassword}
+						type="password"
+						autocomplete="new-password"
+						placeholder="ยืนยันรหัสผ่านใหม่"
+						class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
+					/>
+					<button
+						class="rt-action justify-center disabled:opacity-50 md:col-span-3"
+						disabled={changingPassword}
+						type="submit">{changingPassword ? 'กำลังอัปเดต...' : 'เปลี่ยนรหัสผ่าน'}</button
+					>
 				</form>
 			</section>
 		</div>
@@ -266,7 +360,7 @@
 			<button
 				type="button"
 				class="absolute inset-0 cursor-default"
-				aria-label="Close display name confirmation"
+				aria-label="ปิดการยืนยันชื่อที่แสดง"
 				onclick={() => {
 					if (!savingProfile) displayNameConfirmOpen = false;
 				}}
@@ -277,23 +371,35 @@
 				aria-modal="true"
 				aria-labelledby="display-name-confirm-title"
 			>
-				<div class="pointer-events-none absolute -top-20 -right-16 h-52 w-52 rounded-full bg-amber-300/12 blur-3xl"></div>
+				<div
+					class="pointer-events-none absolute -top-20 -right-16 h-52 w-52 rounded-full bg-amber-300/12 blur-3xl"
+				></div>
 				<div class="relative p-5 sm:p-6">
 					<div class="mb-5 flex items-start justify-between gap-4">
 						<div class="min-w-0">
-							<p class="rt-kicker mb-2 text-amber-100">One-time lock</p>
-							<h2 id="display-name-confirm-title" class="text-2xl font-black text-white uppercase italic">
-								Lock Display Name?
+							<p class="rt-kicker mb-2 text-amber-100">ล็อกได้ครั้งเดียว</p>
+							<h2
+								id="display-name-confirm-title"
+								class="text-2xl font-black text-white uppercase italic"
+							>
+								ล็อกชื่อที่แสดงหรือไม่?
 							</h2>
 						</div>
 						<button
 							type="button"
 							class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-white/10 text-slate-400 transition hover:bg-white/5 hover:text-white disabled:opacity-40"
 							disabled={savingProfile}
-							aria-label="Close"
+							aria-label="ปิด"
 							onclick={() => (displayNameConfirmOpen = false)}
 						>
-							<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+							<svg
+								class="h-5 w-5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.8"
+								stroke-linecap="round"
+							>
 								<path d="M6 18 18 6" />
 								<path d="m6 6 12 12" />
 							</svg>
@@ -302,14 +408,14 @@
 
 					<div class="rounded-xl border border-amber-300/20 bg-amber-300/8 p-4">
 						<div class="text-[10px] font-black tracking-widest text-amber-100 uppercase">
-							Display Name to lock
+							ชื่อที่จะล็อก
 						</div>
-						<div class="mt-2 break-words text-3xl font-black text-white uppercase italic">
-							{displayName || 'RiftThai Player'}
+						<div class="mt-2 text-3xl font-black break-words text-white uppercase italic">
+							{displayName || 'ผู้เล่น RiftThai'}
 						</div>
 						<p class="mt-3 text-sm leading-relaxed font-bold text-slate-300">
-							After this is saved, your Display Name and handle will be locked. You will not be
-							able to change it later from settings.
+							หลังบันทึกแล้ว ชื่อที่แสดงและชื่อผู้ใช้จะถูกล็อก
+							และไม่สามารถกลับมาเปลี่ยนภายหลังในการตั้งค่าได้
 						</p>
 					</div>
 
@@ -320,7 +426,7 @@
 							disabled={savingProfile}
 							onclick={() => (displayNameConfirmOpen = false)}
 						>
-							Cancel
+							ยกเลิก
 						</button>
 						<button
 							type="button"
@@ -328,7 +434,7 @@
 							disabled={savingProfile}
 							onclick={saveProfile}
 						>
-							{savingProfile ? 'Locking...' : 'Lock Display Name'}
+							{savingProfile ? 'กำลังล็อก...' : 'ล็อกชื่อที่แสดง'}
 						</button>
 					</div>
 				</div>
@@ -341,8 +447,7 @@
 			show={true}
 			message={actionNotice.message}
 			type={actionNotice.type}
-			onclose={() => actionNotice = null}
+			onclose={() => (actionNotice = null)}
 		/>
 	{/if}
 </div>
-

@@ -6,8 +6,8 @@ import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/securit
 
 export const GET = async ({ cookies, url }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
-	if (!user.isAdmin) return json({ error: 'admin required' }, { status: 403 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
+	if (!user.isAdmin) return json({ error: 'ต้องมีสิทธิ์ผู้ดูแลระบบ' }, { status: 403 });
 
 	const status = url.searchParams.get('status')?.trim() ?? '';
 	const reports = await listCardReports(isCardReportStatus(status) ? status : '');
@@ -16,8 +16,8 @@ export const GET = async ({ cookies, url }) => {
 
 export const PATCH = async ({ request, cookies, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'login required' }, { status: 401 });
-	if (!user.isAdmin) return json({ error: 'admin required' }, { status: 403 });
+	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
+	if (!user.isAdmin) return json({ error: 'ต้องมีสิทธิ์ผู้ดูแลระบบ' }, { status: 403 });
 
 	const rateLimit = checkRateLimit(`admin-reports:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 60_000,
@@ -34,7 +34,7 @@ export const PATCH = async ({ request, cookies, getClientAddress }) => {
 	const reportId = typeof body?.reportId === 'string' ? body.reportId.trim() : '';
 	const status = isCardReportStatus(body?.status) ? body.status : null;
 	const adminNote = typeof body?.adminNote === 'string' ? body.adminNote.trim().slice(0, 2000) : '';
-	if (!reportId || !status) return json({ error: 'invalid report update' }, { status: 400 });
+	if (!reportId || !status) return json({ error: 'ข้อมูลอัปเดตรายงานไม่ถูกต้อง' }, { status: 400 });
 
 	const report = await updateCardReport(reportId, { status, adminNote });
 	return json({ report });

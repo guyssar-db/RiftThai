@@ -19,11 +19,15 @@ type Card = {
 
 export const POST = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
-	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบเพื่อใช้งานระบบวิเคราะห์เด็คด้วย AI' }, { status: 401 });
+	if (!user)
+		return json({ error: 'กรุณาเข้าสู่ระบบเพื่อใช้งานระบบวิเคราะห์เด็คด้วย AI' }, { status: 401 });
 
 	const config = getRagConfig();
 	if (!config.geminiApiKey) {
-		return json({ error: 'ระบบ AI ยังไม่ได้ตั้งค่า GEMINI_API_KEY บนเซิร์ฟเวอร์' }, { status: 503 });
+		return json(
+			{ error: 'ระบบ AI ยังไม่ได้ตั้งค่า GEMINI_API_KEY บนเซิร์ฟเวอร์' },
+			{ status: 503 }
+		);
 	}
 
 	// Rate Limiting (user and IP)
@@ -49,8 +53,8 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 		return json({ error: 'ข้อมูลคำขอไม่ถูกต้อง' }, { status: 400 });
 	}
 
-	const entries = body.entries as Array<{ code: string; quantity: number }> || [];
-	const championCode = body.championCode as string || '';
+	const entries = (body.entries as Array<{ code: string; quantity: number }>) || [];
+	const championCode = (body.championCode as string) || '';
 
 	if (!entries.length && !championCode) {
 		return json({ error: 'ไม่พบข้อมูลการ์ดในเด็ค' }, { status: 400 });
@@ -72,7 +76,10 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 			return json({ error: 'รหัสการ์ดไม่ถูกต้อง' }, { status: 400 });
 		}
 		if (typeof entry.quantity !== 'number' || entry.quantity < 1 || entry.quantity > 10) {
-			return json({ error: 'จำนวนการ์ดต้องอยู่ระหว่าง 1 ถึง 10 ใบต่อหนึ่งประเภท' }, { status: 400 });
+			return json(
+				{ error: 'จำนวนการ์ดต้องอยู่ระหว่าง 1 ถึง 10 ใบต่อหนึ่งประเภท' },
+				{ status: 400 }
+			);
 		}
 		totalQuantity += entry.quantity;
 	}
@@ -87,13 +94,15 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 	const champion = cards.find((c) => c.code === championCode) || null;
 
 	// Resolve main deck and rune cards details
-	const resolvedEntries = entries.map((entry) => {
-		const card = cards.find((c) => c.code === entry.code);
-		return {
-			card,
-			quantity: entry.quantity
-		};
-	}).filter((e) => e.card);
+	const resolvedEntries = entries
+		.map((entry) => {
+			const card = cards.find((c) => c.code === entry.code);
+			return {
+				card,
+				quantity: entry.quantity
+			};
+		})
+		.filter((e) => e.card);
 
 	const mainDeck = resolvedEntries.filter((e) => e.card?.type !== 'Rune');
 	const runeDeck = resolvedEntries.filter((e) => e.card?.type === 'Rune');
@@ -101,11 +110,13 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 	// Compute quick stats for prompt context
 	const totalMainCards = mainDeck.reduce((sum, e) => sum + e.quantity, 0);
 	const totalRuneCards = runeDeck.reduce((sum, e) => sum + e.quantity, 0);
-	
+
 	const energyCosts = mainDeck
 		.filter((e) => typeof e.card?.cost_energy === 'number')
 		.map((e) => (e.card?.cost_energy as number) * e.quantity);
-	const avgEnergy = energyCosts.length ? (energyCosts.reduce((s, c) => s + c, 0) / energyCosts.length).toFixed(2) : '0';
+	const avgEnergy = energyCosts.length
+		? (energyCosts.reduce((s, c) => s + c, 0) / energyCosts.length).toFixed(2)
+		: '0';
 
 	// Count domains/elements distribution
 	const domainCounts: Record<string, number> = {};
@@ -123,7 +134,9 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 		`- การ์ดเด็คหลักทั้งหมด: ${totalMainCards} ใบ`,
 		`- การ์ดรูนทั้งหมด: ${totalRuneCards} ใบ`,
 		`- ค่าเฉลี่ย Energy: ${avgEnergy}`,
-		`- สัดส่วนธาตุ/โดเมนหลัก: ${Object.entries(domainCounts).map(([k, v]) => `${k} (${v} ใบ)`).join(', ')}`,
+		`- สัดส่วนธาตุ/โดเมนหลัก: ${Object.entries(domainCounts)
+			.map(([k, v]) => `${k} (${v} ใบ)`)
+			.join(', ')}`,
 		``,
 		`รายชื่อการ์ดในเด็คหลัก (Main Deck):`,
 		...mainDeck.map((e) => {
@@ -140,7 +153,7 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 
 	// Call Gemini API to generate critique
 	try {
-		const systemInstruction = 
+		const systemInstruction =
 			'คุณคือโค้ดผู้เชี่ยวชาญการวิเคราะห์และจัดเด็คเกม Riftbound TCG ภาษาไทย ' +
 			'ทำหน้าที่วิเคราะห์เชิงลึกให้กับเด็คของผู้เล่นโดยละเอียด ให้ใช้โครงสร้างการรายงานเป็นภาษาไทยในรูปแบบ Markdown ' +
 			'ที่สะอาดตา เป็นระเบียบ และสวยงามตามหลักเกณฑ์ต่อไปนี้:\n\n' +
@@ -179,7 +192,6 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 
 		return json({ analysis });
 	} catch (error) {
-		console.error('AI Deck analysis failed:', error);
 		const message = error instanceof Error ? error.message : 'ระบบ AI เกิดข้อผิดพลาดในการประมวลผล';
 		return json({ error: message }, { status: 500 });
 	}
