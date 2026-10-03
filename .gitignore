@@ -1,5 +1,9 @@
 node_modules
-/.svelte-kit
+/.agents/
+/.antigravitycli/
+/.git/
+/.svelte-kit/
+/.vscode/
 /build
 /bin
 /.vite
@@ -15,7 +19,6 @@ test-results/
 .DS_Store
 Thumbs.db
 *.lnk
-.vscode/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -52,7 +55,6 @@ src/lib/components/TurnPhasesModal.svelte
 # Documentation
 *.md
 !README.md
-!core_rules.md
 !GEMINI.md
 !docs/
 !docs/*.md
@@ -78,3 +80,9 @@ docs/site-structure.html
 # Ignore temporary unused utility scripts
 download_and_convert.js
 update_json_images.js
+
+# Local review notes, private skills, and test files
+/core_rules.md
+/fix.txt
+/skills/riftthai-ai/
+/tests/

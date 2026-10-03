@@ -25,7 +25,7 @@ export const GET = async ({ cookies }) => {
 export const POST = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
 	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
-	const limit = checkRateLimit(`collection:${clientKey(getClientAddress())}:${user.id}`, {
+	const limit = await checkRateLimit(`collection:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 60_000,
 		max: 120
 	});
@@ -71,7 +71,7 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 export const DELETE = async ({ cookies, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
 	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
-	const limit = checkRateLimit(`collection-clear:${clientKey(getClientAddress())}:${user.id}`, {
+	const limit = await checkRateLimit(`collection-clear:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 60_000,
 		max: 5
 	});

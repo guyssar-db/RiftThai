@@ -110,7 +110,7 @@
 					>
 						<div><strong class="text-white">Main Deck:</strong> 40 ใบรวม Chosen Champion</div>
 						<div><strong class="text-white">Rune / Battlefield:</strong> 12 ใบ / 3 ชื่อไม่ซ้ำ</div>
-						<div><strong class="text-white">Sideboard:</strong> ไม่เกิน 10 ใบ</div>
+						<div><strong class="text-white">Sideboard:</strong> 10 ใบห้ามขาดห้ามเกิน</div>
 						<div>
 							<strong class="text-white">Copy limit:</strong> ชื่อละไม่เกิน 3 รวม Main + Sideboard + Chosen
 							Champion

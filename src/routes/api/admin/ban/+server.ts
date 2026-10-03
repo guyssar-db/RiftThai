@@ -8,7 +8,7 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 	if (!currentUser.isAdmin) return json({ error: 'admin required' }, { status: 403 });
 
 	const ip = clientKey(getClientAddress());
-	const limit = checkRateLimit(`admin:ban:${ip}:${currentUser.id}`, {
+	const limit = await checkRateLimit(`admin:ban:${ip}:${currentUser.id}`, {
 		windowMs: 60_000,
 		max: 10
 	});

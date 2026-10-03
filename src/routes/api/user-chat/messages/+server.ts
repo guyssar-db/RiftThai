@@ -19,8 +19,8 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
 	const ip = clientKey(getClientAddress());
-	const ipLimit = checkRateLimit(`support-chat:ip:${ip}`, { windowMs: 60_000, max: 20 });
-	const userLimit = checkRateLimit(`support-chat:user:${user.id}`, { windowMs: 60_000, max: 10 });
+	const ipLimit = await checkRateLimit(`support-chat:ip:${ip}`, { windowMs: 60_000, max: 20 });
+	const userLimit = await checkRateLimit(`support-chat:user:${user.id}`, { windowMs: 60_000, max: 10 });
 	const limited = ipLimit.limited ? ipLimit : userLimit;
 	if (limited.limited) {
 		return json(

@@ -80,7 +80,7 @@ export const GET = async ({ cookies, url }) => {
 export const POST = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
 	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
-	const limit = checkRateLimit(`deck-save:${clientKey(getClientAddress())}:${user.id}`, {
+	const limit = await checkRateLimit(`deck-save:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 60_000,
 		max: 60
 	});

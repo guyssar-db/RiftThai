@@ -20,8 +20,8 @@ export const POST = async ({ request, getClientAddress }) => {
 		const displayName = typeof body.displayName === 'string' ? body.displayName : '';
 
 		const ip = clientKey(getClientAddress());
-		const ipLimit = checkRateLimit(`register:ip:${ip}`, { windowMs: 60 * 60_000, max: 5 });
-		const emailLimit = checkRateLimit(`register:email:${clientKey(email)}`, {
+		const ipLimit = await checkRateLimit(`register:ip:${ip}`, { windowMs: 60 * 60_000, max: 5 });
+		const emailLimit = await checkRateLimit(`register:email:${clientKey(email)}`, {
 			windowMs: 60 * 60_000,
 			max: 3
 		});

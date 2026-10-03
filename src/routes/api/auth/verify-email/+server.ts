@@ -23,7 +23,7 @@ export const GET = async ({ url }) => {
 
 export const POST = async ({ request, getClientAddress }) => {
 	try {
-		const rateLimit = checkRateLimit(`verify-email:${clientKey(getClientAddress())}`, {
+		const rateLimit = await checkRateLimit(`verify-email:${clientKey(getClientAddress())}`, {
 			windowMs: 60_000,
 			max: 20
 		});

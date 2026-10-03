@@ -15,8 +15,8 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 		}
 
 		const ip = clientKey(getClientAddress());
-		const ipLimit = checkRateLimit(`login:ip:${ip}`, { windowMs: 10 * 60_000, max: 30 });
-		const accountLimit = checkRateLimit(`login:account:${ip}:${clientKey(email)}`, {
+		const ipLimit = await checkRateLimit(`login:ip:${ip}`, { windowMs: 10 * 60_000, max: 30 });
+		const accountLimit = await checkRateLimit(`login:account:${ip}:${clientKey(email)}`, {
 			windowMs: 10 * 60_000,
 			max: 8
 		});
