@@ -19274,8 +19274,8 @@
     "power": {
       "label": "Might",
       "value": {
-        "id": 1,
-        "label": "1"
+        "id": 4,
+        "label": "4"
       }
     },
     "rarity": "Epic",
@@ -19300,8 +19300,8 @@
     "power": {
       "label": "Might",
       "value": {
-        "id": 1,
-        "label": "1"
+        "id": 4,
+        "label": "4"
       }
     },
     "rarity": "Showcase",
@@ -19882,7 +19882,13 @@
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/2a5edfa252798770045f8cd7cc50a93fbbb690fa-744x1039.png",
     "type": "Unit",
     "energy": 5,
-    "power": null,
+    "power": {
+      "label": "Might",
+      "value": {
+        "id": 4,
+        "label": "4"
+      }
+    },
     "rarity": "Rare",
     "domains": [
       "Body"
@@ -19902,7 +19908,13 @@
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/e9f663dc9b2c215b94265149ec5f1927f8aa2480-744x1039.png",
     "type": "Unit",
     "energy": 5,
-    "power": null,
+    "power": {
+      "label": "Might",
+      "value": {
+        "id": 4,
+        "label": "4"
+      }
+    },
     "rarity": "Showcase",
     "domains": [
       "Body"
@@ -21283,7 +21295,13 @@
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/299741933964a0953312d7c2cc0919501d28bc98-744x1039.png",
     "type": "Unit",
     "energy": 5,
-    "power": null,
+    "power": {
+      "label": "Might",
+      "value": {
+        "id": 4,
+        "label": "4"
+      }
+    },
     "rarity": "Showcase",
     "domains": [
       "Body"
