@@ -128,6 +128,8 @@
 
 	async function loadOnlineDecks(baseCollection: DeckCollection) {
 		try {
+			const session = await getAuthSession<{ user?: { id: string } | null }>();
+			if (!session.user) return;
 			const response = await fetch('/api/decks');
 			if (response.status === 401) return;
 			const payload = await response.json().catch(() => ({}));

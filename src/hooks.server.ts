@@ -1,50 +1,9 @@
 import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
 import type { Handle } from '@sveltejs/kit';
+import { checkRateLimit } from '$lib/server/security';
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-
-interface RateLimitInfo {
-	count: number;
-	resetTime: number;
-}
-
-const rateLimitMap = new Map<string, RateLimitInfo>();
-
-function isRateLimited(ip: string, path: string, maxRequests: number, windowMs: number): boolean {
-	const key = `${ip}:${path}`;
-	const now = Date.now();
-	const limitInfo = rateLimitMap.get(key);
-
-	if (!limitInfo || now > limitInfo.resetTime) {
-		rateLimitMap.set(key, {
-			count: 1,
-			resetTime: now + windowMs
-		});
-		return false;
-	}
-
-	limitInfo.count++;
-	if (limitInfo.count > maxRequests) {
-		return true;
-	}
-	return false;
-}
-
-// Clean up expired entries every 5 minutes to prevent memory leaks
-if (typeof globalThis !== 'undefined') {
-	const intervalKey = '__rate_limit_cleanup_interval__';
-	if (!(intervalKey in globalThis)) {
-		(globalThis as any)[intervalKey] = setInterval(() => {
-			const now = Date.now();
-			for (const [key, value] of rateLimitMap.entries()) {
-				if (now > value.resetTime) {
-					rateLimitMap.delete(key);
-				}
-			}
-		}, 5 * 60 * 1000);
-	}
-}
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Rate Limiting for sensitive POST endpoints
@@ -55,7 +14,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			try {
 				ip = event.getClientAddress();
 			} catch {}
-			if (isRateLimited(ip, path, 10, 60_000)) {
+			if ((await checkRateLimit(`auth:${ip}:${path}`, { max: 10, windowMs: 60_000 })).limited) {
 				return new Response('Too Many Requests. Please try again in a minute.', {
 					status: 429,
 					headers: { 'Retry-After': '60' }
@@ -95,7 +54,6 @@ function setSecurityHeaders(response: Response) {
 		"img-src 'self' data: blob: https://cmsassets.rgpub.io",
 		"font-src 'self' data: https://fonts.gstatic.com",
 		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-		"script-src 'self' 'unsafe-inline'",
 		"connect-src 'self' ws: wss:"
 	];
 	if (env.NODE_ENV === 'production') policy.push('upgrade-insecure-requests');
@@ -107,5 +65,6 @@ function setSecurityHeaders(response: Response) {
 		'camera=(), microphone=(), geolocation=(), payment=()'
 	);
 	response.headers.set('X-Frame-Options', 'DENY');
-	response.headers.set('Content-Security-Policy', policy.join('; '));
+	const generatedCsp = response.headers.get('Content-Security-Policy');
+	response.headers.set('Content-Security-Policy', [generatedCsp, policy.join('; ')].filter(Boolean).join('; '));
 }

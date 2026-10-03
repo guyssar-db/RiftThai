@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import fs from 'node:fs';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const allowedHosts = new Set(['cmsassets.rgpub.io']);
@@ -17,12 +17,12 @@ export const GET = async ({ url }) => {
 			error(400, 'Invalid local image path');
 		}
 
-		if (!fs.existsSync(localFilePath)) {
-			error(404, 'Local image not found');
-		}
-
-		const fileBuffer = fs.readFileSync(localFilePath);
 		const ext = path.extname(localFilePath).toLowerCase();
+		if (!['.avif', '.webp', '.png', '.jpg', '.jpeg'].includes(ext)) error(400, 'Unsupported image type');
+		const stat = await fs.stat(localFilePath).catch(() => null);
+		if (!stat?.isFile()) error(404, 'Local image not found');
+		if (stat.size > 10 * 1024 * 1024) error(413, 'Image too large');
+		const fileBuffer = await fs.readFile(localFilePath);
 		const contentType = ext === '.avif' ? 'image/avif' : (ext === '.webp' ? 'image/webp' : 'image/png');
 
 		return new Response(fileBuffer, {
@@ -45,12 +45,28 @@ export const GET = async ({ url }) => {
 		error(400, 'Image host is not allowed');
 	}
 
-	const response = await globalThis.fetch(imageUrl.toString());
-	if (!response.ok || !response.body) {
+	const response = await globalThis.fetch(imageUrl.toString(), { redirect: 'error', signal: AbortSignal.timeout(10_000) }).catch(() => null);
+	if (!response?.ok || !response.body) {
 		error(502, 'Could not fetch card image');
 	}
 
-	return new Response(response.body, {
+	if (!/^image\/(avif|webp|png|jpeg)(;|$)/i.test(response.headers.get('Content-Type') ?? '')) {
+		await response.body.cancel();
+		error(502, 'Unsupported image type');
+	}
+	const reader = response.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let size = 0;
+	try {
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			size += value.byteLength;
+			if (size > 10 * 1024 * 1024) { await reader.cancel(); error(413, 'Image too large'); }
+			chunks.push(value);
+		}
+	} finally { reader.releaseLock(); }
+	return new Response(Buffer.concat(chunks), {
 		headers: {
 			'Cache-Control': 'public, max-age=86400, s-maxage=604800',
 			'Content-Type': response.headers.get('Content-Type') ?? 'image/png'

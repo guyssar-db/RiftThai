@@ -19,7 +19,7 @@ export const PATCH = async ({ request, cookies, getClientAddress }) => {
 	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 	if (!user.isAdmin) return json({ error: 'ต้องมีสิทธิ์ผู้ดูแลระบบ' }, { status: 403 });
 
-	const rateLimit = checkRateLimit(`admin-reports:${clientKey(getClientAddress())}:${user.id}`, {
+	const rateLimit = await checkRateLimit(`admin-reports:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 60_000,
 		max: 30
 	});

@@ -8,7 +8,7 @@
 	let {
 		card,
 		closePopup,
-		canEdit = false,
+		canEdit: _canEdit = false,
 		showAutoSkill = false,
 		onAutoSkill = undefined
 	} = $props<{
@@ -19,6 +19,7 @@
 		onAutoSkill?: () => void;
 	}>();
 
+	const canEdit = false;
 	let isEditing = $state(false);
 	let tempAbilityEn = $state('');
 	let tempAbilityTh = $state('');

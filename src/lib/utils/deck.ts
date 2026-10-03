@@ -498,12 +498,12 @@ export function validateDeck(
 		});
 	}
 
-	if (stats.sideboardTotal > maxSideboardCards) {
+	if (stats.sideboardTotal !== maxSideboardCards) {
 		issues.push({
 			id: 'sideboard-count',
 			severity: 'error',
 			label: 'Sideboard',
-			message: `Sideboard ใส่ได้ไม่เกิน ${maxSideboardCards} ใบ ขณะนี้มี ${stats.sideboardTotal} ใบ`
+			message: `Sideboard ต้องมี ${maxSideboardCards} ใบพอดี ขณะนี้มี ${stats.sideboardTotal} ใบ`
 		});
 	}
 
@@ -569,7 +569,7 @@ export function validateDeck(
 			},
 			{
 				label: 'สำรอง',
-				status: stats.sideboardTotal > maxSideboardCards ? 'fail' : 'pass',
+				status: stats.sideboardTotal === maxSideboardCards ? 'pass' : 'fail',
 				value: `${stats.sideboardTotal}/${maxSideboardCards}`
 			}
 		]

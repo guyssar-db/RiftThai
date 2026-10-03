@@ -7,7 +7,7 @@ export const PATCH = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
 	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
-	const rateLimit = checkRateLimit(`settings:${clientKey(getClientAddress())}:${user.id}`, {
+	const rateLimit = await checkRateLimit(`settings:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 60_000,
 		max: 20
 	});
@@ -47,7 +47,7 @@ export const POST = async ({ cookies, request, getClientAddress }) => {
 	const user = await getAuthenticatedUser(cookies);
 	if (!user) return json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
 
-	const rateLimit = checkRateLimit(`password:${clientKey(getClientAddress())}:${user.id}`, {
+	const rateLimit = await checkRateLimit(`password:${clientKey(getClientAddress())}:${user.id}`, {
 		windowMs: 10 * 60_000,
 		max: 5
 	});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { getAuthSession, invalidateAuthSession } from '$lib/utils/authSession';
 
@@ -32,7 +33,6 @@
 	let menuItems = $derived<MenuItem[]>([
 		{ label: 'กติกา', href: '/rules', active: active === 'rules', icon: 'rules' },
 		{ label: 'โดเมน', href: '/domains', active: active === 'domains', icon: 'domains' },
-		{ label: 'ถาม–ตอบ', href: '/qa', active: active === 'qa', icon: 'qa' },
 		{ label: 'เด็ค', href: '/deck', active: active === 'deck', icon: 'deck' },
 		{
 			label: 'การ์ดสะสม',
@@ -76,6 +76,7 @@
 		isOpen = false;
 		accountOpen = false;
 		window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
+		await goto('/');
 	}
 </script>
 

@@ -7,7 +7,7 @@ import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/securit
 export const POST = async ({ request, cookies, getClientAddress }) => {
 	try {
 		const user = await getAuthenticatedUser(cookies);
-		const rateLimit = checkRateLimit(
+		const rateLimit = await checkRateLimit(
 			`card-report:${clientKey(getClientAddress())}:${user?.id ?? 'anon'}`,
 			{
 				windowMs: 60_000,

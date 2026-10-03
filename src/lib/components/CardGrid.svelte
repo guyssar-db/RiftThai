@@ -18,6 +18,24 @@
 	}>();
 
 	const preloadedPopupImages = new Set<string>();
+	let loadedImages = $state(new Set<string>());
+	let failedImages = $state(new Set<string>());
+
+	function markImageLoaded(cardCode: string) {
+		loadedImages = new Set(loadedImages).add(cardCode);
+		const failures = new Set(failedImages);
+		failures.delete(cardCode);
+		failedImages = failures;
+	}
+
+	// Cached images can finish before Svelte attaches the load handler.
+	function trackImage(node: HTMLImageElement, cardCode: string) {
+		if (node.complete && node.naturalWidth > 0) markImageLoaded(cardCode);
+	}
+
+	function markImageFailed(cardCode: string) {
+		failedImages = new Set(failedImages).add(cardCode);
+	}
 
 	function preloadPopupImage(card: Card) {
 		if (!card.image_url || preloadedPopupImages.has(card.image_url)) return;
@@ -63,19 +81,33 @@
 					{#if card.image_url}
 						{@const imageSources = getCardImageSources(card.image_url, [240, 320, 480, 744])}
 						<img
+							use:trackImage={card.code}
 							src={imageSources.fallback}
 							srcset={imageSources.fallbackSrcset}
 							sizes="(min-width: 1440px) 210px, (min-width: 1180px) 18vw, (min-width: 900px) 23vw, (min-width: 640px) 30vw, 46vw"
 							alt={card.name_en}
-							loading={index < 6 ? 'eager' : 'lazy'}
+							loading={index < 12 ? 'eager' : 'lazy'}
 							decoding="async"
 							fetchpriority={index < 2 ? 'high' : 'auto'}
-							class="h-full w-full object-cover transition duration-500 {usesLandscapeCardFrame(
+							onload={() => markImageLoaded(card.code)}
+							onerror={() => markImageFailed(card.code)}
+							class="h-full w-full object-cover transition duration-500 {loadedImages.has(card.code)
+								? 'opacity-100'
+								: 'opacity-0'} {usesLandscapeCardFrame(
 								card
 							)
 								? 'battlefield-rotated'
 								: 'group-hover:scale-105'}"
 						/>
+						{#if !loadedImages.has(card.code) && !failedImages.has(card.code)}
+							<div class="absolute inset-0 z-10 grid place-items-center bg-slate-900/85" role="status" aria-label="กำลังโหลดรูปการ์ด">
+								<span class="h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"></span>
+							</div>
+						{:else if failedImages.has(card.code)}
+							<div class="absolute inset-0 z-10 grid place-items-center bg-slate-900/85 px-3 text-center text-[10px] font-black tracking-widest text-slate-500 uppercase">
+								โหลดรูปไม่สำเร็จ
+							</div>
+						{/if}
 					{:else}
 						<div
 							class="px-3 text-center text-[10px] font-black tracking-widest text-slate-600 uppercase"

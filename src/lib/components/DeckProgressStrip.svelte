@@ -19,7 +19,7 @@
 		},
 		{ label: 'Main', value: stats.mainTotal, max: maxMainDeckCards, optional: false },
 		{ label: 'Rune', value: stats.runeTotal, max: maxRuneCards, optional: false },
-		{ label: 'สำรอง', value: stats.sideboardTotal, max: maxSideboardCards, optional: true }
+		{ label: 'สำรอง', value: stats.sideboardTotal, max: maxSideboardCards, optional: false }
 	]);
 
 	function percent(value: number, max: number) {

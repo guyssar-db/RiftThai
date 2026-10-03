@@ -15,7 +15,9 @@ export const keywords: Keyword[] = [
     { id: 'reaction', name_en: 'Reaction', name_th: 'รีแอ็คชัน', description_th: 'ประเภทของการ์ดความเร็วสูง (Instant) ที่สามารถร่ายสวนกลับหรือขัดจังหวะคู่แข่งได้ตลอดเวลา รวมถึงในเทิร์นของคู่แข่งและช่วงการต่อสู้', color: '#107361' },
     { id: 'ambush', name_en: 'Ambush', name_th: 'Ambush', description_th: 'ยูนิตที่มีคีย์เวิร์ดนี้สามารถร่ายลงสนามด้วยความเร็วระดับ Reaction (ร่ายแทรกได้) แต่ต้องลงใน Battlefield ที่เรามีทหารคุมอยู่แล้วเท่านั้น', color: '#107361' },
     { id: 'quickdraw', name_en: 'Quick-Draw', name_th: 'Quick-Draw', description_th: 'คล้ายกับ Ambush แต่ใช้สำหรับ \'การ์ดอุปกรณ์ (Gear)\' หรือเวทมนตร์ ให้สามารถร่ายติดตั้งหรือใช้งานด้วยความเร็ว Reaction ได้', color: '#107361' },
-    { id: 'Repeat', name_en: 'Repeat', name_th: 'Repeat', description_th: 'คุณสามารถจ่ายค่าร่ายเพิ่มเติมเพื่อทำซ้ำผลของเวทมนตร์นี้', color: '#107361' },
+    { id: 'deploy', name_en: 'Deploy', name_th: '', description_th: 'เล่นการ์ดใบนี้ได้เฉพาะที่ Battlefield เมื่อคู่แข่ง Hold ที่นี่, ทำลายการ์ดใบนี้', color: '#107361' },
+    { id: 'deploy', name_en: 'Deploy', name_th: '', description_th: 'เล่นการ์ดใบนี้ได้เฉพาะที่ Battlefield เมื่อคู่แข่ง Hold ที่นี่, ทำลายการ์ดใบนี้', color: '#107361' },
+    { id: 'show off', name_en: 'Show Off', name_th: 'Show Off', description_th: 'ขณะที่คุณเล่นการ์ดใบนี้, คุณสามารถเปิดเผยยูนิตจากมือหรือเลือกยูนิตฝ่ายเรา 1 ใบ', color: '#107361' },
 
 
     { id: 'hunt', name_en: 'Hunt', name_th: 'ล่า', description_th: 'กลไกพิเศษที่จะได้รับค่า XP สำหรับการ Level Up เมื่อการ์ดใบนี้ Conquer หรือ Hold', color: '#97B028' },
@@ -40,8 +42,9 @@ export const keywords: Keyword[] = [
     { id: 'predict', name_en: 'Predict', name_th: 'ทำนาย', description_th: 'ดูการ์ดจากใบบนสุดของ Main Deck ตามจำนวนที่กำหนด เลือก Recycle ใบที่ไม่ต้องการโดยส่งกลับเข้าใต้กอง และเรียงใบที่เหลือกลับไว้บนกอง', color: '#717171' },
     { id: 'backline', name_en: 'Backline', name_th: 'แนวหลัง', description_th: 'ยูนิตนี้จะได้รับความเสียหายจากการต่อสู้ (Combat Damage) เป็นลำดับสุดท้าย', color: '#CD2E6F' },
     { id: 'tank', name_en: 'Tank', name_th: 'แทงค์', description_th: 'ยูนิตนี้ต้องรับความเสียหายจากการต่อสู้ (Combat Damage) เป็นลำดับแรกสุดในเลนนั้นเสมอ', color: '#CD2E6F' },
-    { id: 'shield', name_en: 'Shield', name_th: 'เกราะป้องกัน', description_th: 'ป้องกันความเสียหาย 1 ครั้งถัดไปที่จะเกิดขึ้นกับยูนิตนี้ (ไม่ว่าจะจากการต่อสู้หรือเวทมนตร์) แล้วเกราะจะสลายไป', color: '#CD2E6F' },
-    { id: 'assault', name_en: 'Assault', name_th: 'บุกทะลวง', description_th: 'ยูนิตจะได้รับค่าพลังโจมตีเพิ่มขึ้น (+X Might) ขณะที่เป็นฝ่ายโจมตี (Attack) หรือเริ่มเปิด Showdown ในเทิร์นของคุณ', color: '#CD2E6F' }
+    { id: 'shield', name_en: 'Shield', name_th: 'เกราะป้องกัน', description_th: 'ยูนิตจะได้รับค่าพลังโจมตีเพิ่มขึ้น (+X Might) ขณะที่เป็นป้องกัน (Defender) หรือเริ่มเปิด Showdown', color: '#CD2E6F' },
+    { id: 'disarm', name_en: 'Disarm', name_th: 'Disarm', description_th: 'เมื่อยูนิตนี้โจมตี จะลดค่า Might (S) ของยูนิตศัตรูตามที่ระบุในความสามารถ', color: '#CD2E6F' },
+    { id: 'assault', name_en: 'Assault', name_th: 'บุกทะลวง', description_th: 'ยูนิตจะได้รับค่าพลังโจมตีเพิ่มขึ้น (+X Might) ขณะที่เป็นฝ่ายโจมตี (Attack) หรือเริ่มเปิด Showdown', color: '#CD2E6F' },
 ];
 
 export const iconMappings: Record<string, { icon: string, hint: string }> = {

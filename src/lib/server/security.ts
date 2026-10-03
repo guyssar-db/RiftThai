@@ -1,3 +1,7 @@
+import { env } from '$env/dynamic/private';
+import { getRagConfig } from './rag/config';
+import { createHash } from 'node:crypto';
+
 type RateLimitOptions = {
 	windowMs: number;
 	max: number;
@@ -11,7 +15,24 @@ type RateLimitEntry = {
 const buckets = new Map<string, RateLimitEntry>();
 let lastCleanupAt = 0;
 
-export function checkRateLimit(key: string, options: RateLimitOptions) {
+export async function checkRateLimit(key: string, options: RateLimitOptions) {
+	if (env.NODE_ENV === 'production' || env.SHARED_RATE_LIMIT === 'true') {
+		const config = getRagConfig();
+		try {
+			const response = await fetch(`${config.supabaseUrl}/rest/v1/rpc/consume_rate_limit`, {
+				method: 'POST',
+				headers: { apikey: config.supabaseServiceRoleKey, Authorization: `Bearer ${config.supabaseServiceRoleKey}`, 'Content-Type': 'application/json' },
+				body: JSON.stringify({ bucket_key: createHash('sha256').update(key).digest('hex'), window_ms: options.windowMs, max_requests: options.max }),
+				signal: AbortSignal.timeout(5000)
+			});
+			if (!response.ok) throw new Error('Rate limit unavailable');
+			const result = await response.json();
+			if (typeof result.limited !== 'boolean' || !Number.isFinite(result.retryAfter)) throw new Error('Invalid rate limit response');
+			return { limited: result.limited as boolean, retryAfter: result.retryAfter as number };
+		} catch {
+			return { limited: true, retryAfter: 30 };
+		}
+	}
 	const now = Date.now();
 	cleanupExpiredBuckets(now);
 

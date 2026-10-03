@@ -1,22 +1,27 @@
 import { json } from '@sveltejs/kit';
 
-import { loginUser, setSessionCookie } from '$lib/server/auth';
+import { loginUserWithTwoFactor, setSessionCookie } from '$lib/server/auth';
 import { getRagConfig } from '$lib/server/rag/config';
 import { checkRateLimit, clientKey, rateLimitHeaders } from '$lib/server/security';
 
 export const POST = async ({ request, cookies, getClientAddress }) => {
 	try {
-		const body = (await request.json()) as { email?: unknown; password?: unknown };
+		const body = (await request.json()) as {
+			email?: unknown;
+			password?: unknown;
+			twoFactorCode?: unknown;
+		};
 		const email = typeof body.email === 'string' ? body.email.trim() : '';
 		const password = typeof body.password === 'string' ? body.password : '';
+		const twoFactorCode = typeof body.twoFactorCode === 'string' ? body.twoFactorCode : '';
 
 		if (!email || !password) {
 			return json({ error: 'กรุณากรอกอีเมลและรหัสผ่าน' }, { status: 400 });
 		}
 
 		const ip = clientKey(getClientAddress());
-		const ipLimit = checkRateLimit(`login:ip:${ip}`, { windowMs: 10 * 60_000, max: 30 });
-		const accountLimit = checkRateLimit(`login:account:${ip}:${clientKey(email)}`, {
+		const ipLimit = await checkRateLimit(`login:ip:${ip}`, { windowMs: 10 * 60_000, max: 30 });
+		const accountLimit = await checkRateLimit(`login:account:${ip}:${clientKey(email)}`, {
 			windowMs: 10 * 60_000,
 			max: 8
 		});
@@ -28,7 +33,10 @@ export const POST = async ({ request, cookies, getClientAddress }) => {
 			);
 		}
 
-		const session = await loginUser(email, password);
+		const session = await loginUserWithTwoFactor(email, password, twoFactorCode);
+		if (session.requiresTwoFactor) {
+			return json({ requiresTwoFactor: true });
+		}
 		setSessionCookie(cookies, session.sessionToken, session.expiresAt);
 
 		const config = getRagConfig();

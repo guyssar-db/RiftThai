@@ -10,7 +10,7 @@ export const POST = async ({ request, cookies, params, getClientAddress }) => {
 	if (!user.isAdmin) return json({ error: 'ต้องมีสิทธิ์ผู้ดูแลระบบ' }, { status: 403 });
 
 	const ip = clientKey(getClientAddress());
-	const rateLimit = checkRateLimit(`admin-support:${ip}:${user.id}`, { windowMs: 60_000, max: 30 });
+	const rateLimit = await checkRateLimit(`admin-support:${ip}:${user.id}`, { windowMs: 60_000, max: 30 });
 	if (rateLimit.limited) {
 		return json(
 			{ error: 'too many admin messages. please try again later' },

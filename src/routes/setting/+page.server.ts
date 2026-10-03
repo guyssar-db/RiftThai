@@ -1,10 +1,11 @@
 import { redirect } from '@sveltejs/kit';
 
-import { getAuthenticatedUser } from '$lib/server/auth';
+import { getAuthenticatedUser, getTwoFactorStatus } from '$lib/server/auth';
 
 export const load = async ({ cookies }) => {
 	const user = await getAuthenticatedUser(cookies);
 	if (!user) throw redirect(303, '/');
+	const twoFactor = await getTwoFactorStatus(user.id);
 
 	return {
 		user: {
@@ -16,6 +17,7 @@ export const load = async ({ cookies }) => {
 			profileSlug: user.profileSlug,
 			emailVerified: user.emailVerified,
 			createdAt: user.createdAt,
+			twoFactorEnabled: twoFactor.enabled,
 			settings: user.settings
 		}
 	};
