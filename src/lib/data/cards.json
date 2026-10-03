@@ -19267,15 +19267,15 @@
     "name_en": "K'Sante",
     "name_th": "K'Sante",
     "ability_en": "[Shield] (+1 [S] while I'm a defender.)\nWhen I attack or defend, double the [Shield] of a unit you control here this turn.",
-    "ability_th": "[Shield] (+1 [S] ขณะที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้โจมตีหรือป้องกัน, เพิ่ม [Shield] ของยูนิตฝ่ายเราที่คุณควบคุมที่นี่เป็นสองเท่าในเทิร์นนี้.",
+    "ability_th": "[Shield] (+1 [S] ตราบใดที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้โจมตีหรือป้องกัน, เพิ่ม [Shield] ของยูนิตฝั่งเราที่คุณควบคุมอยู่ที่นี่เป็นสองเท่าในเทิร์นนี้",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/f56e9f9db199f915e32ea264b7dab70202f97957-744x1039.png",
     "type": "Unit",
-    "energy": 5,
+    "energy": 4,
     "power": {
       "label": "Might",
       "value": {
-        "id": 4,
-        "label": "4"
+        "id": 1,
+        "label": "1"
       }
     },
     "rarity": "Epic",
@@ -19292,16 +19292,16 @@
     "code": "RAD-045A/167",
     "name_en": "K'Sante",
     "name_th": "K'Sante",
-    "ability_en": "[Shield] (+1 [S] while I'm a defender.)\nWhen I attack or defend, double the [Shield] of a unit you control here this turn.",
-    "ability_th": "[Shield] (+1 [S] ขณะที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้โจมตีหรือป้องกัน, เพิ่ม [Shield] ของยูนิตฝ่ายเราที่คุณควบคุมที่นี่เป็นสองเท่าในเทิร์นนี้.",
+    "ability_en": "[Shield]\nWhen I attack or defend, double the [Shield] of a unit you control here this turn.",
+    "ability_th": "[Shield] (+1 [S] ตราบใดที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้โจมตีหรือป้องกัน, เพิ่ม [Shield] ของยูนิตฝั่งเราที่คุณควบคุมอยู่ที่นี่เป็นสองเท่าในเทิร์นนี้",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/813f6a991117b82a389d5eeb119c08f4ecc12a44-744x1039.png",
     "type": "Unit",
-    "energy": 5,
+    "energy": 4,
     "power": {
       "label": "Might",
       "value": {
-        "id": 4,
-        "label": "4"
+        "id": 1,
+        "label": "1"
       }
     },
     "rarity": "Showcase",
@@ -19877,18 +19877,12 @@
     "code": "RAD-086/167",
     "name_en": "K'Sante",
     "name_th": "K'Sante",
-    "ability_en": "[Shield] (+1 [S] while I'm a defender.)\nWhen I attack or defend, double the [Shield] of a unit you control here this turn.",
-    "ability_th": "[Shield] (+1 [S] ขณะที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้โจมตีหรือป้องกัน, เพิ่ม [Shield] ของยูนิตฝ่ายเราที่คุณควบคุมที่นี่เป็นสองเท่าในเทิร์นนี้.",
+    "ability_en": "[Accelerate] (You may pay [1][C] as an additional cost to have me enter ready.)\n[Shield 2] (+2 [S] while I'm a defender.)\nWhen I hold, channel 1 rune.",
+    "ability_th": "[Accelerate] (คุณสามารถจ่าย :rb_energy_1::rb_rune_body: เป็นค่าร่ายเพิ่มเติมเพื่อให้การ์ดใบนี้ลงสนามในสภาพ Ready)\n[Shield 2] (+2 [S] ตราบใดที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้ Hold, Channel Rune 1 ใบ",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/2a5edfa252798770045f8cd7cc50a93fbbb690fa-744x1039.png",
     "type": "Unit",
     "energy": 5,
-    "power": {
-      "label": "Might",
-      "value": {
-        "id": 4,
-        "label": "4"
-      }
-    },
+    "power": null,
     "rarity": "Rare",
     "domains": [
       "Body"
@@ -19903,18 +19897,12 @@
     "code": "RAD-086A/167",
     "name_en": "K'Sante",
     "name_th": "K'Sante",
-    "ability_en": "[Shield] (+1 [S] while I'm a defender.)\nWhen I attack or defend, double the [Shield] of a unit you control here this turn.",
-    "ability_th": "[Shield] (+1 [S] ขณะที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้โจมตีหรือป้องกัน, เพิ่ม [Shield] ของยูนิตฝ่ายเราที่คุณควบคุมที่นี่เป็นสองเท่าในเทิร์นนี้.",
+    "ability_en": "[Accelerate]\n[Shield 2]\nWhen I hold, channel 1 rune.",
+    "ability_th": "[Accelerate] (คุณสามารถจ่าย :rb_energy_1::rb_rune_body: เป็นค่าร่ายเพิ่มเติมเพื่อให้การ์ดใบนี้ลงสนามในสภาพ Ready)\n[Shield 2] (+2 [S] ตราบใดที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้ Hold, Channel Rune 1 ใบ",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/e9f663dc9b2c215b94265149ec5f1927f8aa2480-744x1039.png",
     "type": "Unit",
     "energy": 5,
-    "power": {
-      "label": "Might",
-      "value": {
-        "id": 4,
-        "label": "4"
-      }
-    },
+    "power": null,
     "rarity": "Showcase",
     "domains": [
       "Body"
@@ -19929,16 +19917,16 @@
     "code": "RAD-090/167",
     "name_en": "Evelynn",
     "name_th": "Evelynn",
-    "ability_en": "[Disarm] (When I attack, give an enemy unit here -1 [S] this turn.)\nWhen I hold, if you control a facedown card here, score 1 point.",
-    "ability_th": "[Disarm] (เมื่อการ์ดใบนี้โจมตี, มอบ -1 [S] ให้ยูนิตศัตรูที่นี่ 1 ใบในเทิร์นนี้)\nเมื่อการ์ดใบนี้ Hold, หากคุณควบคุมการ์ดคว่ำหน้า 1 ใบที่นี่, คุณได้ 1 คะแนน",
+    "ability_en": "[Ambush] (You may play me as a [Reaction] to a battlefield where you have units.)\nWhen you play a card from face down, ready me and give me +1 [S] this turn.",
+    "ability_th": "[Ambush] (คุณสามารถเล่นการ์ดใบนี้เป็น [Reaction] ไปยัง 1 Battlefield ที่คุณมียูนิตอยู่)\nเมื่อคุณเล่นการ์ดจากด้านคว่ำหน้า, ให้การ์ดใบนี้ Ready และมอบ +1 [S] ให้การ์ดใบนี้ในเทิร์นนี้",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/26b83de26622fb5163d2fe321ff29e2bf16ac027-744x1039.png",
     "type": "Unit",
-    "energy": 4,
+    "energy": 5,
     "power": {
       "label": "Might",
       "value": {
-        "id": 4,
-        "label": "4"
+        "id": 1,
+        "label": "1"
       }
     },
     "rarity": "Epic",
@@ -19954,16 +19942,16 @@
     "code": "RAD-090A/167",
     "name_en": "Evelynn",
     "name_th": "Evelynn",
-    "ability_en": "[Disarm] (When I attack, give an enemy unit here -1 [S] this turn.)\nWhen I hold, if you control a facedown card here, score 1 point.",
-    "ability_th": "[Disarm] (เมื่อการ์ดใบนี้โจมตี, มอบ -1 [S] ให้ยูนิตศัตรูที่นี่ 1 ใบในเทิร์นนี้)\nเมื่อการ์ดใบนี้ Hold, หากคุณควบคุมการ์ดคว่ำหน้า 1 ใบที่นี่, คุณได้ 1 คะแนน",
+    "ability_en": "[Ambush]\nWhen you play a card from face down, ready me and give me +1 [S] this turn.",
+    "ability_th": "[Ambush] (คุณสามารถเล่นการ์ดใบนี้เป็น [Reaction] ไปยัง 1 Battlefield ที่คุณมียูนิตอยู่)\nเมื่อคุณเล่นการ์ดจากด้านคว่ำหน้า, ให้การ์ดใบนี้ Ready และมอบ +1 [S] ให้การ์ดใบนี้ในเทิร์นนี้",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/5947488a0f6aa65e69f0612edce1f4b298a04260-744x1039.png",
     "type": "Unit",
-    "energy": 4,
+    "energy": 5,
     "power": {
       "label": "Might",
       "value": {
-        "id": 4,
-        "label": "4"
+        "id": 1,
+        "label": "1"
       }
     },
     "rarity": "Showcase",
@@ -20212,7 +20200,7 @@
     "name_en": "Evelynn",
     "name_th": "Evelynn",
     "ability_en": "[Disarm] (When I attack, give an enemy unit here -1 [S] this turn.)\nWhen I hold, if you control a facedown card here, score 1 point.",
-    "ability_th": "[Disarm] (เมื่อการ์ดใบนี้โจมตี, มอบ -1 [S] ให้ยูนิตศัตรูที่นี่ 1 ใบในเทิร์นนี้)\nเมื่อการ์ดใบนี้ Hold, หากคุณควบคุมการ์ดคว่ำหน้า 1 ใบที่นี่, คุณได้ 1 คะแนน",
+    "ability_th": "[Disarm] (เมื่อการ์ดใบนี้โจมตี, มอบ -1 [S] ให้ยูนิตศัตรูที่นี่ 1 ใบในเทิร์นนี้)\nเมื่อการ์ดใบนี้ Hold, หากคุณควบคุมการ์ดคว่ำหน้า 1 ใบที่นี่, คุณจะได้รับ 1 คะแนน",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/8c17158e6153eddb4b56abd8a09cbbd20600b049-744x1039.png",
     "type": "Unit",
     "energy": 4,
@@ -20236,8 +20224,8 @@
     "code": "RAD-109A/167",
     "name_en": "Evelynn",
     "name_th": "Evelynn",
-    "ability_en": "[Disarm] (When I attack, give an enemy unit here -1 [S] this turn.)\nWhen I hold, if you control a facedown card here, score 1 point.",
-    "ability_th": "[Disarm] (เมื่อการ์ดใบนี้โจมตี, มอบ -1 [S] ให้ยูนิตศัตรูที่นี่ 1 ใบในเทิร์นนี้)\nเมื่อการ์ดใบนี้ Hold, หากคุณควบคุมการ์ดคว่ำหน้า 1 ใบที่นี่, คุณได้ 1 คะแนน",
+    "ability_en": "[Disarm]\nWhen I hold, if you control a facedown card here, score 1 point.",
+    "ability_th": "[Disarm] (เมื่อการ์ดใบนี้โจมตี, มอบ -1 [S] ให้ยูนิตศัตรูที่นี่ 1 ใบในเทิร์นนี้)\nเมื่อการ์ดใบนี้ Hold, หากคุณควบคุมการ์ดคว่ำหน้า 1 ใบที่นี่, คุณจะได้รับ 1 คะแนน",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/fc73c433c11c858f936a0ee4acf19dd5861d1fee-744x1039.png",
     "type": "Unit",
     "energy": 4,
@@ -21290,18 +21278,12 @@
     "code": "RAD-178/167",
     "name_en": "K'Sante",
     "name_th": "K'Sante",
-    "ability_en": "[Shield] (+1 [S] while I'm a defender.)\nWhen I attack or defend, double the [Shield] of a unit you control here this turn.",
-    "ability_th": "[Shield] (+1 [S] ขณะที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้โจมตีหรือป้องกัน, เพิ่ม [Shield] ของยูนิตฝ่ายเราที่คุณควบคุมที่นี่เป็นสองเท่าในเทิร์นนี้.",
+    "ability_en": "[Accelerate]\n[Shield 2]\nWhen I hold, channel 1 rune.",
+    "ability_th": "[Accelerate] (คุณสามารถจ่าย :rb_energy_1::rb_rune_body: เป็นค่าร่ายเพิ่มเติมเพื่อให้การ์ดใบนี้ลงสนามในสภาพ Ready)\n[Shield 2] (+2 [S] ตราบใดที่การ์ดใบนี้เป็นผู้ป้องกัน)\nเมื่อการ์ดใบนี้ Hold, Channel Rune 1 ใบ",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/299741933964a0953312d7c2cc0919501d28bc98-744x1039.png",
     "type": "Unit",
     "energy": 5,
-    "power": {
-      "label": "Might",
-      "value": {
-        "id": 4,
-        "label": "4"
-      }
-    },
+    "power": null,
     "rarity": "Showcase",
     "domains": [
       "Body"
@@ -21610,7 +21592,7 @@
     "name_en": "Evelynn",
     "name_th": "Evelynn",
     "ability_en": "[Disarm] (When I attack, give an enemy unit here -1 [S] this turn.)\nWhen I hold, if you control a facedown card here, score 1 point.",
-    "ability_th": "[Disarm] (เมื่อการ์ดใบนี้โจมตี, มอบ -1 [S] ให้ยูนิตศัตรูที่นี่ 1 ใบในเทิร์นนี้)\nเมื่อการ์ดใบนี้ Hold, หากคุณควบคุมการ์ดคว่ำหน้า 1 ใบที่นี่, คุณได้ 1 คะแนน",
+    "ability_th": "[Disarm] (เมื่อการ์ดใบนี้โจมตี, มอบ -1 [S] ให้ยูนิตศัตรูที่นี่ 1 ใบในเทิร์นนี้)\nเมื่อการ์ดใบนี้ Hold, หากคุณควบคุมการ์ดคว่ำหน้า 1 ใบที่นี่, คุณจะได้รับ 1 คะแนน",
     "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/game_data_live/f79b82a0a56c2e4af641beb84762abcd6b058195-744x1039.png",
     "type": "Unit",
     "energy": 4,
