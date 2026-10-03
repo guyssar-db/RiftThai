@@ -1,5 +1,15 @@
-import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
+import {
+	createCipheriv,
+	createDecipheriv,
+	createHash,
+	createHmac,
+	randomBytes,
+	scrypt as scryptCallback,
+	timingSafeEqual
+} from 'node:crypto';
 import { promisify } from 'node:util';
+
+import QRCode from 'qrcode';
 
 import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
@@ -35,6 +45,24 @@ type SessionRow = {
 	user_id: string;
 	session_token_hash: string;
 	expires_at: string;
+};
+
+type TwoFactorRow = {
+	user_id: string;
+	secret_encrypted: string;
+	enabled_at: string | null;
+	backup_code_hashes: string[];
+	last_used_step: number | null;
+};
+
+export type TwoFactorSetup = {
+	secret: string;
+	otpauthUri: string;
+	qrDataUrl: string;
+};
+
+export type TwoFactorStatus = {
+	enabled: boolean;
 };
 
 export type AuthUser = {
@@ -108,6 +136,14 @@ export async function registerUser(emailInput: string, password: string, display
 }
 
 export async function loginUser(emailInput: string, password: string) {
+	return loginUserWithTwoFactor(emailInput, password, '');
+}
+
+export async function loginUserWithTwoFactor(
+	emailInput: string,
+	password: string,
+	twoFactorCode: string
+) {
 	const email = normalizeEmail(emailInput);
 	const user = await findUserByEmail(email);
 	if (!user) throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
@@ -116,6 +152,15 @@ export async function loginUser(emailInput: string, password: string) {
 	if (!passwordOk) throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
 	if (user.banned) throw new Error('บัญชีนี้ถูกระงับการใช้งาน');
 	if (!user.email_verified_at) throw new Error('Please verify your email before logging in');
+
+	const twoFactor = await getTwoFactorRow(user.id);
+	if (twoFactor?.enabled_at) {
+		if (!twoFactorCode) {
+			return { requiresTwoFactor: true as const, user: toAuthUser(user) };
+		}
+		const valid = await consumeTwoFactorCode(user.id, twoFactor, twoFactorCode);
+		if (!valid) throw new Error('รหัส 2FA ไม่ถูกต้องหรือถูกใช้ไปแล้ว');
+	}
 
 	const sessionToken = createToken();
 	const sessionHash = hashToken(sessionToken);
@@ -134,10 +179,104 @@ export async function loginUser(emailInput: string, password: string) {
 	});
 
 	return {
+		requiresTwoFactor: false as const,
 		user: toAuthUser(user),
 		sessionToken,
 		expiresAt
 	};
+}
+
+export async function getTwoFactorStatus(userId: string): Promise<TwoFactorStatus> {
+	const row = await getTwoFactorRow(userId);
+	return { enabled: Boolean(row?.enabled_at) };
+}
+
+export async function beginTwoFactorSetup(
+	userId: string,
+	currentPassword: string
+): Promise<TwoFactorSetup> {
+	const user = await findUserById(userId);
+	if (!user) throw new Error('ไม่พบบัญชีผู้ใช้');
+	if (!(await verifyPassword(currentPassword, user.password_hash))) {
+		throw new Error('รหัสผ่านปัจจุบันไม่ถูกต้อง');
+	}
+
+	const existing = await getTwoFactorRow(userId);
+	if (existing?.enabled_at) throw new Error('บัญชีนี้เปิดใช้ 2FA อยู่แล้ว');
+
+	const secret = generateTotpSecret();
+	const issuer = 'RiftThai';
+	const label = `${issuer}:${user.email}`;
+	const otpauthUri = `otpauth://totp/${encodeURIComponent(label)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+	const qrDataUrl = await QRCode.toDataURL(otpauthUri, {
+		errorCorrectionLevel: 'M',
+		margin: 2,
+		width: 240
+	});
+
+	await authRequest('/rest/v1/user_two_factor', {
+		method: 'POST',
+		headers: {
+			Prefer: 'resolution=merge-duplicates,return=minimal'
+		},
+		body: JSON.stringify({
+			user_id: userId,
+			secret_encrypted: encryptTwoFactorSecret(secret),
+			enabled_at: null,
+			backup_code_hashes: [],
+			last_used_step: null,
+			updated_at: new Date().toISOString()
+		})
+	});
+
+	return { secret, otpauthUri, qrDataUrl };
+}
+
+export async function confirmTwoFactorSetup(userId: string, codeInput: string) {
+	const row = await getTwoFactorRow(userId);
+	if (!row || row.enabled_at) throw new Error('ไม่พบรายการตั้งค่า 2FA ที่รอยืนยัน');
+
+	const secret = decryptTwoFactorSecret(row.secret_encrypted);
+	const acceptedStep = verifyTotp(secret, codeInput);
+	if (acceptedStep === null) throw new Error('รหัส 2FA ไม่ถูกต้อง');
+
+	const backupCodes = Array.from({ length: 10 }, () =>
+		randomBytes(6).toString('hex').toUpperCase()
+	);
+	await authRequest(`/rest/v1/user_two_factor?user_id=eq.${encodeURIComponent(userId)}`, {
+		method: 'PATCH',
+		headers: { Prefer: 'return=minimal' },
+		body: JSON.stringify({
+			enabled_at: new Date().toISOString(),
+			backup_code_hashes: backupCodes.map(hashBackupCode),
+			last_used_step: acceptedStep,
+			updated_at: new Date().toISOString()
+		})
+	});
+
+	return backupCodes;
+}
+
+export async function disableTwoFactor(
+	userId: string,
+	currentPassword: string,
+	codeInput: string
+) {
+	const user = await findUserById(userId);
+	if (!user) throw new Error('ไม่พบบัญชีผู้ใช้');
+	if (!(await verifyPassword(currentPassword, user.password_hash))) {
+		throw new Error('รหัสผ่านปัจจุบันไม่ถูกต้อง');
+	}
+
+	const row = await getTwoFactorRow(userId);
+	if (!row?.enabled_at) throw new Error('บัญชีนี้ยังไม่ได้เปิดใช้ 2FA');
+	if (!(await consumeTwoFactorCode(userId, row, codeInput))) {
+		throw new Error('รหัส 2FA ไม่ถูกต้องหรือถูกใช้ไปแล้ว');
+	}
+
+	await authRequest(`/rest/v1/user_two_factor?user_id=eq.${encodeURIComponent(userId)}`, {
+		method: 'DELETE'
+	});
 }
 
 export async function verifyEmailToken(token: string) {
@@ -497,6 +636,36 @@ async function findUserById(userId: string) {
 	return rows[0] ?? null;
 }
 
+async function getTwoFactorRow(userId: string) {
+	const rows = await authRequest<TwoFactorRow[]>(
+		`/rest/v1/user_two_factor?user_id=eq.${encodeURIComponent(userId)}&select=*`
+	);
+	return rows[0] ?? null;
+}
+
+async function consumeTwoFactorCode(
+	userId: string,
+	row: TwoFactorRow,
+	codeInput: string
+) {
+	const code = normalizeTwoFactorCode(codeInput);
+	if (/^\d{6}$/.test(code)) {
+		const acceptedStep = verifyTotp(decryptTwoFactorSecret(row.secret_encrypted), code);
+		if (acceptedStep === null) return false;
+
+		return await authRequest<boolean>('/rest/v1/rpc/consume_two_factor_totp', {
+			method: 'POST',
+			body: JSON.stringify({ target_user_id: userId, expected_step: acceptedStep })
+		});
+	}
+
+	if (!/^[A-F0-9]{12}$/.test(code)) return false;
+	return await authRequest<boolean>('/rest/v1/rpc/consume_two_factor_backup_code', {
+		method: 'POST',
+		body: JSON.stringify({ target_user_id: userId, code_hash: hashBackupCode(code) })
+	});
+}
+
 async function deleteSession(sessionHash: string) {
 	await authRequest(
 		`/rest/v1/user_sessions?session_token_hash=eq.${encodeURIComponent(sessionHash)}`,
@@ -510,6 +679,109 @@ async function hashPassword(password: string) {
 	const salt = randomBytes(16).toString('base64url');
 	const key = (await scrypt(password, salt, passwordKeyLength)) as Buffer;
 	return `${salt}:${key.toString('base64url')}`;
+}
+
+function generateTotpSecret() {
+	const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+	const bytes = randomBytes(20);
+	let buffer = 0n;
+	let bits = 0;
+	let secret = '';
+
+	for (const byte of bytes) {
+		buffer = (buffer << 8n) | BigInt(byte);
+		bits += 8;
+		while (bits >= 5) {
+			bits -= 5;
+			secret += alphabet[Number((buffer >> BigInt(bits)) & 31n)];
+		}
+	}
+
+	if (bits > 0) secret += alphabet[Number((buffer << BigInt(5 - bits)) & 31n)];
+	return secret;
+}
+
+function decodeBase32(value: string) {
+	const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+	let buffer = 0n;
+	let bits = 0;
+	const bytes: number[] = [];
+
+	for (const character of value.replace(/=+$/, '').toUpperCase()) {
+		const index = alphabet.indexOf(character);
+		if (index < 0) throw new Error('Invalid TOTP secret');
+		buffer = (buffer << 5n) | BigInt(index);
+		bits += 5;
+		if (bits >= 8) {
+			bits -= 8;
+			bytes.push(Number((buffer >> BigInt(bits)) & 255n));
+		}
+	}
+
+	return Buffer.from(bytes);
+}
+
+function verifyTotp(secret: string, codeInput: string) {
+	const code = normalizeTwoFactorCode(codeInput);
+	if (!/^\d{6}$/.test(code)) return null;
+
+	const currentStep = Math.floor(Date.now() / 1000 / 30);
+	const secretBytes = decodeBase32(secret);
+	for (const step of [currentStep - 1, currentStep, currentStep + 1]) {
+		const counter = Buffer.alloc(8);
+		counter.writeBigInt64BE(BigInt(step));
+		const digest = createHmac('sha1', secretBytes).update(counter).digest();
+		const offset = digest[digest.length - 1] & 0x0f;
+		const binary =
+			((digest[offset] & 0x7f) << 24) |
+			((digest[offset + 1] & 0xff) << 16) |
+			((digest[offset + 2] & 0xff) << 8) |
+			(digest[offset + 3] & 0xff);
+		const expected = String(binary % 1_000_000).padStart(6, '0');
+		if (timingSafeEqual(Buffer.from(expected), Buffer.from(code))) return step;
+	}
+
+	return null;
+}
+
+function normalizeTwoFactorCode(value: string) {
+	return value.replace(/\s+/g, '').trim().toUpperCase();
+}
+
+function hashBackupCode(code: string) {
+	return createHash('sha256').update(`riftthai-2fa:${code}`).digest('hex');
+}
+
+function getTwoFactorEncryptionKey() {
+	const encryptionSecret = env.TOTP_ENCRYPTION_KEY;
+	if (!encryptionSecret) throw new Error('TOTP_ENCRYPTION_KEY is missing');
+	return createHash('sha256').update(encryptionSecret).digest();
+}
+
+function encryptTwoFactorSecret(secret: string) {
+	const iv = randomBytes(12);
+	const cipher = createCipheriv('aes-256-gcm', getTwoFactorEncryptionKey(), iv);
+	const encrypted = Buffer.concat([cipher.update(secret, 'utf8'), cipher.final()]);
+	const tag = cipher.getAuthTag();
+	return `v1.${iv.toString('base64url')}.${tag.toString('base64url')}.${encrypted.toString('base64url')}`;
+}
+
+function decryptTwoFactorSecret(payload: string) {
+	const [version, ivValue, tagValue, encryptedValue] = payload.split('.');
+	if (version !== 'v1' || !ivValue || !tagValue || !encryptedValue) {
+		throw new Error('Invalid encrypted TOTP secret');
+	}
+
+	const decipher = createDecipheriv(
+		'aes-256-gcm',
+		getTwoFactorEncryptionKey(),
+		Buffer.from(ivValue, 'base64url')
+	);
+	decipher.setAuthTag(Buffer.from(tagValue, 'base64url'));
+	return Buffer.concat([
+		decipher.update(Buffer.from(encryptedValue, 'base64url')),
+		decipher.final()
+	]).toString('utf8');
 }
 
 async function verifyPassword(password: string, stored: string) {

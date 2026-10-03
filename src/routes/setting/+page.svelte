@@ -18,8 +18,22 @@
 		profileSlug: string;
 		emailVerified: boolean;
 		createdAt: string;
+		twoFactorEnabled: boolean;
 		settings: UserSettings;
 	};
+
+	type TwoFactorSetup = {
+		secret: string;
+		otpauthUri: string;
+		qrDataUrl: string;
+	};
+
+	const settingSections = [
+		{ id: 'profile', label: 'โปรไฟล์', description: 'ชื่อและข้อมูลบัญชี' },
+		{ id: 'preferences', label: 'การตั้งค่า', description: 'ความเป็นส่วนตัวและเด็ค' },
+		{ id: 'security', label: 'ความปลอดภัย', description: 'รหัสผ่านและ 2FA' }
+	] as const;
+	type SettingSection = (typeof settingSections)[number]['id'];
 
 	let { data } = $props();
 	let user = $derived(data.user as SettingsUser);
@@ -40,6 +54,13 @@
 	let savingProfile = $state(false);
 	let savingSettings = $state(false);
 	let changingPassword = $state(false);
+	let twoFactorEnabled = $state(false);
+	let twoFactorSetup = $state<TwoFactorSetup | null>(null);
+	let twoFactorPassword = $state('');
+	let twoFactorCode = $state('');
+	let backupCodes = $state<string[]>([]);
+	let twoFactorLoading = $state(false);
+	let activeSection = $state<SettingSection>('profile');
 	let displayNameConfirmOpen = $state(false);
 	let actionNotice = $state<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
@@ -49,6 +70,7 @@
 		displayNameLocked = user.displayNameLocked;
 		profileHandle = user.profileHandle;
 		profileSlug = user.profileSlug;
+		twoFactorEnabled = user.twoFactorEnabled;
 		settings = { ...user.settings };
 		initialized = true;
 	});
@@ -129,6 +151,88 @@
 		}
 	}
 
+	async function startTwoFactorSetup() {
+		if (!twoFactorPassword) {
+			showActionNotice('กรุณากรอกรหัสผ่านปัจจุบัน', 'error');
+			return;
+		}
+		twoFactorLoading = true;
+		try {
+			const response = await fetch('/api/auth/2fa', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'setup', currentPassword: twoFactorPassword })
+			});
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error(payload.error || 'เริ่มตั้งค่า 2FA ไม่สำเร็จ');
+			twoFactorSetup = payload;
+			twoFactorCode = '';
+			backupCodes = [];
+			showActionNotice('สแกน QR แล้วกรอกรหัสจาก Authenticator เพื่อยืนยัน', 'info');
+		} catch (err) {
+			showActionNotice(err instanceof Error ? err.message : 'เริ่มตั้งค่า 2FA ไม่สำเร็จ', 'error');
+		} finally {
+			twoFactorLoading = false;
+		}
+	}
+
+	async function confirmTwoFactor() {
+		if (!twoFactorCode) {
+			showActionNotice('กรุณากรอกรหัสจาก Authenticator', 'error');
+			return;
+		}
+		twoFactorLoading = true;
+		try {
+			const response = await fetch('/api/auth/2fa', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'enable', code: twoFactorCode })
+			});
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error(payload.error || 'เปิดใช้ 2FA ไม่สำเร็จ');
+			twoFactorEnabled = true;
+			twoFactorSetup = null;
+			backupCodes = payload.backupCodes ?? [];
+			twoFactorPassword = '';
+			twoFactorCode = '';
+			showActionNotice('เปิดใช้ 2FA แล้ว กรุณาบันทึก Backup codes', 'success');
+		} catch (err) {
+			showActionNotice(err instanceof Error ? err.message : 'เปิดใช้ 2FA ไม่สำเร็จ', 'error');
+		} finally {
+			twoFactorLoading = false;
+		}
+	}
+
+	async function turnOffTwoFactor() {
+		if (!twoFactorPassword || !twoFactorCode) {
+			showActionNotice('กรุณากรอกรหัสผ่านและรหัส 2FA', 'error');
+			return;
+		}
+		twoFactorLoading = true;
+		try {
+			const response = await fetch('/api/auth/2fa', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'disable',
+					currentPassword: twoFactorPassword,
+					code: twoFactorCode
+				})
+			});
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok) throw new Error(payload.error || 'ปิดใช้ 2FA ไม่สำเร็จ');
+			twoFactorEnabled = false;
+			twoFactorPassword = '';
+			twoFactorCode = '';
+			backupCodes = [];
+			showActionNotice('ปิดใช้ 2FA แล้ว', 'success');
+		} catch (err) {
+			showActionNotice(err instanceof Error ? err.message : 'ปิดใช้ 2FA ไม่สำเร็จ', 'error');
+		} finally {
+			twoFactorLoading = false;
+		}
+	}
+
 	function showActionNotice(message: string, type: 'success' | 'error' | 'info' = 'info') {
 		actionNotice = null;
 		window.setTimeout(() => {
@@ -161,7 +265,32 @@
 			<a href="/profile/{profileSlug}" class="rt-action mt-5">ดูโปรไฟล์</a>
 		</header>
 
+		<nav
+			class="rt-panel mb-5 grid gap-2 rounded-xl p-2 sm:grid-cols-3"
+			aria-label="หมวดการตั้งค่า"
+		>
+			{#each settingSections as section}
+				<button
+					type="button"
+					class="rounded-lg px-4 py-3 text-left transition {activeSection === section.id
+						? 'bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-300/10'
+						: 'text-slate-400 hover:bg-white/5 hover:text-white'}"
+					aria-current={activeSection === section.id ? 'page' : undefined}
+					onclick={() => (activeSection = section.id)}
+				>
+					<span class="block text-sm font-black uppercase">{section.label}</span>
+					<span
+						class="mt-1 block text-[10px] font-bold {activeSection === section.id
+							? 'text-slate-800/70'
+							: 'text-slate-500'}"
+						>{section.description}</span
+					>
+				</button>
+			{/each}
+		</nav>
+
 		<div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.75fr)]">
+			{#if activeSection === 'profile'}
 			<section class="rt-panel rounded-xl p-5">
 				<h2 class="text-xl font-black text-white uppercase italic">โปรไฟล์</h2>
 				<form
@@ -213,6 +342,7 @@
 					</div>
 				</div>
 			</section>
+			{:else if activeSection === 'preferences'}
 
 			<section class="rt-panel rounded-xl p-5">
 				<h2 class="text-xl font-black text-white uppercase italic">บัญชี</h2>
@@ -314,6 +444,117 @@
 					>
 				</div>
 			</section>
+			{:else}
+
+			<section class="rt-panel rounded-xl p-5 lg:col-span-2">
+				<h2 class="text-xl font-black text-white uppercase italic">ความปลอดภัยบัญชี</h2>
+				{#if twoFactorEnabled}
+					<div class="mt-4 rounded-lg border border-emerald-300/20 bg-emerald-300/8 p-4">
+						<div class="font-black text-emerald-100">เปิดใช้ 2FA อยู่</div>
+						<p class="mt-1 text-xs font-bold text-slate-400">
+							ทุกครั้งที่เข้าสู่ระบบต้องใช้รหัสจากแอป Authenticator หรือ Backup code
+						</p>
+					</div>
+					<form
+						class="mt-4 grid gap-3 md:grid-cols-3"
+						onsubmit={(e) => {
+							e.preventDefault();
+							void turnOffTwoFactor();
+						}}
+					>
+						<input
+							bind:value={twoFactorPassword}
+							type="password"
+							autocomplete="current-password"
+							placeholder="รหัสผ่านปัจจุบัน"
+							class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
+						/>
+						<input
+							bind:value={twoFactorCode}
+							inputmode="numeric"
+							autocomplete="one-time-code"
+							maxlength="16"
+							placeholder="รหัส 2FA หรือ Backup code"
+							class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
+						/>
+						<button class="rt-action justify-center disabled:opacity-50" disabled={twoFactorLoading} type="submit">
+							{twoFactorLoading ? 'กำลังดำเนินการ...' : 'ปิดใช้ 2FA'}
+						</button>
+					</form>
+				{:else if twoFactorSetup}
+					<div class="mt-4 grid gap-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-center">
+						<div class="w-fit rounded-xl bg-white p-3">
+							<img src={twoFactorSetup.qrDataUrl} alt="QR code สำหรับตั้งค่า 2FA" class="h-56 w-56" />
+						</div>
+						<div class="space-y-3">
+							<p class="text-sm font-bold text-slate-300">
+								สแกน QR ด้วย Google Authenticator, Microsoft Authenticator หรือแอปที่รองรับ TOTP
+							</p>
+							<div class="rounded-lg border border-white/10 bg-black/20 p-3">
+								<div class="text-[10px] font-black tracking-widest text-slate-500 uppercase">คีย์สำรองสำหรับกรอกเอง</div>
+								<code class="mt-2 block break-all text-sm font-black tracking-widest text-cyan-200">{twoFactorSetup.secret}</code>
+							</div>
+							<form
+								class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+								onsubmit={(e) => {
+									e.preventDefault();
+									void confirmTwoFactor();
+								}}
+							>
+								<input
+									bind:value={twoFactorCode}
+									inputmode="numeric"
+									autocomplete="one-time-code"
+									maxlength="6"
+									placeholder="รหัส 6 หลักจาก Authenticator"
+									required
+									class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
+								/>
+								<button class="rt-action justify-center disabled:opacity-50" disabled={twoFactorLoading} type="submit">
+									{twoFactorLoading ? 'กำลังยืนยัน...' : 'ยืนยันและเปิดใช้'}
+								</button>
+							</form>
+						</div>
+					</div>
+				{:else}
+					<p class="mt-3 text-sm font-bold text-slate-400">
+						เพิ่มชั้นความปลอดภัยด้วยรหัสแบบใช้ครั้งเดียวจากแอป Authenticator
+					</p>
+					<form
+						class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+						onsubmit={(e) => {
+							e.preventDefault();
+							void startTwoFactorSetup();
+						}}
+					>
+						<input
+							bind:value={twoFactorPassword}
+							type="password"
+							autocomplete="current-password"
+							placeholder="ยืนยันด้วยรหัสผ่านปัจจุบัน"
+							required
+							class="min-h-11 rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
+						/>
+						<button class="rt-action justify-center disabled:opacity-50" disabled={twoFactorLoading} type="submit">
+							{twoFactorLoading ? 'กำลังเตรียม...' : 'ตั้งค่า 2FA'}
+						</button>
+					</form>
+				{/if}
+
+				{#if backupCodes.length > 0}
+					<div class="mt-5 rounded-lg border border-amber-300/25 bg-amber-300/8 p-4">
+						<div class="font-black text-amber-100">Backup codes — บันทึกไว้ทันที</div>
+						<p class="mt-1 text-xs font-bold text-slate-400">
+							แต่ละรหัสใช้ได้ครั้งเดียว และจะไม่แสดงซ้ำหลังออกจากหน้านี้
+						</p>
+						<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+							{#each backupCodes as code}
+								<code class="rounded bg-black/30 px-2 py-2 text-center text-xs font-black tracking-wider text-amber-100">{code}</code>
+							{/each}
+						</div>
+					</div>
+				{/if}
+			</section>
 
 			<section class="rt-panel rounded-xl p-5 lg:col-span-2">
 				<h2 class="text-xl font-black text-white uppercase italic">เปลี่ยนรหัสผ่าน</h2>
@@ -352,6 +593,7 @@
 					>
 				</form>
 			</section>
+			{/if}
 		</div>
 	</main>
 

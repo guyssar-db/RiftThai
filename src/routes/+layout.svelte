@@ -64,7 +64,7 @@
 		'/privacy': {
 			title: 'Privacy Policy - RiftThai',
 			description:
-				'นโยบายความเป็นส่วนตัวของ RiftThai สำหรับบัญชีผู้ใช้ แชต ระบบ AI และข้อมูลการใช้งาน'
+				'นโยบายความเป็นส่วนตัวของ RiftThai สำหรับบัญชีผู้ใช้ ระบบแชตสนับสนุน และข้อมูลการใช้งาน'
 		},
 		'/terms': {
 			title: 'Terms of Use - RiftThai',

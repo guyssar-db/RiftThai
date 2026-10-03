@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { getAuthSession, invalidateAuthSession } from '$lib/utils/authSession';
 
@@ -72,6 +73,7 @@
 		currentUser = null;
 		accountOpen = false;
 		window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
+		await goto('/');
 	}
 </script>
 

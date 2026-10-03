@@ -15,6 +15,7 @@
 	};
 
 	type AuthSession = {
+		requiresTwoFactor?: boolean;
 		user: {
 			id: string;
 			email: string;
@@ -42,6 +43,12 @@
 	let acceptedTerms = $state(false);
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
+	let loginTwoFactorRequired = $state(false);
+	let twoFactorModalOpen = $state(false);
+	let loginTwoFactorDigits = $state<string[]>(Array(6).fill(''));
+	let loginTwoFactorBackupMode = $state(false);
+	let loginBackupCode = $state('');
+	let twoFactorInputRefs = $state<HTMLInputElement[]>([]);
 	let authLoading = $state(true);
 
 	// Chat support state
@@ -62,6 +69,9 @@
 			authMode = detail?.mode === 'register' ? 'register' : 'login';
 			loginError = '';
 			registerSent = false;
+			loginTwoFactorRequired = false;
+			twoFactorModalOpen = false;
+			resetTwoFactorDigits();
 			authModalOpen = true;
 		};
 
@@ -113,6 +123,11 @@
 					body: JSON.stringify({
 						email: loginEmail,
 						password: loginPassword,
+						twoFactorCode: loginTwoFactorRequired
+							? loginTwoFactorBackupMode
+								? loginBackupCode
+								: loginTwoFactorDigits.join('')
+							: undefined,
 						displayName: authMode === 'register' ? loginDisplayName : undefined
 					})
 				}
@@ -126,11 +141,21 @@
 				loginDisplayName = '';
 				return;
 			}
+			if (data.requiresTwoFactor) {
+				loginTwoFactorRequired = true;
+				authModalOpen = false;
+				twoFactorModalOpen = true;
+				loginError = '';
+				return;
+			}
 			if (!data.user) throw new Error(data.error || 'เข้าสู่ระบบไม่สำเร็จ');
 			currentUser = data.user;
 			authModalOpen = false;
 			window.dispatchEvent(new CustomEvent('riftthai-auth-changed'));
 			loginPassword = '';
+			resetTwoFactorDigits();
+			loginTwoFactorRequired = false;
+			twoFactorModalOpen = false;
 			confirmPassword = '';
 			loginDisplayName = '';
 		} catch (err) {
@@ -138,6 +163,49 @@
 		} finally {
 			authLoading = false;
 		}
+	}
+
+	function resetTwoFactorDigits() {
+		loginTwoFactorDigits = Array(6).fill('');
+		loginTwoFactorBackupMode = false;
+		loginBackupCode = '';
+		twoFactorInputRefs = [];
+	}
+
+	function closeTwoFactorModal() {
+		twoFactorModalOpen = false;
+		loginTwoFactorRequired = false;
+		resetTwoFactorDigits();
+		authModalOpen = true;
+	}
+
+	function handleTwoFactorInput(index: number, event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const digit = input.value.replace(/\D/g, '').slice(-1);
+		loginTwoFactorDigits[index] = digit;
+		loginTwoFactorDigits = [...loginTwoFactorDigits];
+		input.value = digit;
+		if (digit && index < 5) twoFactorInputRefs[index + 1]?.focus();
+	}
+
+	function handleTwoFactorKeydown(index: number, event: KeyboardEvent) {
+		if (event.key === 'Backspace' && !loginTwoFactorDigits[index] && index > 0) {
+			loginTwoFactorDigits[index - 1] = '';
+			loginTwoFactorDigits = [...loginTwoFactorDigits];
+			twoFactorInputRefs[index - 1]?.focus();
+		} else if (event.key === 'ArrowLeft' && index > 0) {
+			twoFactorInputRefs[index - 1]?.focus();
+		} else if (event.key === 'ArrowRight' && index < 5) {
+			twoFactorInputRefs[index + 1]?.focus();
+		}
+	}
+
+	function handleTwoFactorPaste(event: ClipboardEvent) {
+		event.preventDefault();
+		const pasted = event.clipboardData?.getData('text').replace(/\D/g, '').slice(0, 6) ?? '';
+		if (!pasted) return;
+		loginTwoFactorDigits = Array.from({ length: 6 }, (_, index) => pasted[index] ?? '');
+		twoFactorInputRefs[Math.min(pasted.length, 6) - 1]?.focus();
 	}
 
 	// Fetch messages from support API
@@ -242,6 +310,9 @@
 				onclick={() => {
 					authMode = 'login';
 					loginError = '';
+					loginTwoFactorRequired = false;
+						twoFactorModalOpen = false;
+						resetTwoFactorDigits();
 				}}
 			>
 				เข้าสู่ระบบ
@@ -255,6 +326,9 @@
 				onclick={() => {
 					authMode = 'register';
 					loginError = '';
+					loginTwoFactorRequired = false;
+					twoFactorModalOpen = false;
+					resetTwoFactorDigits();
 				}}
 			>
 				สมัครสมาชิก
@@ -399,6 +473,89 @@
 				>
 			</Checkbox>
 		{/if}
+	</form>
+</Modal>
+
+<Modal
+	bind:open={twoFactorModalOpen}
+	title="ยืนยัน 2FA"
+	subtitle="กรอกรหัสจาก Authenticator"
+	onclose={closeTwoFactorModal}
+>
+	<form
+		class="space-y-4"
+		onsubmit={(event) => {
+			event.preventDefault();
+			void login();
+		}}
+	>
+		<div class="rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-3 py-3 text-xs font-bold leading-relaxed text-cyan-100">
+			เปิดแอป Authenticator แล้วกรอกรหัส 6 หลักล่าสุดของ RiftThai
+		</div>
+
+		{#if loginTwoFactorBackupMode}
+			<Input
+				bind:value={loginBackupCode}
+				autocomplete="one-time-code"
+				placeholder="Backup code"
+				maxlength="12"
+				required
+			/>
+		{:else}
+			<div class="flex justify-center gap-2" onpaste={handleTwoFactorPaste}>
+				{#each Array(6) as _, index}
+					<input
+						bind:this={twoFactorInputRefs[index]}
+						value={loginTwoFactorDigits[index]}
+						inputmode="numeric"
+						autocomplete={index === 0 ? 'one-time-code' : 'off'}
+						maxlength="1"
+						pattern="[0-9]*"
+						aria-label={`รหัส 2FA หลักที่ ${index + 1}`}
+						class="h-12 w-10 rounded-lg border border-white/15 bg-slate-950/80 text-center text-xl font-black text-white outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20"
+						oninput={(event) => handleTwoFactorInput(index, event)}
+						onkeydown={(event) => handleTwoFactorKeydown(index, event)}
+					/>
+				{/each}
+			</div>
+		{/if}
+
+		{#if loginError}
+			<div class="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200">
+				{loginError}
+			</div>
+		{/if}
+
+		<button
+			type="submit"
+			class="rt-action w-full justify-center disabled:cursor-not-allowed disabled:opacity-50"
+			disabled={authLoading ||
+				(loginTwoFactorBackupMode
+					? loginBackupCode.length === 0
+					: loginTwoFactorDigits.join('').length !== 6)}
+		>
+			{authLoading ? 'กำลังตรวจสอบ...' : 'ยืนยันและเข้าสู่ระบบ'}
+		</button>
+
+		<button
+			type="button"
+			class="w-full text-xs font-black text-cyan-200 transition hover:text-white"
+			onclick={() => {
+				loginTwoFactorBackupMode = !loginTwoFactorBackupMode;
+				loginError = '';
+				if (!loginTwoFactorBackupMode) loginBackupCode = '';
+			}}
+		>
+			{loginTwoFactorBackupMode ? 'ใช้รหัสจาก Authenticator แทน' : 'ใช้ Backup code แทน'}
+		</button>
+
+		<button
+			type="button"
+			class="w-full text-xs font-bold text-slate-500 transition hover:text-slate-300"
+			onclick={closeTwoFactorModal}
+		>
+			กลับไปหน้าเข้าสู่ระบบ
+		</button>
 	</form>
 </Modal>
 
