@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { syncMotionPreference } from '$lib/utils/motion';
 	import { navigating } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -7,10 +8,12 @@
 	import './layout.css';
 	import FakeAiChat from '$lib/components/FakeAiChat.svelte';
 	import PcSideNav from '$lib/components/PcSideNav.svelte';
+	import GsapPageMotion from '$lib/components/GsapPageMotion.svelte';
 	import { getAuthSession } from '$lib/utils/authSession';
 	import { dev } from '$app/environment';
 	import { inject } from '@vercel/analytics';
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+	import { desktopSidebarCollapsed } from '$lib/stores/sidebar';
 
 	let { children } = $props();
 
@@ -142,7 +145,12 @@
 	let lastUserStatus: boolean | null = null;
 
 	onMount(() => {
-		if (!dev) {
+		syncMotionPreference();
+		window.addEventListener('storage', syncMotionPreference);
+		// Local production previews also have dev=false, but no Vercel endpoints.
+		const hostname = window.location.hostname;
+		const isHostedSite = hostname === new URL(siteUrl).hostname || hostname.endsWith('.vercel.app');
+		if (!dev && isHostedSite) {
 			inject();
 			injectSpeedInsights();
 		}
@@ -159,6 +167,7 @@
 		window.addEventListener('riftthai-auth-changed', syncAuth);
 
 		return () => {
+			window.removeEventListener('storage', syncMotionPreference);
 			window.removeEventListener('riftthai-auth-changed', syncAuth);
 		};
 	});
@@ -266,10 +275,15 @@
 {/if}
 <div
 	class="rt-app-frame min-h-dvh lg:grid lg:grid-cols-[5.25rem_minmax(0,1fr)] xl:grid-cols-[13.5rem_minmax(0,1fr)]"
+	class:rt-sidebar-collapsed={$desktopSidebarCollapsed}
+	class:rt-library-theme={pathname !== '/' &&
+		!pathname.startsWith('/admin') &&
+		!pathname.startsWith('/api')}
 >
 	<PcSideNav active={sideNavActive} />
 	<div class="min-w-0">
 		{@render children()}
+		<GsapPageMotion />
 	</div>
 </div>
 {#if showCookieNotice}

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { getAuthSession, invalidateAuthSession } from '$lib/utils/authSession';
+	import { desktopSidebarCollapsed } from '$lib/stores/sidebar';
 
 	type MenuItem = {
 		label: string;
@@ -28,6 +29,7 @@
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
 	let accountOpen = $state(false);
+	const sidebarStorageKey = 'riftthai_desktop_sidebar_collapsed';
 
 	let menuItems = $derived<MenuItem[]>([
 		{ label: 'การ์ด', href: '/', active: active === 'cards', icon: 'cards' },
@@ -45,11 +47,22 @@
 	]);
 
 	onMount(() => {
+		const saved = window.localStorage.getItem(sidebarStorageKey);
+		if (saved !== null) desktopSidebarCollapsed.set(saved === 'true');
 		void loadSession();
 		const syncAuth = () => void loadSession(true);
 		window.addEventListener('riftthai-auth-changed', syncAuth);
 		return () => window.removeEventListener('riftthai-auth-changed', syncAuth);
 	});
+
+	function toggleSidebar() {
+		desktopSidebarCollapsed.update((collapsed) => {
+			const next = !collapsed;
+			window.localStorage.setItem(sidebarStorageKey, String(next));
+			return next;
+		});
+		accountOpen = false;
+	}
 
 	async function loadSession(forceRefresh = false) {
 		authLoading = true;
@@ -79,16 +92,40 @@
 
 <aside
 	class="rt-desktop-sidebar sticky top-0 z-[250] hidden h-dvh min-h-dvh flex-col border-r border-white/8 bg-slate-950/88 px-3 py-4 backdrop-blur-xl lg:flex"
+	class:rt-sidebar-collapsed={$desktopSidebarCollapsed}
 >
 	<a
 		href="/"
-		class="hidden h-12 items-center rounded-xl border border-white/8 bg-white/[0.025] px-3 text-white transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.04] xl:flex"
+		class="rt-sidebar-brand hidden h-12 items-center rounded-xl border border-white/8 bg-white/[0.025] px-3 text-white transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.04] xl:flex"
 		aria-label="RiftThai home"
 	>
 		<span class="font-display text-sm font-bold tracking-[0.08em]"
 			>RIFT<span class="rt-brand-accent">THAI</span></span
 		>
 	</a>
+	<button
+		type="button"
+		class="rt-sidebar-toggle mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/8 bg-white/[0.025] text-slate-400 transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.05] hover:text-cyan-100 xl:justify-start xl:px-3"
+		aria-label={$desktopSidebarCollapsed ? 'ขยายเมนูด้านซ้าย' : 'พับเมนูด้านซ้าย'}
+		title={$desktopSidebarCollapsed ? 'ขยายเมนู' : 'พับเมนู'}
+		aria-pressed={$desktopSidebarCollapsed}
+		onclick={toggleSidebar}
+	>
+		<svg
+			class="h-5 w-5 transition-transform duration-300 {$desktopSidebarCollapsed ? 'rotate-180' : ''}"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.4"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			aria-hidden="true"
+		>
+			<path d="m15 18-6-6 6-6" />
+			<path d="M9 12h10" />
+		</svg>
+		<span class="rt-sidebar-label hidden text-[10px] font-black tracking-widest uppercase xl:block">พับเมนู</span>
+	</button>
 
 	<nav class="flex flex-1 flex-col gap-1.5 pt-5" aria-label="Desktop navigation">
 		{#each menuItems as item}
@@ -230,7 +267,7 @@
 						</svg>
 					{/if}
 				</span>
-				<span class="hidden truncate xl:block">{item.label}</span>
+				<span class="rt-sidebar-label hidden truncate xl:block">{item.label}</span>
 			</a>
 		{/each}
 	</nav>
@@ -265,7 +302,7 @@
 						<path d="M4 21a8 8 0 0 1 16 0" />
 					</svg>
 				</span>
-				<span class="hidden min-w-0 truncate xl:block">{currentUser.profileHandle}</span>
+				<span class="rt-sidebar-label hidden min-w-0 truncate xl:block">{currentUser.profileHandle}</span>
 				<svg
 					class="hidden h-4 w-4 shrink-0 transition xl:block {accountOpen ? 'rotate-180' : ''}"
 					viewBox="0 0 20 20"
@@ -287,7 +324,7 @@
 							aria-label="Admin Panel"
 							title="Admin Panel"
 						>
-							Admin Panel
+							<span class="rt-sidebar-label">Admin Panel</span>
 						</a>
 					{/if}
 					<a
@@ -296,8 +333,7 @@
 						aria-label="โปรไฟล์"
 						title="โปรไฟล์"
 					>
-						<span class="hidden xl:block">โปรไฟล์</span>
-						<span class="xl:hidden">โปรไฟล์</span>
+							<span class="rt-sidebar-label">โปรไฟล์</span>
 					</a>
 					<a
 						href="/setting"
@@ -305,7 +341,7 @@
 						aria-label="Setting"
 						title="Setting"
 					>
-						Setting
+						<span class="rt-sidebar-label">Setting</span>
 					</a>
 					<button
 						type="button"
@@ -314,7 +350,7 @@
 						aria-label="Logout"
 						title="Logout"
 					>
-						Logout
+						<span class="rt-sidebar-label">Logout</span>
 					</button>
 				</div>
 			{/if}
@@ -341,7 +377,7 @@
 						<path d="M15 12H3" />
 					</svg>
 				</span>
-				<span class="hidden xl:block">เข้าสู่ระบบ</span>
+				<span class="rt-sidebar-label hidden xl:block">เข้าสู่ระบบ</span>
 			</button>
 			<button
 				type="button"
@@ -366,7 +402,7 @@
 						<path d="M22 11h-6" />
 					</svg>
 				</span>
-				<span class="hidden xl:block">สมัครสมาชิก</span>
+				<span class="rt-sidebar-label hidden xl:block">สมัครสมาชิก</span>
 			</button>
 		{/if}
 	</div>

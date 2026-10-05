@@ -1,4 +1,5 @@
 <script lang="ts">
+	import MotionPreference from '$lib/components/MotionPreference.svelte';
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
 	import Toast from '$lib/components/ui/Toast.svelte';
 
@@ -343,6 +344,7 @@
 				</div>
 			</section>
 			{:else if activeSection === 'preferences'}
+			<MotionPreference />
 
 			<section class="rt-panel rounded-xl p-5">
 				<h2 class="text-xl font-black text-white uppercase italic">บัญชี</h2>

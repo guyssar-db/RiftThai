@@ -1,4 +1,5 @@
 import type { Card } from '$lib/types/card';
+import { getCardTypeLabels } from '$lib/data/typeIcons';
 
 export type DeckEntry = {
 	code: string;
@@ -577,15 +578,15 @@ export function validateDeck(
 }
 
 export function isRuneCard(card: Card) {
-	return card.type === 'Rune' || card.type?.includes('Rune');
+	return getCardTypeLabels(card).includes('Rune');
 }
 
 export function isLegendCard(card: Card) {
-	return card.type === 'Legend';
+	return getCardTypeLabels(card).includes('Legend');
 }
 
 export function isBattlefieldCard(card: Card) {
-	return card.type === 'Battlefield' && !isTokenCard(card);
+	return getCardTypeLabels(card).includes('Battlefield') && !isTokenCard(card);
 }
 
 export function isTokenCard(card: Card) {
@@ -601,7 +602,7 @@ export function hasUnlimitedDeckCopies(card: Card) {
 }
 
 export function isChampionCandidate(card: Card, legend: Card | null) {
-	if (!legend || card.type !== 'Unit') return false;
+	if (!legend || !getCardTypeLabels(card).includes('Unit')) return false;
 	const legendTags = new Set((legend.tags ?? []).map(normalizeComparable));
 	return (card.tags ?? []).some((tag) => legendTags.has(normalizeComparable(tag)));
 }
@@ -645,9 +646,10 @@ function getZoneSort(card: Card) {
 }
 
 function getMainTypeSort(card: Card) {
-	if (card.type === 'Unit') return 0;
-	if (card.type === 'Spell') return 1;
-	if (card.type === 'Gear') return 2;
+	const types = getCardTypeLabels(card);
+	if (types.includes('Unit')) return 0;
+	if (types.includes('Spell')) return 1;
+	if (types.includes('Gear')) return 2;
 	return 3;
 }
 

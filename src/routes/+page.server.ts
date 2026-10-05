@@ -1,4 +1,10 @@
 import { getAuthenticatedUser } from '$lib/server/auth';
+import sourceCards from '../../static/cards.json';
+
+// Source Power is a rune cost; Card.power in the legacy schema represents Might.
+const powerCosts: Record<string, number | null> = Object.fromEntries(
+	sourceCards.map((card) => [card.cardCode.toLowerCase().replaceAll('/', '-'), card.power])
+);
 
 export const load = async ({ cookies, url }) => {
 	const user = await getAuthenticatedUser(cookies);
@@ -6,6 +12,8 @@ export const load = async ({ cookies, url }) => {
 	const searchTerm = url.searchParams.get('q') ?? '';
 	const selectedSet = url.searchParams.get('set') ?? 'All';
 	const selectedType = url.searchParams.get('type') ?? 'All';
+	const gearParam = url.searchParams.get('gear')?.toLowerCase();
+	const selectedGearGroup = gearParam === 'equipment' ? 'Equipment' : gearParam === 'unit' ? 'Unit' : 'All';
 	const selectedDomains = url.searchParams.get('domains')?.split(',').filter(Boolean) ?? [];
 	const viewMode = url.searchParams.get('mode') ?? 'gallery';
 
@@ -16,10 +24,19 @@ export const load = async ({ cookies, url }) => {
 	const selectedMight = mightParam !== null && mightParam !== '' ? Number(mightParam) : null;
 
 	return {
+		powerCosts,
+		selectedRarity: url.searchParams.get('rarity') ?? 'All',
+		sortMode: ['name', 'energy'].includes(url.searchParams.get('sort') ?? '')
+			? url.searchParams.get('sort')!
+			: 'latest',
+		selectedPower: ['1', '2', '3'].includes(url.searchParams.get('power') ?? '')
+			? Number(url.searchParams.get('power'))
+			: null,
 		canEdit,
 		searchTerm,
 		selectedSet,
 		selectedType,
+		selectedGearGroup,
 		selectedDomains,
 		viewMode,
 		selectedEnergy,

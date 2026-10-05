@@ -2,20 +2,25 @@
 	import { onMount, tick } from 'svelte';
 	import { keywords, iconMappings } from '$lib/data/keywords';
 	import { getRarityIcon } from '$lib/data/rarityIcons';
-	import { getTypeIcons } from '$lib/data/typeIcons';
+	import { getCardTypeIcons, getCardTypeLabels } from '$lib/data/typeIcons';
 	import type { Card } from '$lib/types/card';
 	import { getCardImageSources } from '$lib/utils/cardImages';
+	import { gsap } from 'gsap';
+	import CardImage from '$lib/components/CardImage.svelte';
+	import { reduceMotion } from '$lib/utils/motion';
 	let {
 		card,
 		closePopup,
 		canEdit: _canEdit = false,
 		showAutoSkill = false,
+		drawer = false,
 		onAutoSkill = undefined
 	} = $props<{
 		card: Card;
 		closePopup: () => void;
 		canEdit?: boolean;
 		showAutoSkill?: boolean;
+		drawer?: boolean;
 		onAutoSkill?: () => void;
 	}>();
 
@@ -24,6 +29,15 @@
 	let tempAbilityEn = $state('');
 	let tempAbilityTh = $state('');
 	let isSaving = $state(false);
+	let imageLoaded = $state(false);
+	let imageFailed = $state(false);
+	let imageAttempt = $state(0);
+	function retryArtwork() { imageLoaded = false; imageFailed = false; imageAttempt += 1; }
+	$effect(() => {
+		card.image_url;
+		imageLoaded = false;
+		imageFailed = !card.image_url;
+	});
 	let modalImageSources = $derived(getCardImageSources(card.image_url, [360, 480, 640, 744]));
 	let isReportOpen = $state(false);
 	let reportType = $state('translation');
@@ -36,9 +50,40 @@
 	let tooltipX = $state(0);
 	let tooltipY = $state(0);
 	let activeLang = $state<'th' | 'en'>('th');
+	let equipmentText = $derived(activeLang === 'th'
+		? card.equipmentEffectiveTh?.trim() || card.equipmentEffective?.trim() || ''
+		: card.equipmentEffective?.trim() || '');
+	let hasEquipmentMight = $derived(typeof card.equipmentMight === 'number' && Number.isFinite(card.equipmentMight));
 	let modalElement: HTMLDivElement | null = null;
 	let previouslyFocusedElement: HTMLElement | null = null;
 	let previousBodyOverflow = '';
+	let isClosing = false;
+	let cardTypes = $derived(getCardTypeLabels(card));
+
+	function motionAllowed() {
+		// Use the shared, user-controlled browser preference.
+		return !reduceMotion();
+	}
+
+	function handleClose() {
+		if (isClosing) return;
+		if (!drawer || !modalElement || !motionAllowed()) {
+			closePopup();
+			return;
+		}
+		isClosing = true;
+		const isDesktopDrawer = window.matchMedia('(min-width: 1024px)').matches;
+		gsap.to(modalElement, {
+			overwrite: true,
+			x: isDesktopDrawer ? '100%' : 0,
+			y: isDesktopDrawer ? 0 : 8,
+			scale: isDesktopDrawer ? 1 : 0.97,
+			autoAlpha: 0,
+			duration: 0.22,
+			ease: 'power2.in',
+			onComplete: closePopup
+		});
+	}
 
 	function getFocusableElements() {
 		if (!modalElement) return [];
@@ -54,7 +99,7 @@
 		if (event.key === 'Escape') {
 			event.preventDefault();
 			event.stopPropagation();
-			closePopup();
+			handleClose();
 			return;
 		}
 
@@ -84,11 +129,35 @@
 		document.body.style.overflow = 'hidden';
 
 		void tick().then(() => {
+			if (modalElement && motionAllowed()) {
+				const isDesktopDrawer = drawer && window.matchMedia('(min-width: 1024px)').matches;
+				gsap.fromTo(
+					modalElement,
+					{
+						x: isDesktopDrawer ? '100%' : 0,
+						y: isDesktopDrawer ? 0 : 8,
+						scale: isDesktopDrawer ? 1 : 0.97,
+						autoAlpha: 0
+					},
+					{
+						x: 0,
+						y: 0,
+						scale: 1,
+						autoAlpha: 1,
+						duration: isDesktopDrawer ? 0.4 : 0.25,
+						ease: 'power3.out',
+						clearProps: 'transform,opacity,visibility'
+					}
+				);
+			} else if (modalElement) {
+				gsap.set(modalElement, { clearProps: 'visibility' });
+			}
 			const focusableElements = getFocusableElements();
-			(focusableElements[0] ?? modalElement)?.focus();
+			(focusableElements[0] ?? modalElement)?.focus({ preventScroll: true });
 		});
 
 		return () => {
+			if (modalElement) gsap.killTweensOf(modalElement);
 			document.body.style.overflow = previousBodyOverflow;
 			previouslyFocusedElement?.focus();
 		};
@@ -540,18 +609,20 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="animate-in fade-in fixed inset-0 z-[1000] flex items-center justify-center p-2 duration-200 sm:p-5 lg:p-8"
-	onclick={closePopup}
+	class="fixed inset-0 z-[1000] flex items-center justify-center overflow-hidden p-2 sm:p-5 lg:p-8"
+	class:home-card-drawer={drawer}
+	onclick={handleClose}
 >
 	<div class="absolute inset-0 bg-slate-950/88 backdrop-blur-xl transition-opacity"></div>
 
 	<div
 		bind:this={modalElement}
+		style="visibility: hidden"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="card-modal-title"
 		tabindex="-1"
-		class="rt-panel animate-in zoom-in-95 relative flex max-h-[96dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl transition-all duration-300 sm:max-h-[92dvh]"
+		class="rt-panel relative flex max-h-[96dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl sm:max-h-[92dvh]"
 		onclick={(e) => {
 			e.stopPropagation();
 			activeTooltip = '';
@@ -569,7 +640,7 @@
 			</div>
 			<button
 				class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-slate-300 transition hover:bg-white/[0.07] hover:text-white active:scale-95"
-				onclick={closePopup}
+				onclick={handleClose}
 				aria-label="ปิดรายละเอียดการ์ด"
 			>
 				<svg
@@ -587,7 +658,7 @@
 		<!-- Desktop Close -->
 		<button
 			class="absolute top-5 right-5 z-50 hidden h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-slate-950/55 text-slate-400 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white lg:flex"
-			onclick={closePopup}
+			onclick={handleClose}
 			aria-label="ปิดรายละเอียดการ์ด"
 		>
 			<svg
@@ -610,18 +681,27 @@
 					<div
 						class="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(118,223,205,0.06),transparent_55%)]"
 					></div>
-					<div class="relative z-10 w-full max-w-[250px] sm:max-w-[340px] lg:max-w-[380px]">
-						<img
+					<div class="relative z-10 aspect-[744/1039] w-full max-w-[250px] sm:max-w-[340px] lg:max-w-[380px]">
+						{#key card.image_url + ':' + imageAttempt}
+						<CardImage
 							src={modalImageSources.fallback}
 							srcset={modalImageSources.fallbackSrcset}
-							sizes="(min-width: 1024px) 380px, (min-width: 640px) 340px, 250px"
+							sizes="(min-width: 1024px) 420px, (min-width: 640px) 340px, 250px"
 							alt={card.name_en}
 							loading="eager"
 							decoding="async"
 							fetchpriority="high"
-							draggable="false"
+							onLoaded={() => { imageLoaded = true; imageFailed = false; }}
+							onFailed={() => { imageFailed = true; }}
 							class="pointer-events-none h-auto w-full rounded-xl border border-white/8 object-contain shadow-[0_24px_60px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:scale-[1.01]"
 						/>
+						{/key}
+						{#if !imageLoaded}
+							<div class="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-xl bg-slate-800 text-sm text-slate-300" role="status">
+								{#if imageFailed}<span>โหลดรูปไม่สำเร็จ</span><button class="rounded-lg border border-white/20 px-4 py-2" onclick={retryArtwork}>ลองใหม่</button>
+								{:else}<span class="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-cyan-300"></span><span>กำลังโหลดรูปการ์ด</span>{/if}
+							</div>
+						{/if}
 					</div>
 				</div>
 
@@ -678,7 +758,7 @@
 									class="flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-cyan-300/10 bg-cyan-300/8 px-3 py-2"
 								>
 									<div class="flex shrink-0 items-center gap-1">
-										{#each getTypeIcons(card.type) as typeIcon}
+						{#each getCardTypeIcons(card) as typeIcon}
 											<img
 												src="/images/icons/{typeIcon.src}"
 												class="h-5 w-5 object-contain"
@@ -688,7 +768,7 @@
 									</div>
 									<span
 										class="min-w-0 truncate text-xs font-black tracking-wider text-white uppercase"
-										>{card.type || '-'}</span
+						>{cardTypes.join(' · ') || '-'}</span
 									>
 								</div>
 
@@ -931,6 +1011,23 @@
 									</div>
 								{/if}
 							</div>
+						{/if}
+						{#if card.equipmentEffective?.trim() || card.equipmentEffectiveTh?.trim() || hasEquipmentMight}
+							<section class="rounded-xl border border-white/10 bg-slate-950/30 p-4 space-y-3" aria-label="Equipment">
+								<div class="flex flex-wrap items-center justify-between gap-3">
+									<h3 class="text-sm font-bold text-cyan-200">{activeLang === 'th' ? 'สกิล Equipment' : 'Equipment skill'}</h3>
+									{#if hasEquipmentMight}
+										<span class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-sm font-bold text-slate-200">
+											<span class="text-cyan-200">+{card.equipmentMight}</span><img src="/images/icons/might.svg" alt="Might" class="h-4 w-4" /><strong>Might</strong>
+										</span>
+									{/if}
+								</div>
+								{#if equipmentText}
+									<div class="text-sm leading-relaxed text-slate-200 sm:text-base" onmouseover={showTooltip} onmouseout={handleMouseOut} onfocus={showTooltip} onblur={hideTooltip} onfocusin={showTooltip} onfocusout={hideTooltip} onclick={toggleTooltip}>
+										{@html parseAbility(equipmentText)}
+									</div>
+								{/if}
+							</section>
 						{/if}
 					</div>
 				</div>

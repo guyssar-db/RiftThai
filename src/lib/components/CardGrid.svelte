@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { getRarityIcon } from '$lib/data/rarityIcons';
-	import { getTypeIcons } from '$lib/data/typeIcons';
+	import { getCardTypeIcons, getCardTypeLabels } from '$lib/data/typeIcons';
 	import type { Card } from '$lib/types/card';
 	import { getCardImageSources, getCardImageUrl } from '$lib/utils/cardImages';
 	import { usesLandscapeCardFrame } from '$lib/utils/cardPresentation';
+	import CardImage from '$lib/components/CardImage.svelte';
 
 	let {
 		cards,
@@ -20,17 +21,18 @@
 	const preloadedPopupImages = new Set<string>();
 	let loadedImages = $state(new Set<string>());
 	let failedImages = $state(new Set<string>());
+	let retries = $state<Record<string, number>>({});
+	function retryImage(code: string) {
+		failedImages = new Set([...failedImages].filter((item) => item !== code));
+		loadedImages = new Set([...loadedImages].filter((item) => item !== code));
+		retries = { ...retries, [code]: (retries[code] ?? 0) + 1 };
+	}
 
 	function markImageLoaded(cardCode: string) {
 		loadedImages = new Set(loadedImages).add(cardCode);
 		const failures = new Set(failedImages);
 		failures.delete(cardCode);
 		failedImages = failures;
-	}
-
-	// Cached images can finish before Svelte attaches the load handler.
-	function trackImage(node: HTMLImageElement, cardCode: string) {
-		if (node.complete && node.naturalWidth > 0) markImageLoaded(cardCode);
 	}
 
 	function markImageFailed(cardCode: string) {
@@ -67,9 +69,11 @@
 {:else}
 	<div class="card-grid">
 		{#each cards as card, index (card.code)}
+			{@const cardTypes = getCardTypeLabels(card)}
+			<div class="relative min-w-0">
 			<button
 				type="button"
-				class="rt-glow-card group min-w-0 rounded-xl text-left transition duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/20"
+				class="rt-glow-card group w-full min-w-0 rounded-xl text-left transition duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/20"
 				onpointerenter={() => preloadPopupImage(card)}
 				onfocus={() => preloadPopupImage(card)}
 				onclick={() => handleOpenPopup(card)}
@@ -80,8 +84,8 @@
 				>
 					{#if card.image_url}
 						{@const imageSources = getCardImageSources(card.image_url, [240, 320, 480, 744])}
-						<img
-							use:trackImage={card.code}
+						{#key retries[card.code] ?? 0}
+						<CardImage
 							src={imageSources.fallback}
 							srcset={imageSources.fallbackSrcset}
 							sizes="(min-width: 1440px) 210px, (min-width: 1180px) 18vw, (min-width: 900px) 23vw, (min-width: 640px) 30vw, 46vw"
@@ -89,22 +93,29 @@
 							loading={index < 12 ? 'eager' : 'lazy'}
 							decoding="async"
 							fetchpriority={index < 2 ? 'high' : 'auto'}
-							onload={() => markImageLoaded(card.code)}
-							onerror={() => markImageFailed(card.code)}
+							onLoaded={() => markImageLoaded(card.code)}
+							onFailed={() => markImageFailed(card.code)}
 							class="h-full w-full object-cover transition duration-500 {loadedImages.has(card.code)
 								? 'opacity-100'
-								: 'opacity-0'} {usesLandscapeCardFrame(
-								card
-							)
+								: 'opacity-0'} {usesLandscapeCardFrame(card)
 								? 'battlefield-rotated'
 								: 'group-hover:scale-105'}"
 						/>
+						{/key}
 						{#if !loadedImages.has(card.code) && !failedImages.has(card.code)}
-							<div class="absolute inset-0 z-10 grid place-items-center bg-slate-900/85" role="status" aria-label="กำลังโหลดรูปการ์ด">
-								<span class="h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"></span>
+							<div
+								class="absolute inset-0 z-10 grid place-items-center bg-gradient-to-br from-slate-800 to-slate-900"
+								role="status"
+								aria-label="กำลังโหลดรูปการ์ด"
+							>
+								<span
+									class="h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"
+								></span>
 							</div>
 						{:else if failedImages.has(card.code)}
-							<div class="absolute inset-0 z-10 grid place-items-center bg-slate-900/85 px-3 text-center text-[10px] font-black tracking-widest text-slate-500 uppercase">
+							<div
+								class="absolute inset-0 z-10 grid place-items-center bg-slate-900/85 px-3 text-center text-[10px] font-black tracking-widest text-slate-500 uppercase"
+							>
 								โหลดรูปไม่สำเร็จ
 							</div>
 						{/if}
@@ -165,17 +176,21 @@
 					<div
 						class="mt-1.5 flex min-w-0 items-center gap-1.5 text-[10px] font-semibold tracking-wide text-slate-500 sm:text-[11px]"
 					>
-						{#each getTypeIcons(card.type) as typeIcon}
+						{#each getCardTypeIcons(card) as typeIcon}
 							<img
 								src="/images/icons/{typeIcon.src}"
 								class="h-3.5 w-3.5 shrink-0 object-contain opacity-70"
 								alt="{typeIcon.label} type"
 							/>
 						{/each}
-						<span class="truncate">{card.type}</span>
+						<span class="truncate">{cardTypes.join(' · ')}</span>
 					</div>
 				</div>
 			</button>
+			{#if failedImages.has(card.code)}
+				<button type="button" class="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 rounded-lg border border-white/20 bg-slate-800 px-4 py-2 text-xs text-white" onclick={() => retryImage(card.code)} aria-label="ลองโหลดรูป {card.name_en} ใหม่">ลองใหม่</button>
+			{/if}
+			</div>
 		{/each}
 	</div>
 {/if}
