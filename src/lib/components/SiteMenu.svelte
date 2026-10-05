@@ -92,6 +92,33 @@
 		};
 	});
 
+	$effect(() => {
+		if (typeof window === 'undefined' || !isOpen || !menuTrigger) return;
+		if (!window.matchMedia('(max-width: 1023px)').matches) return;
+
+		const nav = menuTrigger.closest('nav');
+		const pageShell = menuTrigger.closest<HTMLElement>('.rt-page-shell');
+		const previousNavStyle = nav?.getAttribute('style') ?? null;
+		const previousPageShellStyle = pageShell?.getAttribute('style') ?? null;
+
+		nav?.style.setProperty('z-index', '2147483647', 'important');
+		nav?.style.setProperty('overflow', 'visible', 'important');
+		nav?.style.setProperty('backdrop-filter', 'none', 'important');
+		nav?.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+		pageShell?.style.setProperty('overflow', 'visible', 'important');
+
+		return () => {
+			if (nav) {
+				if (previousNavStyle === null) nav.removeAttribute('style');
+				else nav.setAttribute('style', previousNavStyle);
+			}
+			if (pageShell) {
+				if (previousPageShellStyle === null) pageShell.removeAttribute('style');
+				else pageShell.setAttribute('style', previousPageShellStyle);
+			}
+		};
+	});
+
 	let menuItems = $derived<MenuItem[]>([
 		...(includeCards
 			? [{ label: 'การ์ด', href: '/', active: active === 'cards', icon: 'cards' as const }]
