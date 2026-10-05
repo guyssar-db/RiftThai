@@ -732,7 +732,7 @@
 	<div class="mesh-gradient"></div>
 
 	<nav
-		class="design-nav sticky top-0 z-50 border-b border-amber-200/10 bg-[#0a0e15]/90 backdrop-blur-xl"
+		class="design-nav sticky top-0 z-[1000] border-b border-amber-200/10 bg-[#0a0e15]/90 backdrop-blur-xl"
 	>
 		<div class="rt-container flex items-center justify-between gap-4 py-3">
 			<a

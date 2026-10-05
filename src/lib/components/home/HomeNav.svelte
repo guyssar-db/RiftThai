@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SiteMenu from './HomeMenu.svelte';
+	import SiteMenu from '../SiteMenu.svelte';
 
 	type ViewMode = 'gallery' | 'keywords' | 'phases';
 
@@ -44,7 +44,7 @@
 			{/each}
 		</div>
 
-		<div class="justify-self-end"><SiteMenu /></div>
+		<div class="justify-self-end"><SiteMenu active="cards" includeCards /></div>
 	</div>
 </nav>
 

@@ -1328,6 +1328,14 @@ h3.italic {
 	background-color: #17333c !important;
 }
 
+.rt-library-theme .rt-page-shell [class*='bg-cyan-300'][class*='text-slate-950'] {
+	color: #e4edf2 !important;
+}
+
+.rt-library-theme .rt-page-shell [class*='bg-cyan-300'] [class*='text-slate-800'] {
+	color: #a8c2cc !important;
+}
+
 .rt-library-theme .rt-page-shell .rt-heading {
 	font-family: var(--font-sans);
 	font-style: normal;
@@ -1361,8 +1369,61 @@ h3.italic {
 	animation: none;
 }
 
-@media (min-width: 1280px) {
+.site-menu-drawer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 12px;
+	padding: 4px 4px 14px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.site-menu-drawer-brand {
+	color: #f8fafc;
+	font-family: var(--font-display);
+	font-size: 1rem;
+	font-weight: 950;
+	letter-spacing: 0.08em;
+}
+
+.site-menu-drawer-brand span {
+	color: var(--brand-cyan);
+}
+
+.site-menu-drawer-close {
+	display: grid;
+	width: 36px;
+	height: 36px;
+	place-items: center;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 10px;
+	color: #cbd5e1;
+	font-size: 1.35rem;
+	line-height: 1;
+	transition:
+		border-color 160ms ease,
+		background-color 160ms ease,
+		color 160ms ease;
+}
+
+.site-menu-drawer-close:hover {
+	border-color: rgba(130, 202, 199, 0.45);
+	background: rgba(130, 202, 199, 0.1);
+	color: #ffffff;
+}
+
+@media (max-width: 1023px) {
+	nav:has(.site-menu-open) {
+		z-index: 1200 !important;
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+	}
+}
+
+@media (min-width: 1024px) {
 	.rt-app-frame {
+		grid-template-columns: 13.5rem minmax(0, 1fr);
 		transition: grid-template-columns 280ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
@@ -1371,7 +1432,8 @@ h3.italic {
 	}
 
 	.rt-desktop-sidebar.rt-sidebar-collapsed .rt-sidebar-brand,
-	.rt-desktop-sidebar.rt-sidebar-collapsed .rt-sidebar-label {
+	.rt-desktop-sidebar.rt-sidebar-collapsed .rt-sidebar-label,
+	.rt-desktop-sidebar.rt-sidebar-collapsed .rt-sidebar-account-chevron {
 		display: none;
 	}
 

@@ -4,14 +4,13 @@
 	import { getAuthSession, invalidateAuthSession } from '$lib/utils/authSession';
 	import { gsap } from 'gsap';
 	import { reduceMotion } from '$lib/utils/motion';
-	import MotionPreference from '$lib/components/MotionPreference.svelte';
 
 	type MenuItem = {
 		label: string;
 		href: string;
 		external?: boolean;
 		active?: boolean;
-		icon: 'domains' | 'qa' | 'deck' | 'donate' | 'official' | 'collection' | 'rules';
+		icon: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'official' | 'collection' | 'rules';
 	};
 
 	type AuthSession = {
@@ -25,8 +24,9 @@
 		} | null;
 	};
 
-	let { active = '' } = $props<{
-		active?: 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '';
+	let { active = '', includeCards = false } = $props<{
+		active?: 'cards' | 'domains' | 'qa' | 'deck' | 'donate' | 'collection' | 'rules' | '';
+		includeCards?: boolean;
 	}>();
 	let isOpen = $state(false);
 	let accountOpen = $state(false);
@@ -82,6 +82,9 @@
 	});
 
 	let menuItems = $derived<MenuItem[]>([
+		...(includeCards
+			? [{ label: 'การ์ด', href: '/', active: active === 'cards', icon: 'cards' as const }]
+			: []),
 		{ label: 'กติกา', href: '/rules', active: active === 'rules', icon: 'rules' },
 		{ label: 'โดเมน', href: '/domains', active: active === 'domains', icon: 'domains' },
 		{ label: 'เด็ค', href: '/deck', active: active === 'deck', icon: 'deck' },
@@ -139,7 +142,7 @@
 	}
 </script>
 
-<div class="relative">
+<div class="site-menu-host relative" class:site-menu-open={isOpen}>
 	<button
 		class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/8 bg-white/[0.035] text-slate-200 transition hover:border-white/15 hover:bg-white/[0.06] focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/20 lg:hidden"
 		type="button"
@@ -178,16 +181,23 @@
 	{#if isOpen}
 		<button
 			type="button"
-			class="site-menu-backdrop fixed inset-0 z-[200] bg-slate-950/70 lg:hidden"
+			class="site-menu-backdrop fixed inset-0 z-[1100] bg-slate-950/70 lg:hidden"
 			aria-label="ปิดเมนู"
 			onclick={closeMenu}
 		></button>
 		<div
 			bind:this={menuDrawer}
 			style="visibility: hidden"
-			class="site-menu-drawer fixed inset-y-0 left-0 z-[220] w-[min(19rem,86vw)] overflow-y-auto border-r border-white/10 bg-[#0d1922] p-3 shadow-2xl lg:hidden"
+			class="site-menu-drawer fixed inset-y-0 left-0 z-[1120] w-[min(19rem,86vw)] overflow-y-auto border-r border-white/10 bg-[#0d1922] p-3 shadow-2xl lg:hidden"
 		>
-			<MotionPreference />
+			<div class="site-menu-drawer-header">
+				<a href="/" class="site-menu-drawer-brand" onclick={closeMenu}>
+					RIFT<span>THAI</span>
+				</a>
+				<button type="button" class="site-menu-drawer-close" aria-label="ปิดเมนู" onclick={closeMenu}>
+					×
+				</button>
+			</div>
 			{#each menuItems as item}
 				<a
 					href={item.href}

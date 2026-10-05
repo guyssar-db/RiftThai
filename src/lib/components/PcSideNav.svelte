@@ -96,7 +96,7 @@
 >
 	<a
 		href="/"
-		class="rt-sidebar-brand hidden h-12 items-center rounded-xl border border-white/8 bg-white/[0.025] px-3 text-white transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.04] xl:flex"
+		class="rt-sidebar-brand hidden h-12 items-center rounded-xl border border-white/8 bg-white/[0.025] px-3 text-white transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.04] lg:flex"
 		aria-label="RiftThai home"
 	>
 		<span class="font-display text-sm font-bold tracking-[0.08em]"
@@ -105,7 +105,7 @@
 	</a>
 	<button
 		type="button"
-		class="rt-sidebar-toggle mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/8 bg-white/[0.025] text-slate-400 transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.05] hover:text-cyan-100 xl:justify-start xl:px-3"
+		class="rt-sidebar-toggle mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/8 bg-white/[0.025] text-slate-400 transition hover:border-cyan-300/25 hover:bg-cyan-300/[0.05] hover:text-cyan-100 lg:justify-start lg:px-3"
 		aria-label={$desktopSidebarCollapsed ? 'ขยายเมนูด้านซ้าย' : 'พับเมนูด้านซ้าย'}
 		title={$desktopSidebarCollapsed ? 'ขยายเมนู' : 'พับเมนู'}
 		aria-pressed={$desktopSidebarCollapsed}
@@ -124,7 +124,7 @@
 			<path d="m15 18-6-6 6-6" />
 			<path d="M9 12h10" />
 		</svg>
-		<span class="rt-sidebar-label hidden text-[10px] font-black tracking-widest uppercase xl:block">พับเมนู</span>
+		<span class="rt-sidebar-label hidden text-[10px] font-black tracking-widest uppercase lg:block">พับเมนู</span>
 	</button>
 
 	<nav class="flex flex-1 flex-col gap-1.5 pt-5" aria-label="Desktop navigation">
@@ -135,14 +135,14 @@
 				rel={item.external ? 'noreferrer' : undefined}
 				aria-label={item.label}
 				title={item.label}
-				class="group relative flex h-12 w-full items-center justify-center rounded-xl text-[11px] font-black tracking-widest uppercase transition xl:justify-start xl:gap-3 xl:px-3 {item.active
+				class="group relative flex h-12 w-full items-center justify-center rounded-xl text-[11px] font-black tracking-widest uppercase transition lg:justify-start lg:gap-3 lg:px-3 {item.active
 					? 'border border-cyan-300/18 bg-cyan-300/[0.08] text-cyan-100'
 					: 'border border-transparent text-slate-400 hover:border-white/8 hover:bg-white/[0.035] hover:text-white'} {item.external
 					? 'border border-white/8 bg-white/[0.025] text-slate-200 hover:bg-white/[0.05]'
 					: ''}"
 			>
 				{#if item.active}
-					<span class="absolute -left-1 h-5 w-0.5 rounded-full bg-cyan-300 xl:-left-3"></span>
+					<span class="absolute -left-1 h-5 w-0.5 rounded-full bg-cyan-300 lg:-left-3"></span>
 				{/if}
 				<span
 					class="grid h-8 w-8 shrink-0 place-items-center rounded-lg transition {item.active
@@ -267,7 +267,7 @@
 						</svg>
 					{/if}
 				</span>
-				<span class="rt-sidebar-label hidden truncate xl:block">{item.label}</span>
+				<span class="rt-sidebar-label hidden truncate lg:block">{item.label}</span>
 			</a>
 		{/each}
 	</nav>
@@ -280,11 +280,17 @@
 		{:else if currentUser}
 			<button
 				type="button"
-				class="group flex h-12 w-full items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/8 text-[11px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white xl:justify-start xl:gap-3 xl:px-3"
+				class="group flex h-12 w-full items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/8 text-[11px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white lg:justify-start lg:gap-3 lg:px-3"
 				aria-label="โปรไฟล์"
 				title="โปรไฟล์"
 				aria-expanded={accountOpen}
-				onclick={() => (accountOpen = !accountOpen)}
+				onclick={() => {
+					if ($desktopSidebarCollapsed) {
+						desktopSidebarCollapsed.set(false);
+						window.localStorage.setItem(sidebarStorageKey, 'false');
+					}
+					accountOpen = !accountOpen;
+				}}
 			>
 				<span
 					class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-cyan-300/10 text-cyan-200"
@@ -302,9 +308,11 @@
 						<path d="M4 21a8 8 0 0 1 16 0" />
 					</svg>
 				</span>
-				<span class="rt-sidebar-label hidden min-w-0 truncate xl:block">{currentUser.profileHandle}</span>
+				<span class="rt-sidebar-label hidden min-w-0 truncate lg:block">{currentUser.profileHandle}</span>
 				<svg
-					class="hidden h-4 w-4 shrink-0 transition xl:block {accountOpen ? 'rotate-180' : ''}"
+					class="rt-sidebar-account-chevron hidden h-4 w-4 shrink-0 transition lg:block {accountOpen
+						? 'rotate-180'
+						: ''}"
 					viewBox="0 0 20 20"
 					fill="currentColor"
 				>
@@ -320,7 +328,7 @@
 					{#if currentUser.isAdmin}
 						<a
 							href="/admin"
-							class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-cyan-300 uppercase transition hover:bg-white/8 hover:text-cyan-100 xl:justify-start xl:px-3"
+							class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-cyan-300 uppercase transition hover:bg-white/8 hover:text-cyan-100 lg:justify-start lg:px-3"
 							aria-label="Admin Panel"
 							title="Admin Panel"
 						>
@@ -329,7 +337,7 @@
 					{/if}
 					<a
 						href="/profile/{currentUser.profileSlug}"
-						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white xl:justify-start xl:px-3"
+						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white lg:justify-start lg:px-3"
 						aria-label="โปรไฟล์"
 						title="โปรไฟล์"
 					>
@@ -337,7 +345,7 @@
 					</a>
 					<a
 						href="/setting"
-						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white xl:justify-start xl:px-3"
+						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white lg:justify-start lg:px-3"
 						aria-label="Setting"
 						title="Setting"
 					>
@@ -345,7 +353,7 @@
 					</a>
 					<button
 						type="button"
-						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white xl:justify-start xl:px-3"
+						class="flex h-11 w-full items-center justify-center rounded-lg text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/8 hover:text-white lg:justify-start lg:px-3"
 						onclick={logout}
 						aria-label="Logout"
 						title="Logout"
@@ -357,7 +365,7 @@
 		{:else}
 			<button
 				type="button"
-				class="flex h-12 w-full items-center justify-center rounded-xl bg-cyan-300 text-[11px] font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-200 xl:justify-start xl:gap-3 xl:px-3"
+				class="flex h-12 w-full items-center justify-center rounded-xl bg-cyan-300 text-[11px] font-black tracking-widest text-slate-950 uppercase transition hover:bg-cyan-200 lg:justify-start lg:gap-3 lg:px-3"
 				onclick={() => openAuth('login')}
 				aria-label="เข้าสู่ระบบ"
 				title="เข้าสู่ระบบ"
@@ -377,11 +385,11 @@
 						<path d="M15 12H3" />
 					</svg>
 				</span>
-				<span class="rt-sidebar-label hidden xl:block">เข้าสู่ระบบ</span>
+				<span class="rt-sidebar-label hidden lg:block">เข้าสู่ระบบ</span>
 			</button>
 			<button
 				type="button"
-				class="flex h-12 w-full items-center justify-center rounded-xl border border-cyan-300/20 text-[11px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10 xl:justify-start xl:gap-3 xl:px-3"
+				class="flex h-12 w-full items-center justify-center rounded-xl border border-cyan-300/20 text-[11px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10 lg:justify-start lg:gap-3 lg:px-3"
 				onclick={() => openAuth('register')}
 				aria-label="สมัครสมาชิก"
 				title="สมัครสมาชิก"
@@ -402,7 +410,7 @@
 						<path d="M22 11h-6" />
 					</svg>
 				</span>
-				<span class="rt-sidebar-label hidden xl:block">สมัครสมาชิก</span>
+				<span class="rt-sidebar-label hidden lg:block">สมัครสมาชิก</span>
 			</button>
 		{/if}
 	</div>

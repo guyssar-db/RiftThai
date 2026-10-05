@@ -274,7 +274,7 @@
 	</div>
 {/if}
 <div
-	class="rt-app-frame min-h-dvh lg:grid lg:grid-cols-[5.25rem_minmax(0,1fr)] xl:grid-cols-[13.5rem_minmax(0,1fr)]"
+	class="rt-app-frame min-h-dvh lg:grid"
 	class:rt-sidebar-collapsed={$desktopSidebarCollapsed}
 	class:rt-library-theme={pathname !== '/' &&
 		!pathname.startsWith('/admin') &&
