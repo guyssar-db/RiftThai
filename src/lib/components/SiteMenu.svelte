@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { getAuthSession, invalidateAuthSession } from '$lib/utils/authSession';
+	import { gsap } from 'gsap';
+	import { reduceMotion } from '$lib/utils/motion';
+	import MotionPreference from '$lib/components/MotionPreference.svelte';
 
 	type MenuItem = {
 		label: string;
@@ -29,6 +32,54 @@
 	let accountOpen = $state(false);
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
+	let menuDrawer = $state<HTMLDivElement | null>(null);
+
+	function openMenu() {
+		isOpen = true;
+		void tick().then(() => {
+			// Navigation drawers explicitly keep their slide motion, including
+			// when the OS disables decorative animations.
+			if (!menuDrawer) return;
+			if (reduceMotion()) { gsap.set(menuDrawer, { clearProps: 'visibility' }); return; }
+			gsap.fromTo(
+				menuDrawer,
+				{ xPercent: -100, autoAlpha: 0 },
+				{
+					xPercent: 0,
+					autoAlpha: 1,
+					duration: 0.4,
+					overwrite: true,
+					ease: 'power3.out',
+					clearProps: 'transform,opacity,visibility'
+				}
+			);
+		});
+	}
+
+	function closeMenu() {
+		if (!isOpen) return;
+		if (!menuDrawer || reduceMotion()) {
+			isOpen = false;
+			return;
+		}
+		gsap.to(menuDrawer, {
+			overwrite: true,
+			xPercent: -100,
+			autoAlpha: 0,
+			duration: 0.18,
+			ease: 'power2.in',
+			onComplete: () => (isOpen = false)
+		});
+	}
+
+	$effect(() => {
+		if (typeof document === 'undefined') return;
+		const previousOverflow = document.body.style.overflow;
+		if (isOpen) document.body.style.overflow = 'hidden';
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	});
 
 	let menuItems = $derived<MenuItem[]>([
 		{ label: 'กติกา', href: '/rules', active: active === 'rules', icon: 'rules' },
@@ -49,7 +100,15 @@
 		void loadSession();
 		const syncAuth = () => void loadSession(true);
 		window.addEventListener('riftthai-auth-changed', syncAuth);
-		return () => window.removeEventListener('riftthai-auth-changed', syncAuth);
+		const closeOnEscape = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') closeMenu();
+		};
+		window.addEventListener('keydown', closeOnEscape);
+		return () => {
+			if (menuDrawer) gsap.killTweensOf(menuDrawer);
+			window.removeEventListener('riftthai-auth-changed', syncAuth);
+			window.removeEventListener('keydown', closeOnEscape);
+		};
 	});
 
 	async function loadSession(forceRefresh = false) {
@@ -86,7 +145,7 @@
 		type="button"
 		aria-label="Open menu"
 		aria-expanded={isOpen}
-		onclick={() => (isOpen = !isOpen)}
+		onclick={() => (isOpen ? closeMenu() : openMenu())}
 	>
 		{#if isOpen}
 			<svg
@@ -117,9 +176,18 @@
 	</button>
 
 	{#if isOpen}
+		<button
+			type="button"
+			class="site-menu-backdrop fixed inset-0 z-[200] bg-slate-950/70 lg:hidden"
+			aria-label="ปิดเมนู"
+			onclick={closeMenu}
+		></button>
 		<div
-			class="rt-panel absolute top-14 right-0 z-[220] w-64 overflow-hidden rounded-xl p-2 lg:hidden"
+			bind:this={menuDrawer}
+			style="visibility: hidden"
+			class="site-menu-drawer fixed inset-y-0 left-0 z-[220] w-[min(19rem,86vw)] overflow-y-auto border-r border-white/10 bg-[#0d1922] p-3 shadow-2xl lg:hidden"
 		>
+			<MotionPreference />
 			{#each menuItems as item}
 				<a
 					href={item.href}

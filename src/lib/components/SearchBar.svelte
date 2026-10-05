@@ -8,6 +8,7 @@
 		searchTerm = $bindable(),
 		selectedSet = $bindable(),
 		selectedType = $bindable(),
+		selectedGearGroup = $bindable('All'),
 		selectedDomains = $bindable(),
 		selectedEnergy = $bindable(),
 		selectedMight = $bindable(),
@@ -19,6 +20,7 @@
 		searchTerm: string;
 		selectedSet: string;
 		selectedType: string;
+		selectedGearGroup: string;
 		selectedDomains: string[];
 		selectedEnergy: number | null;
 		selectedMight: number | null;
@@ -32,6 +34,7 @@
 	let domainOptions = $derived(domains.filter((domain: string) => domain !== 'All'));
 	let activeFilterCount = $derived(
 		[selectedSet, selectedType].filter((value) => value !== 'All').length +
+		(selectedType === 'Gear' && selectedGearGroup !== 'All' ? 1 : 0) +
 			(selectedDomains.length > 0 ? 1 : 0) +
 			(selectedEnergy !== null ? 1 : 0) +
 			(selectedMight !== null ? 1 : 0)
@@ -57,9 +60,11 @@
 		}))
 	);
 	let isBattlefieldType = $derived(selectedType === 'Battlefield');
+	let isGearType = $derived(selectedType === 'Gear');
 
 	$effect(() => {
 		if (isBattlefieldType && selectedDomains.length > 0) selectedDomains = [];
+		if (!isGearType && selectedGearGroup !== 'All') selectedGearGroup = 'All';
 	});
 
 	function toggleDomain(domain: string) {
@@ -72,6 +77,7 @@
 	function resetFilters() {
 		selectedSet = 'All';
 		selectedType = 'All';
+		selectedGearGroup = 'All';
 		selectedDomains = [];
 		selectedEnergy = null;
 		selectedMight = null;
@@ -166,6 +172,19 @@
 					>
 					<IconSelect bind:value={selectedType} label="ประเภทการ์ด" options={typeSelectOptions} />
 				</div>
+				{#if isGearType}
+					<label class="grid gap-1.5">
+						<span class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">หมวด Gear</span>
+						<select
+							class="h-11 rounded-xl border border-white/10 bg-black/20 px-3 text-sm font-medium text-white outline-none transition focus:border-cyan-300/45 focus:ring-4 focus:ring-cyan-300/[0.07]"
+							bind:value={selectedGearGroup}
+						>
+							<option value="All">All Gear</option>
+							<option value="Equipment">Gear Equipment</option>
+							<option value="Unit">Gear Unit</option>
+						</select>
+					</label>
+				{/if}
 				<div class="grid gap-1.5">
 					<span class="text-[10px] font-bold tracking-widest text-slate-500 uppercase"
 						>ชุดการ์ด</span

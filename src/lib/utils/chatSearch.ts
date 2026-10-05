@@ -2,6 +2,7 @@ import { domainAnswers, type DomainAnswer } from '$lib/data/domainAnswers';
 import { iconMappings, keywords } from '$lib/data/keywords';
 import { ruleAnswers, type RuleAnswer } from '$lib/data/ruleAnswers';
 import { spiritforgedFaq } from '$lib/data/spiritforgedFaq';
+import { getCardTypeLabels } from '$lib/data/typeIcons';
 import type { Card } from '$lib/types/card';
 
 export type QAAnswer = {
@@ -679,7 +680,7 @@ export function searchableCardText(card: Card) {
 			card.name_en,
 			card.name_th,
 			card.code,
-			card.type,
+			...getCardTypeLabels(card),
 			card.rarity,
 			card.set_name,
 			card.ability_en,
@@ -842,7 +843,7 @@ export function formatCards(matches: ScoredCard[]) {
 			const domains = card.domains?.length ? ` | ${card.domains.join(', ')}` : '';
 			const tags = card.tags?.length ? ` | #${card.tags.join(' #')}` : '';
 			const ability = card.ability_th || card.ability_en || 'ไม่มี ability text';
-			return `${index + 1}. ${card.name_en} (${card.code})\n${card.type} - ${card.rarity}${domains}${tags}\n${ability}`;
+			return `${index + 1}. ${card.name_en} (${card.code})\n${getCardTypeLabels(card).join(', ')} - ${card.rarity}${domains}${tags}\n${ability}`;
 		})
 		.join('\n\n');
 }
@@ -886,7 +887,7 @@ export function formatCardSummary(card: Card) {
 	const domains = card.domains?.length ? card.domains.join(', ') : 'ไม่ระบุ';
 	const cost = card.energy ?? 0;
 	const tags = card.tags?.length ? ` | tags: ${card.tags.join(', ')}` : '';
-	return `${card.name_en} คือการ์ด ${cardValue(card.type)} | cost ${cost} | domain ${domains} | set ${cardValue(card.set_name)}${tags}`;
+	return `${card.name_en} คือการ์ด ${cardValue(getCardTypeLabels(card).join(', '))} | cost ${cost} | domain ${domains} | set ${cardValue(card.set_name)}${tags}`;
 }
 
 export function formatCardFieldAnswer(query: string, card: Card) {
@@ -899,7 +900,7 @@ export function formatCardFieldAnswer(query: string, card: Card) {
 	const power = cardPowerLabel(card) ?? 'ไม่ระบุ';
 	const answers: string[] = [];
 
-	if (intents.type) answers.push(`${cardName} เป็นประเภท ${cardValue(card.type)}`);
+	if (intents.type) answers.push(`${cardName} เป็นประเภท ${cardValue(getCardTypeLabels(card).join(', '))}`);
 	if (intents.domain) answers.push(`${cardName} มี domain ${domains}`);
 	if (intents.cost) answers.push(`${cardName} มี cost ${card.energy ?? 0}`);
 	if (intents.set) answers.push(`${cardName} อยู่ในชุด ${cardValue(card.set_name)}`);
@@ -957,7 +958,7 @@ export function formatFocusedCardAnswer(query: string, matches: ScoredCard[]) {
 		normalizedQuery.includes('ความสามารถ') ||
 		normalizedQuery.includes('สกิล');
 
-	if (asksType) return `${cardName} เป็นประเภท ${card.type || 'ไม่ระบุ'}`;
+	if (asksType) return `${cardName} เป็นประเภท ${getCardTypeLabels(card).join(', ') || 'ไม่ระบุ'}`;
 	if (asksDomain)
 		return `${cardName} มี domain ${card.domains?.length ? card.domains.join(', ') : 'ไม่ระบุ'}`;
 	if (asksCost) return `${cardName} มี cost ${card.energy ?? 0}`;

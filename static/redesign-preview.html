@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>RiftThai — Design Preview</title>
+    <style>
+      :root {
+        --bg: #060b14;
+        --panel: rgba(12, 24, 41, 0.86);
+        --panel-strong: #0d1b2e;
+        --line: rgba(121, 204, 245, 0.18);
+        --line-bright: rgba(69, 235, 224, 0.76);
+        --text: #eef8ff;
+        --muted: #7892a8;
+        --cyan: #45e9e1;
+        --cyan-soft: rgba(69, 233, 225, 0.12);
+        --gold: #ffbd78;
+        --drawer: min(390px, 100vw);
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; color: var(--text); background: var(--bg); }
+      button, input, select { font: inherit; }
+      button, a { -webkit-tap-highlight-color: transparent; }
+      button { cursor: pointer; }
+      a { color: inherit; }
+
+      body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        pointer-events: none;
+        content: "";
+        background:
+          radial-gradient(circle at 75% -10%, rgba(20, 101, 184, 0.35), transparent 34rem),
+          radial-gradient(circle at 0% 70%, rgba(14, 90, 116, 0.22), transparent 28rem),
+          linear-gradient(135deg, #071322, #060b14 55%, #100d16);
+      }
+
+      body::after {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        content: "";
+        opacity: 0.28;
+        background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+        background-size: 110px 110px;
+        mask-image: linear-gradient(to bottom, black, transparent 85%);
+      }
+
+      .app { min-height: 100vh; }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 30;
+        display: flex;
+        width: 232px;
+        flex-direction: column;
+        padding: 18px 12px;
+        border-right: 1px solid rgba(120, 208, 242, 0.13);
+        background: rgba(4, 12, 22, 0.9);
+        backdrop-filter: blur(20px);
+      }
+      .brand { display: flex; align-items: center; gap: 10px; padding: 7px 10px 24px; text-decoration: none; }
+      .brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid rgba(69, 233, 225, 0.72); color: var(--cyan); font-size: 24px; font-weight: 950; font-style: italic; transform: skew(-10deg); }
+      .brand strong { display: block; font-size: 16px; letter-spacing: .08em; }
+      .brand strong span { color: var(--cyan); }
+      .brand small { display: block; margin-top: 2px; color: #7f9aad; font-size: 9px; font-weight: 700; white-space: nowrap; }
+      .nav { display: grid; gap: 5px; }
+      .nav a { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 13px; border: 1px solid transparent; border-radius: 12px; color: #8ca4b7; font-size: 12px; font-weight: 850; text-decoration: none; transition: .18s ease; }
+      .nav a:hover { color: #effcff; border-color: rgba(122, 202, 236, 0.15); background: rgba(255,255,255,.04); }
+      .nav a.active { border-color: rgba(69, 233, 225, .35); color: var(--cyan); background: rgba(69, 233, 225, .1); box-shadow: inset 3px 0 0 var(--cyan); }
+      .nav-icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; background: rgba(255,255,255,.05); font-size: 16px; }
+      .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(120, 208, 242, 0.13); }
+      .account { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid rgba(120, 208, 242, 0.13); border-radius: 13px; background: rgba(255,255,255,.03); }
+      .avatar { display: grid; width: 35px; height: 35px; place-items: center; border-radius: 50%; color: #05202b; background: var(--cyan); font-weight: 950; }
+      .account b { display: block; font-size: 11px; }
+      .account small { color: var(--muted); font-size: 9px; }
+
+      .content { min-width: 0; margin-left: 232px; padding: 0 30px 60px; }
+      .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; min-height: 74px; margin: 0 -30px 25px; padding: 0 30px; border-bottom: 1px solid rgba(120, 208, 242, 0.13); background: rgba(4, 11, 20, 0.76); backdrop-filter: blur(18px); }
+      .topbar-tabs { display: flex; gap: 4px; padding: 4px; border: 1px solid rgba(120, 208, 242, 0.14); border-radius: 12px; background: rgba(255,255,255,.025); }
+      .topbar-tabs a { padding: 10px 18px; border-radius: 8px; color: #839aac; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-decoration: none; }
+      .topbar-tabs a:hover { color: white; background: rgba(255,255,255,.05); }
+      .topbar-tabs a.active { color: #062027; background: var(--cyan); box-shadow: 0 0 22px rgba(69, 233, 225, .22); }
+      .preview-label { padding: 7px 9px; border: 1px solid rgba(255, 189, 120, .35); border-radius: 999px; color: var(--gold); font-size: 9px; font-weight: 900; letter-spacing: .1em; }
+
+      .hero, .index-panel { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(135deg, rgba(13, 34, 57, .96), rgba(7, 15, 27, .96)); box-shadow: 0 20px 55px rgba(0,0,0,.2); }
+      .hero { display: grid; grid-template-columns: minmax(0, 1fr) 286px; min-height: 285px; }
+      .hero::before { position: absolute; top: -220px; right: 160px; width: 520px; height: 520px; border-radius: 50%; content: ""; background: rgba(23, 117, 196, .22); filter: blur(65px); }
+      .hero-copy { position: relative; padding: 43px 48px; }
+      .eyebrow { color: var(--cyan); font-size: 10px; font-weight: 950; letter-spacing: .22em; text-transform: uppercase; }
+      .eyebrow span { display: inline-block; margin-left: 7px; padding: 5px 7px; border-radius: 5px; color: #b6e1ec; background: rgba(69, 233, 225, .1); font-size: 8px; letter-spacing: .1em; }
+      h1 { max-width: 630px; margin: 18px 0 10px; font-size: clamp(32px, 4vw, 58px); line-height: .98; letter-spacing: -.06em; }
+      h1 em { color: var(--cyan); font-style: normal; }
+      .hero-copy p { max-width: 600px; margin: 0; color: #a2b7c7; font-size: 14px; line-height: 1.75; }
+      .hero-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+      .hero-links a { padding: 8px 11px; border: 1px solid rgba(69, 233, 225, .2); border-radius: 7px; color: #baf8f4; background: rgba(69, 233, 225, .08); font-size: 10px; font-weight: 900; text-decoration: none; }
+      .hero-links a:hover { border-color: var(--cyan); background: rgba(69,233,225,.16); }
+      .metrics { display: grid; align-content: center; gap: 10px; padding: 24px; border-left: 1px solid rgba(120, 208, 242, 0.13); background: rgba(3, 10, 18, .28); }
+      .metric { display: flex; align-items: center; justify-content: space-between; padding: 16px; border: 1px solid rgba(120, 208, 242, .15); border-radius: 11px; background: rgba(255,255,255,.025); }
+      .metric span { color: #7d98ac; font-size: 10px; font-weight: 850; text-transform: uppercase; }
+      .metric strong { color: #f4fdff; font-size: 22px; }
+
+      .index-panel { margin-top: 22px; padding: 23px; }
+      .panel-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+      .panel-heading h2 { margin: 5px 0 0; font-size: 19px; }
+      .count { padding: 8px 10px; border: 1px solid rgba(69,233,225,.18); border-radius: 7px; color: var(--cyan); font-size: 10px; font-weight: 900; }
+      .search-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; margin-top: 18px; }
+      .search { display: flex; align-items: center; gap: 12px; min-width: 0; min-height: 54px; padding: 0 16px; border: 1px solid rgba(118, 206, 240, .24); border-radius: 11px; background: rgba(0, 6, 14, .42); }
+      .search:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(69,233,225,.08); }
+      .search span { color: #b2d3e3; font-size: 25px; line-height: 1; }
+      .search input { width: 100%; min-width: 0; border: 0; outline: 0; color: var(--text); background: transparent; font-size: 13px; }
+      .search input::placeholder { color: #6e879a; }
+      .search-btn { min-width: 112px; border: 0; border-radius: 11px; color: #062027; background: var(--cyan); font-size: 13px; font-weight: 950; }
+      .search-btn:hover { background: #a8fffa; }
+      .filters { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 9px; margin-top: 10px; }
+      .filter { display: grid; gap: 5px; padding: 10px 12px; border: 1px solid rgba(118, 206, 240, .16); border-radius: 9px; background: rgba(0, 6, 14, .35); }
+      .filter label { color: #7590a4; font-size: 9px; font-weight: 850; }
+      .filter select { border: 0; outline: 0; color: #e5f7ff; background: transparent; font-size: 12px; font-weight: 800; }
+      .filter option { color: #e5f7ff; background: #0d1b2e; }
+      .clear-btn { min-width: 110px; border: 1px solid rgba(118, 206, 240, .16); border-radius: 9px; color: #a6bfd0; background: rgba(255,255,255,.04); font-size: 11px; font-weight: 850; }
+      .clear-btn:hover { border-color: var(--cyan); color: white; }
+
+      .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin: 24px 0 13px; }
+      .results-title { display: flex; align-items: baseline; gap: 7px; }
+      .results-title strong { font-size: 22px; }
+      .results-title span { color: #7a95a8; font-size: 11px; font-weight: 800; }
+      .results-tools { display: flex; align-items: center; gap: 8px; }
+      .sort { display: flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid rgba(118,206,240,.15); border-radius: 7px; color: #7893a8; font-size: 10px; font-weight: 800; }
+      .sort select { border: 0; outline: 0; color: var(--cyan); background: transparent; font-size: 11px; font-weight: 900; }
+      .sort option { background: #0d1b2e; }
+      .view-switch { display: flex; padding: 3px; border: 1px solid rgba(118,206,240,.15); border-radius: 7px; }
+      .view-switch button { width: 31px; height: 28px; border: 0; border-radius: 4px; color: #7390a5; background: transparent; font-size: 18px; }
+      .view-switch button.active { color: #062027; background: var(--cyan); }
+
+      .cards { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px 13px; }
+      .card { min-width: 0; padding: 0; border: 0; color: var(--text); text-align: left; background: transparent; }
+      .card-visual { position: relative; overflow: hidden; aspect-ratio: 744 / 1039; border: 1px solid rgba(121, 204, 245, .18); border-radius: 11px; background: #081421; box-shadow: 0 12px 27px rgba(0,0,0,.28); transition: .18s ease; }
+      .card:hover .card-visual, .card.selected .card-visual { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(69,233,225,.15), 0 18px 34px rgba(0,0,0,.34); transform: translateY(-3px); }
+      .card-visual img.art { display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .25s ease; }
+      .card-visual img.art.loaded { opacity: 1; }
+      .loader { position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; border: 2px solid rgba(69,233,225,.2); border-top-color: var(--cyan); border-radius: 50%; animation: spin .75s linear infinite; transform: translate(-50%,-50%); }
+      .card-code { position: absolute; top: 8px; right: 8px; padding: 5px 6px; border: 1px solid rgba(255,255,255,.16); border-radius: 6px; color: #effbff; background: rgba(4,10,17,.8); font-size: 8px; font-weight: 950; letter-spacing: .04em; }
+      .rarity { position: absolute; top: 8px; left: 8px; width: 28px; height: 28px; padding: 5px; border: 1px solid rgba(255,255,255,.16); border-radius: 7px; background: rgba(4,10,17,.8); }
+      .card-meta { padding-top: 8px; }
+      .card-meta strong { display: block; overflow: hidden; color: #eff9ff; font-size: 13px; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
+      .card-meta small { display: flex; align-items: center; gap: 5px; overflow: hidden; margin-top: 4px; color: #7e99ac; font-size: 10px; font-weight: 800; white-space: nowrap; }
+      .card-meta small img { width: 14px; height: 14px; object-fit: contain; opacity: .85; }
+      .dot { width: 3px; height: 3px; border-radius: 50%; background: #49677c; }
+      .empty { display: grid; min-height: 220px; place-items: center; border: 1px dashed rgba(121,204,245,.2); border-radius: 12px; color: var(--muted); }
+
+      .drawer { position: fixed; inset: 74px 0 0 auto; z-index: 40; display: flex; width: var(--drawer); flex-direction: column; overflow-y: auto; padding: 19px 20px 30px; border-left: 1px solid rgba(69,233,225,.25); background: rgba(6, 18, 31, .97); box-shadow: -24px 0 55px rgba(0,0,0,.3); backdrop-filter: blur(22px); transform: translateX(105%); transition: transform .25s ease; }
+      .drawer.open { transform: translateX(0); }
+      .drawer-top { display: flex; align-items: center; justify-content: space-between; color: #7f9aac; font-size: 9px; font-weight: 950; letter-spacing: .17em; }
+      .close { border: 0; color: #d2e2ed; background: transparent; font-size: 27px; line-height: 1; }
+      .close:hover { color: var(--cyan); }
+      .drawer-art { width: min(100%, 276px); margin: 12px auto 17px; overflow: hidden; border: 1px solid rgba(255,255,255,.16); border-radius: 12px; box-shadow: 0 18px 38px rgba(0,0,0,.38); }
+      .drawer-art img { display: block; width: 100%; aspect-ratio: 744/1039; object-fit: cover; }
+      .drawer-title { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+      .drawer-title h2 { margin: 0; font-size: 25px; letter-spacing: -.04em; }
+      .drawer-title p { margin: 4px 0 0; color: #7994a7; font-size: 10px; }
+      .heart { border: 0; color: #d8e7ef; background: transparent; font-size: 30px; line-height: 1; }
+      .heart.liked { color: #ff7397; }
+      .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 15px 0; }
+      .badge { display: inline-flex; align-items: center; gap: 4px; padding: 6px 8px; border: 1px solid rgba(121,204,245,.18); border-radius: 7px; color: #b9cede; background: rgba(255,255,255,.04); font-size: 10px; font-weight: 850; }
+      .badge img { width: 13px; height: 13px; }
+      .detail-tabs { display: flex; gap: 3px; padding: 3px; border-bottom: 1px solid rgba(121,204,245,.16); }
+      .detail-tabs button { flex: 1; min-height: 38px; border: 0; border-radius: 6px; color: #7e98ab; background: transparent; font-size: 10px; font-weight: 900; }
+      .detail-tabs button.active { color: #062027; background: var(--cyan); }
+      .ability { margin-top: 13px; padding: 14px; border: 1px solid rgba(69,233,225,.25); border-radius: 10px; background: rgba(6, 45, 55, .44); }
+      .ability-heading { display: flex; align-items: center; justify-content: space-between; color: #baf6f2; font-size: 12px; font-weight: 950; }
+      .ability-heading small { padding: 4px 6px; border: 1px solid rgba(69,233,225,.32); border-radius: 999px; color: var(--cyan); font-size: 7px; }
+      .ability p { margin: 13px 0 0; color: #e5f4fa; font-size: 12px; line-height: 1.8; white-space: pre-line; }
+      .related { display: flex; align-items: center; justify-content: space-between; margin-top: 13px; padding: 14px; border: 1px solid rgba(121,204,245,.16); border-radius: 10px; background: rgba(255,255,255,.025); }
+      .related small { display: block; color: #7893a7; font-size: 10px; font-weight: 800; }
+      .related b { display: inline-block; margin-top: 7px; padding: 5px 7px; border: 1px solid rgba(121,204,245,.18); border-radius: 6px; color: #c9dce7; font-size: 10px; }
+      .related > span { color: #96afbf; font-size: 22px; }
+
+      .mobile-bar { display: none; }
+      @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+      @media (max-width: 1250px) {
+        .cards { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+        .filters { grid-template-columns: repeat(2, 1fr); }
+        .clear-btn { min-height: 45px; }
+      }
+      @media (max-width: 980px) {
+        .sidebar { width: 72px; padding-inline: 9px; }
+        .brand { justify-content: center; padding-inline: 0; }
+        .brand > span:last-child, .nav a > span:last-child, .account > div:last-child { display: none; }
+        .nav a { justify-content: center; padding: 0; }
+        .content { margin-left: 72px; }
+        .hero { grid-template-columns: 1fr 225px; }
+        .test-brand small { display: none; }
+      }
+      @media (max-width: 760px) {
+        .sidebar { display: none; }
+        .content { margin-left: 0; padding: 0 14px 80px; }
+        .topbar { margin: 0 -14px 18px; padding: 0 14px; }
+        .topbar-tabs { display: none; }
+        .hero { grid-template-columns: 1fr; }
+        .hero-copy { padding: 30px 24px; }
+        .metrics { grid-template-columns: repeat(3, 1fr); padding: 12px; border-top: 1px solid rgba(120,208,242,.13); border-left: 0; }
+        .metric { display: grid; gap: 5px; padding: 10px; }
+        .metric strong { font-size: 17px; }
+        .index-panel { padding: 16px; }
+        .search-row { grid-template-columns: 1fr; }
+        .search-btn { min-height: 46px; }
+        .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px 9px; }
+        .card-meta strong { font-size: 11px; }
+        .card-meta small { font-size: 8px; }
+        .drawer { inset: 0; width: 100%; padding-top: 18px; }
+        .mobile-bar { position: fixed; inset: auto 0 0; z-index: 35; display: flex; justify-content: space-around; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(120,208,242,.15); background: rgba(4,12,22,.95); backdrop-filter: blur(18px); }
+        .mobile-bar a { color: #8ca5b7; font-size: 10px; font-weight: 900; text-decoration: none; }
+        .mobile-bar a.active { color: var(--cyan); }
+      }
+      @media (max-width: 440px) {
+        .preview-label { display: none; }
+        .filters { grid-template-columns: 1fr; }
+        .results-bar { align-items: start; flex-direction: column; }
+        .results-tools { width: 100%; justify-content: space-between; }
+        .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        h1 { font-size: 35px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <a class="brand" href="/">
+          <span class="brand-mark">R</span>
+          <span><strong>RIFT<span>THAI</span></strong><small>คลังข้อมูลการ์ด Riftbound ภาษาไทย</small></span>
+        </a>
+        <nav class="nav" aria-label="เมนูหลัก">
+          <a class="active" href="#cards"><span class="nav-icon">▦</span><span>การ์ด</span></a>
+          <a href="/rules"><span class="nav-icon">▤</span><span>กติกา</span></a>
+          <a href="/domains"><span class="nav-icon">✣</span><span>คีย์เวิร์ด</span></a>
+          <a href="/deck"><span class="nav-icon">▥</span><span>เด็ค</span></a>
+          <a href="#"><span class="nav-icon">▧</span><span>การ์ดสะสม</span></a>
+          <a href="#"><span class="nav-icon">♡</span><span>สนับสนุน</span></a>
+        </nav>
+        <div class="sidebar-footer"><div class="account"><span class="avatar">G</span><div><b>GUYSSAR</b><small>Design preview</small></div></div></div>
+      </aside>
+
+      <div class="content">
+        <header class="topbar">
+          <a class="brand" href="/" style="padding:0"><span class="brand-mark">R</span><span><strong>RIFT<span>THAI</span></strong></span></a>
+          <nav class="topbar-tabs"><a class="active" href="#cards">การ์ด</a><a href="/rules">กติกา</a><a href="/deck">เด็ค</a></nav>
+          <span class="preview-label">HTML PREVIEW</span>
+        </header>
+
+        <main id="cards">
+          <section class="hero">
+            <div class="hero-copy">
+              <div class="eyebrow">RIFTBOUND THAI CARD DATABASE <span>LIVE INDEX</span></div>
+              <h1>คลังการ์ด <em>Riftbound</em> ภาษาไทย</h1>
+              <p>ค้นหาการ์ด อ่านคำแปลไทย กรองตามชุดการ์ด ประเภท โดเมน และความหายากได้จากหน้าเดียว</p>
+              <div class="hero-links"><a href="#card-index">เริ่มค้นหาการ์ด</a><a href="/rules">อ่านกติกา</a><a href="/deck">เตรียมเด็ค</a></div>
+            </div>
+            <div class="metrics"><div class="metric"><span>การ์ดทั้งหมด</span><strong id="metric-cards">—</strong></div><div class="metric"><span>ชุดการ์ด</span><strong id="metric-sets">—</strong></div><div class="metric"><span>โดเมน</span><strong id="metric-domains">—</strong></div></div>
+          </section>
+
+          <section id="card-index" class="index-panel">
+            <div class="panel-heading"><div><div class="eyebrow">CARD INDEX</div><h2>ค้นหาการ์ด</h2></div><div class="count" id="count">กำลังโหลด...</div></div>
+            <div class="search-row"><label class="search"><span>⌕</span><input id="search" placeholder="ค้นหาชื่อการ์ด, รหัส, ความสามารถ หรือแท็ก..." /></label><button class="search-btn" id="search-btn">ค้นหา</button></div>
+            <div class="filters">
+              <div class="filter"><label for="set">ชุดการ์ด (Set)</label><select id="set"><option>ทั้งหมด</option></select></div>
+              <div class="filter"><label for="domain">โดเมน (Domain)</label><select id="domain"><option>ทั้งหมด</option></select></div>
+              <div class="filter"><label for="type">ประเภท (Type)</label><select id="type"><option>ทั้งหมด</option></select></div>
+              <div class="filter"><label for="rarity">ความหายาก (Rarity)</label><select id="rarity"><option>ทั้งหมด</option></select></div>
+              <button class="clear-btn" id="clear">⌘ ล้างตัวกรอง</button>
+            </div>
+          </section>
+
+          <section class="results-bar"><div class="results-title"><strong id="result-count">—</strong><span>การ์ด</span></div><div class="results-tools"><label class="sort">เรียงโดย <select id="sort"><option value="code">ล่าสุด</option><option value="name">ชื่อการ์ด</option></select></label><div class="view-switch"><button class="active" id="grid-view" aria-label="ตาราง">▦</button><button id="list-view" aria-label="รายการ">☷</button></div></div></section>
+          <section id="grid" class="cards" aria-live="polite"></section>
+        </main>
+      </div>
+
+      <aside class="drawer open" id="drawer" aria-label="รายละเอียดการ์ด">
+        <div class="drawer-top"><span>PREVIEW / CARD DETAIL</span><button class="close" id="close-drawer" aria-label="ปิดรายละเอียด">×</button></div>
+        <div class="drawer-art"><img id="detail-image" src="" alt="" /></div>
+        <div class="drawer-title"><div><h2 id="detail-name">เลือกการ์ด</h2><p id="detail-subtitle">—</p></div><button class="heart" id="heart" aria-label="เพิ่มรายการโปรด">♡</button></div>
+        <div class="badges" id="badges"></div>
+        <div class="detail-tabs"><button class="active" data-tab="thai">คำแปลภาษาไทย</button><button data-tab="english">ข้อความต้นฉบับ</button><button data-tab="meta">ข้อมูลอื่นๆ</button></div>
+        <div class="ability"><div class="ability-heading"><span id="ability-heading">คำแปลการ์ด (ภาษาไทย)</span><small id="ability-label">THAI TEXT</small></div><p id="ability-text">—</p></div>
+        <div class="related"><div><small>คีย์เวิร์ดที่เกี่ยวข้อง</small><b>Assault</b></div><span>›</span></div>
+      </aside>
+      <nav class="mobile-bar"><a class="active" href="#cards">▦<br />การ์ด</a><a href="/rules">▤<br />กติกา</a><a href="/deck">▥<br />เด็ค</a></nav>
+    </div>
+
+    <script>
+      const state = { cards: [], filtered: [], selected: null, tab: 'thai', favorite: false };
+      const PREVIEW_CARDS = [{"cardCode":"ven-001-166","name":"Baccai Sandspinner","fullName":"Baccai Sandspinner","cardSet":"Vendetta","rarity":"Common","cardType":"Unit","tags":["Shurima"],"energy":6,"might":6,"abilityEffective":"[Empower] [5]. This ability costs [3] less if you control 4 or fewer runes. (Pay the cost: Empower me. Use only if not Empowered.)\n[Empowered][>] I have [Deflect] and [Assault 2]. (Opponents must pay [A] to choose me with a spell or ability. +2 [S] while I'm an attacker.)","abilityEffectiveThai":"[Empower] [5]. ความสามารถนี้มีค่าร่ายถูกลง [3] ถ้าคุณควบคุม Rune ไม่เกิน 4 ใบ. (จ่ายค่าร่ายนี้เพื่อ Empower การ์ดใบนี้. ใช้ได้เมื่อการ์ดใบนี้ยังไม่ Empowered เท่านั้น.)\n[Empowered][>] การ์ดใบนี้มี [Deflect] และ [Assault 2]. \n(คู่แข่งต้องจ่าย [A] เพื่อเลือกการ์ดใบนี้ด้วยเวทมนตร์หรือความสามารถ. +2 [S] ขณะที่การ์ดใบนี้เป็นผู้โจมตี.)","artist":"Kudos Productions","imageUrl":"/image/cards/d8abab7f0df7c8ec9fff8c8dfa71c732e1ce2e6a-744x1039.avif","domains":["Fury"]},{"cardCode":"ven-r01","name":"Fury Rune","fullName":"Fury Rune","cardSet":"Vendetta","rarity":"Common","cardType":"Rune","energy":null,"might":null,"abilityEffective":null,"abilityEffectiveThai":"","artist":"Greg Ghielmetti & Leah Chen","imageUrl":"/image/cards/f95ed6ba0c4d4d357c45bf5bdb1a8e540af1f85f-744x1039.avif","domains":["Fury"]},{"cardCode":"ven-sp1-006","name":"Kai'Sa","fullName":"Kai'Sa, Survivor","cardSet":"Vendetta","rarity":"Epic","cardType":"Unit","tags":["Kai'Sa"],"energy":4,"might":4,"abilityEffective":"[Accelerate]\nWhen I conquer, draw 1.","abilityEffectiveThai":"[Accelerate] (คุณสามารถจ่าย :rb_energy_1::rb_rune_fury: เป็นค่าร่ายเพิ่มเติมเพื่อให้การ์ดใบนี้ลงสนามในสภาพ Ready) เมื่อการ์ดใบนี้ Conquer ให้จั่ว 1 ใบ","artist":"Wild Rift Splash Team","imageUrl":"/image/cards/a14d1be8f014a331f60885013d81a1a8f5c8c076-744x1039.avif","domains":["Fury"]},{"cardCode":"ven-002-166","name":"Blade Twirler","fullName":"Blade Twirler","cardSet":"Vendetta","rarity":"Common","cardType":"Unit","tags":["Yordle","Ionia"],"energy":4,"might":4,"abilityEffective":"The first time I move each turn, choose a player. They [Burn 1]. (They put the top card of their Main Deck into their trash.)","abilityEffectiveThai":"ครั้งแรกที่การ์ดใบนี้เคลื่อนที่ในแต่ละเทิร์น, เลือกผู้เล่น 1 คน ผู้เล่นคนนั้น [Burn 1] (ผู้เล่นคนนั้นนำการ์ดใบบนสุดของ Main Deck ลง Trash ของตนเอง)","artist":"Six More Vodka","imageUrl":"/image/cards/b222082d5d38630c4d2542ed24c0442881e3de18-744x1039.avif","domains":["Fury"]},{"cardCode":"ven-r02","name":"Calm Rune","fullName":"Calm Rune","cardSet":"Vendetta","rarity":"Common","cardType":"Rune","energy":null,"might":null,"abilityEffective":null,"abilityEffectiveThai":"","artist":"Greg Ghielmetti & Leah Chen","imageUrl":"/image/cards/9b70aa1b334728a3e8beeea0c9154a2d0f79b1eb-744x1039.avif","domains":["Calm"]},{"cardCode":"ven-sp2-006","name":"Sona","fullName":"Sona, Harmonious","cardSet":"Vendetta","rarity":"Epic","cardType":"Unit","tags":["Sona"],"energy":4,"might":4,"abilityEffective":"At the end of your turn, if I'm at a battlefield, ready up to 4 friendly runes.","abilityEffectiveThai":"เมื่อตอนจบเทิร์นของคุณ, หากการ์ดใบนี้อยู่ที่ Battlefield, ให้ Ready รูนฝั่งเราที่ exhaust สูงสุด 4 ใบ","artist":"Wild Rift Splash Team","imageUrl":"/image/cards/2cc800fbd0011dd084426445ebb1c2831420063d-744x1039.avif","domains":["Calm"]},{"cardCode":"ven-sp3-006","name":"Ahri","fullName":"Ahri, Inquisitive","cardSet":"Vendetta","rarity":"Epic","cardType":"Unit","tags":["Ahri","Ionia"],"energy":3,"might":3,"abilityEffective":"When I attack or defend, give an enemy unit here -2 [S] this turn, to a minimum of 1 [S].","abilityEffectiveThai":"เมื่อการ์ดใบนี้โจมตีหรือป้องกัน, ยูนิตศัตรู 1 ใบได้รับ -2 :rb_might: ในเทิร์นนี้, โดยลดลงได้ไม่ต่ำกว่า 1 :rb_might:","artist":"Wild Rift Splash Team","imageUrl":"/image/cards/e8d1993018d8317494cbaab4e4dd738c2e80740d-744x1039.avif","domains":["Mind"]},{"cardCode":"ven-003-166","name":"Brittle Steel","fullName":"Brittle Steel","cardSet":"Vendetta","rarity":"Common","cardType":"Spell","energy":2,"might":null,"abilityEffective":"Kill a gear.\n[Flow] [4][C] (You may play this from your trash for its Flow cost. Then banish it.)","abilityEffectiveThai":"ทำลาย Gear 1 ใบ.\n[Flow] [4][C] (คุณสามารถ เล่นการ์ดใบนี้จาก Trash ของคุณ โดยจ่ายคอสต์ของ Flow. จากนั้น Banish มัน.)","artist":"Six More Vodka","imageUrl":"/image/cards/2264ab788558ec69b1b6ed3e03ce69a3f63bdbb7-744x1039.avif","domains":["Fury"]},{"cardCode":"ven-r03","name":"Mind Rune","fullName":"Mind Rune","cardSet":"Vendetta","rarity":"Common","cardType":"Rune","energy":null,"might":null,"abilityEffective":null,"abilityEffectiveThai":"","artist":"Greg Ghielmetti & Leah Chen","imageUrl":"/image/cards/33df1c56c6e76f9cb783c19161f16fcdbdc20f98-744x1039.avif","domains":["Mind"]},{"cardCode":"ven-r04","name":"Body Rune","fullName":"Body Rune","cardSet":"Vendetta","rarity":"Common","cardType":"Rune","energy":null,"might":null,"abilityEffective":null,"abilityEffectiveThai":"","artist":"Greg Ghielmetti & Leah Chen","imageUrl":"/image/cards/3313c73c5b31daa482073bfefbf4d2255a89d7d0-744x1039.avif","domains":["Body"]},{"cardCode":"ven-004-166","name":"Dune Surfer","fullName":"Dune Surfer","cardSet":"Vendetta","rarity":"Common","cardType":"Unit","tags":["Shurima"],"energy":3,"might":3,"abilityEffective":"You ignore [Tank] while assigning combat damage here.","abilityEffectiveThai":"การ์ดใบนี้ไม่สนใจ [Tank] ขณะเลือกทำความเสียหายจากการต่อสู้ที่นี่","artist":"Dao Trong Le","imageUrl":"/image/cards/acab9ec71d58f1e109cd8879c0fef0bdeb866432-744x1039.avif","domains":["Fury"]},{"cardCode":"ven-t04","name":"Recruit (NX)","fullName":"Recruit (NX)","cardSet":"Vendetta","rarity":"Common","cardType":"Token","tags":["Recruit"],"energy":null,"might":1,"abilityEffective":null,"abilityEffectiveThai":"","artist":"Six More Vodka","imageUrl":"/image/cards/08b9ccf225fc2ae9eb9b5668e5361b09789210ee-744x1039.avif","domains":["Colorless"]},{"cardCode":"ven-sp4-006","name":"Sett","fullName":"Sett, Brawler","cardSet":"Vendetta","rarity":"Epic","cardType":"Unit","tags":["Sett"],"energy":5,"might":4,"abilityEffective":"When you play me or when I conquer, buff me.\nSpend my buff: Give me +4 [S] this turn.","abilityEffectiveThai":"เมื่อการ์ดใบนี้ถูกเล่นหรือเมื่อการ์ดใบนี้ Conquer, มอบ Buff ให้การ์ดใบนี้ (ถ้าการ์ดใบนี้ไม่มี Buff การ์ดใบนี้จะได้รับ Buff +1 :rb_might:) สละ Buff ของการ์ดใบนี้: มอบพลังให้การ์ดใบนี้ +4 :rb_might: ในเทิร์นนี้","artist":"Wild Rift Splash Team","imageUrl":"/image/cards/075f83adf06b41c42c78addd11cfc73fbdb8aabb-744x1039.avif","domains":["Body"]},{"cardCode":"ven-r05","name":"Chaos Rune","fullName":"Chaos Rune","cardSet":"Vendetta","rarity":"Common","cardType":"Rune","energy":null,"might":null,"abilityEffective":null,"abilityEffectiveThai":"","artist":"Greg Ghielmetti & Leah Chen","imageUrl":"/image/cards/3861fc5668911a70c21cf3d3075adec716deb7080-744x1039.avif","domains":["Chaos"]},{"cardCode":"ven-sp5-006","name":"Ezreal","fullName":"Ezreal, Prodigy","cardSet":"Vendetta","rarity":"Epic","cardType":"Unit","tags":["Ezreal","Piltover"],"energy":3,"might":3,"abilityEffective":"When you play me, discard 1, then draw 2.\nOptional additional costs you pay cost [1] or [A] less.","abilityEffectiveThai":"เมื่อคุณเล่นการ์ดใบนี้ ทิ้งการ์ด 1 ใบ จากนั้นจั่ว 2 ใบ \nค่าร่ายเพิ่มเติมที่เป็นทางเลือกที่คุณต้องจ่าย จะมีค่าร่ายลดลง :rb_energy_1: หรือลดลง :rb_rune_rainbow: แต้ม","artist":"Envar Studio","imageUrl":"/image/cards/fd4beecca19d4e84ead0852acce83d4c34ac1b4c-744x1039.avif","domains":["Order"]},{"cardCode":"ven-005-166","name":"Forsaken Baccai","fullName":"Forsaken Baccai","cardSet":"Vendetta","rarity":"Common","cardType":"Unit","tags":["Shurima"],"energy":2,"might":2,"abilityEffective":"If you control fewer runes than an opponent at the start of your Beginning Phase, give me +1 [S] this turn.","abilityEffectiveThai":"ถ้าคุณควบคุม Rune น้อยกว่าคู่แข่งในตอนเริ่ม Beginning Phase ของคุณ, มอบพลังให้การ์ดใบนี้ +1 [S] ในเทิร์นนี้","artist":"Kudos Productions","imageUrl":"/image/cards/33d3e7840280e2780687057f08f30312a56d230f-744x1039.avif","domains":["Fury"]},{"cardCode":"ven-sp6-006","name":"Lux","fullName":"Lux, Crownguard","cardSet":"Vendetta","rarity":"Epic","cardType":"Unit","tags":["Lux"],"energy":4,"might":2,"abilityEffective":": [Reaction] — [Add] [2]. Spend this Energy only to play spells.","abilityEffectiveThai":":rb_exhaust:: [Reaction] — [Add] :rb_energy_2: ใช้ได้เฉพาะการเล่นเวทมนตร์เท่านั้น (ความสามารถที่เพิ่มทรัพยากรไม่สามารถร่ายสวนกลับได้)","artist":"Envar Studio","imageUrl":"/image/cards/b9778ec229e052268ea66213ca2dbf60612b2862-744x1039.avif","domains":["Order"]},{"cardCode":"ven-006-166","name":"Oasis Raider","fullName":"Oasis Raider","cardSet":"Vendetta","rarity":"Common","cardType":"Unit","tags":["Shurima"],"energy":4,"might":4,"abilityEffective":"If you control fewer runes than an opponent at the start of your Beginning Phase, give me +2 [S] and [Ganking] this turn. (I can move from battlefield to battlefield.)","abilityEffectiveThai":"ถ้าคุณควบคุม Rune น้อยกว่าคู่แข่ง ในตอนเริ่ม Beginning Phase ของคุณ, มอบพลังให้การ์ดใบนี้ +2 [S] และ [Ganking] ในเทิร์นนี้. (การ์ดใบนี้สามารถเคลื่อนที่จาก Battlefield หนึ่งไปยังอีก Battlefield หนึ่งได้.)","artist":"JiHun Lee","imageUrl":"/image/cards/d44355b9b129054e63b6f2c8de30518fe87b6295-744x1039.avif","domains":["Fury"]}];
+      const $ = (selector) => document.querySelector(selector);
+      const byId = (id) => document.getElementById(id);
+      const unique = (values) => [...new Set(values.filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
+      const imageFor = (card) => {
+        const image = card?.imageUrl || '';
+        return location.protocol === 'file:' && image.startsWith('/') ? `.${image}` : image;
+      };
+
+      function fillSelect(id, values) {
+        byId(id).innerHTML = '<option>ทั้งหมด</option>' + values.map((value) => `<option>${escapeHtml(value)}</option>`).join('');
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
+      }
+
+      function render() {
+        const needle = byId('search').value.trim().toLowerCase();
+        const selectedSet = byId('set').value;
+        const selectedDomain = byId('domain').value;
+        const selectedType = byId('type').value;
+        const selectedRarity = byId('rarity').value;
+        const sortMode = byId('sort').value;
+        state.filtered = state.cards.filter((card) => {
+          const searchText = [card.name, card.fullName, card.cardCode, card.abilityEffective, card.abilityEffectiveThai, card.cardSet, card.cardType, ...(card.tags || []), ...(card.domains || [])].join(' ').toLowerCase();
+          return (!needle || searchText.includes(needle)) && (selectedSet === 'ทั้งหมด' || card.cardSet === selectedSet) && (selectedDomain === 'ทั้งหมด' || (card.domains || []).includes(selectedDomain)) && (selectedType === 'ทั้งหมด' || card.cardType === selectedType) && (selectedRarity === 'ทั้งหมด' || card.rarity === selectedRarity);
+        }).sort((a, b) => sortMode === 'name' ? String(a.name).localeCompare(String(b.name)) : String(a.cardCode).localeCompare(String(b.cardCode)));
+
+        byId('count').textContent = `${state.filtered.length.toLocaleString('th-TH')} ใบ`;
+        byId('result-count').textContent = state.filtered.length.toLocaleString('th-TH');
+        const grid = byId('grid');
+        if (!state.filtered.length) { grid.className = 'empty'; grid.innerHTML = '<strong>ไม่พบการ์ดที่ค้นหา</strong>'; return; }
+        grid.className = 'cards';
+        grid.innerHTML = state.filtered.slice(0, 36).map((card, index) => `
+          <button class="card ${state.selected?.cardCode === card.cardCode ? 'selected' : ''}" data-code="${escapeHtml(card.cardCode)}">
+            <div class="card-visual">
+              <img class="art" src="${escapeHtml(imageFor(card))}" alt="${escapeHtml(card.name)}" loading="${index < 12 ? 'eager' : 'lazy'}" onload="this.classList.add('loaded'); this.nextElementSibling.remove()" onerror="this.nextElementSibling.remove()" />
+              <span class="loader"></span>
+              <span class="card-code">${escapeHtml(card.cardCode)}</span>
+              <span class="rarity">${escapeHtml((card.rarity || 'C')[0])}</span>
+            </div>
+            <div class="card-meta"><strong>${escapeHtml(card.name)}</strong><small><span>${escapeHtml(card.cardType || 'Card')}</span><i class="dot"></i><span>${escapeHtml(card.cardSet || '—')}</span></small></div>
+          </button>`).join('');
+        grid.querySelectorAll('.card').forEach((button) => button.addEventListener('click', () => selectCard(state.cards.find((card) => card.cardCode === button.dataset.code))));
+      }
+
+      function selectCard(card) {
+        if (!card) return;
+        state.selected = card;
+        state.favorite = false;
+        updateDetail();
+        render();
+        byId('drawer').classList.add('open');
+      }
+
+      function updateDetail() {
+        const card = state.selected;
+        if (!card) return;
+        byId('detail-image').src = imageFor(card);
+        byId('detail-image').alt = card.name || '';
+        byId('detail-name').textContent = card.name || '—';
+        byId('detail-subtitle').textContent = `${card.fullName || card.name || '—'} · ${card.cardCode || '—'}`;
+        byId('heart').textContent = state.favorite ? '♥' : '♡';
+        byId('heart').classList.toggle('liked', state.favorite);
+        byId('badges').innerHTML = [card.cardType, card.cardSet, card.rarity, ...(card.domains || [])].filter(Boolean).map((value) => `<span class="badge">${escapeHtml(value)}</span>`).join('');
+        const content = state.tab === 'thai' ? card.abilityEffectiveThai : state.tab === 'english' ? card.abilityEffective : `Energy: ${card.energy ?? '—'} · Might: ${card.might ?? '—'} · Artist: ${card.artist || '—'}`;
+        byId('ability-heading').textContent = state.tab === 'thai' ? 'คำแปลการ์ด (ภาษาไทย)' : state.tab === 'english' ? 'Original ability' : 'ข้อมูลการ์ด';
+        byId('ability-label').textContent = state.tab === 'thai' ? 'THAI TEXT' : state.tab === 'english' ? 'ENGLISH SOURCE' : 'METADATA';
+        byId('ability-text').textContent = content || 'ยังไม่มีข้อมูล';
+      }
+
+      async function loadCards() {
+        if (location.protocol !== 'file:') {
+          try {
+            const response = await fetch('/cards.json');
+            if (response.ok) return await response.json();
+          } catch (_) {}
+        }
+        return PREVIEW_CARDS;
+      }
+
+      async function init() {
+        try {
+          state.cards = await loadCards();
+          fillSelect('set', unique(state.cards.map((card) => card.cardSet)));
+          fillSelect('domain', unique(state.cards.flatMap((card) => card.domains || [])));
+          fillSelect('type', unique(state.cards.map((card) => card.cardType)));
+          fillSelect('rarity', unique(state.cards.map((card) => card.rarity)));
+          byId('metric-cards').textContent = state.cards.length.toLocaleString('th-TH');
+          byId('metric-sets').textContent = unique(state.cards.map((card) => card.cardSet)).length;
+          byId('metric-domains').textContent = unique(state.cards.flatMap((card) => card.domains || [])).length;
+          state.selected = state.cards[3] || state.cards[0];
+          updateDetail();
+          render();
+        } catch (error) {
+          byId('grid').className = 'empty';
+          byId('grid').textContent = 'โหลดข้อมูลการ์ดไม่สำเร็จ';
+          console.error(error);
+        }
+      }
+
+      ['search', 'set', 'domain', 'type', 'rarity', 'sort'].forEach((id) => byId(id).addEventListener('input', render));
+      byId('search-btn').addEventListener('click', render);
+      byId('clear').addEventListener('click', () => { byId('search').value = ''; ['set', 'domain', 'type', 'rarity'].forEach((id) => byId(id).value = 'ทั้งหมด'); render(); });
+      byId('close-drawer').addEventListener('click', () => byId('drawer').classList.remove('open'));
+      byId('heart').addEventListener('click', () => { state.favorite = !state.favorite; updateDetail(); });
+      document.querySelectorAll('[data-tab]').forEach((button) => button.addEventListener('click', () => { state.tab = button.dataset.tab; document.querySelectorAll('[data-tab]').forEach((tab) => tab.classList.toggle('active', tab === button)); updateDetail(); }));
+      byId('grid-view').addEventListener('click', () => { byId('grid').className = 'cards'; byId('grid-view').classList.add('active'); byId('list-view').classList.remove('active'); });
+      byId('list-view').addEventListener('click', () => { byId('grid').className = 'cards'; byId('list-view').classList.add('active'); byId('grid-view').classList.remove('active'); });
+      init();
+    </script>
+  </body>
+</html>
