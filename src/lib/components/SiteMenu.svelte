@@ -145,9 +145,13 @@
 <div class="site-menu-host relative" class:site-menu-open={isOpen}>
 	<button
 		class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/8 bg-white/[0.035] text-slate-200 transition hover:border-white/15 hover:bg-white/[0.06] focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/20 lg:hidden"
+		class:opacity-0={isOpen}
+		class:pointer-events-none={isOpen}
 		type="button"
 		aria-label="Open menu"
 		aria-expanded={isOpen}
+		aria-hidden={isOpen}
+		tabindex={isOpen ? -1 : 0}
 		onclick={() => (isOpen ? closeMenu() : openMenu())}
 	>
 		{#if isOpen}
