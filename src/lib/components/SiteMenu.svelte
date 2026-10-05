@@ -33,6 +33,8 @@
 	let currentUser = $state<AuthSession['user']>(null);
 	let authLoading = $state(true);
 	let menuDrawer = $state<HTMLDivElement | null>(null);
+	let menuTrigger = $state<HTMLButtonElement | null>(null);
+	let menuCloseButton = $state<HTMLButtonElement | null>(null);
 
 	function openMenu() {
 		isOpen = true;
@@ -40,7 +42,12 @@
 			// Navigation drawers explicitly keep their slide motion, including
 			// when the OS disables decorative animations.
 			if (!menuDrawer) return;
-			if (reduceMotion()) { gsap.set(menuDrawer, { clearProps: 'visibility' }); return; }
+			if (reduceMotion()) {
+				gsap.set(menuDrawer, { clearProps: 'visibility' });
+				menuCloseButton?.focus();
+				return;
+			}
+			menuCloseButton?.focus();
 			gsap.fromTo(
 				menuDrawer,
 				{ xPercent: -100, autoAlpha: 0 },
@@ -60,6 +67,7 @@
 		if (!isOpen) return;
 		if (!menuDrawer || reduceMotion()) {
 			isOpen = false;
+			void tick().then(() => menuTrigger?.focus());
 			return;
 		}
 		gsap.to(menuDrawer, {
@@ -68,7 +76,10 @@
 			autoAlpha: 0,
 			duration: 0.18,
 			ease: 'power2.in',
-			onComplete: () => (isOpen = false)
+			onComplete: () => {
+				isOpen = false;
+				void tick().then(() => menuTrigger?.focus());
+			}
 		});
 	}
 
@@ -144,13 +155,13 @@
 
 <div class="site-menu-host relative" class:site-menu-open={isOpen}>
 	<button
+		bind:this={menuTrigger}
 		class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/8 bg-white/[0.035] text-slate-200 transition hover:border-white/15 hover:bg-white/[0.06] focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/20 lg:hidden"
 		class:opacity-0={isOpen}
 		class:pointer-events-none={isOpen}
 		type="button"
 		aria-label="Open menu"
 		aria-expanded={isOpen}
-		aria-hidden={isOpen}
 		tabindex={isOpen ? -1 : 0}
 		onclick={() => (isOpen ? closeMenu() : openMenu())}
 	>
@@ -191,14 +202,13 @@
 		></button>
 		<div
 			bind:this={menuDrawer}
-			style="visibility: hidden"
 			class="site-menu-drawer fixed inset-y-0 left-0 z-[1120] w-[min(19rem,86vw)] overflow-y-auto border-r border-white/10 bg-[#0d1922] p-3 shadow-2xl lg:hidden"
 		>
 			<div class="site-menu-drawer-header">
 				<a href="/" class="site-menu-drawer-brand" onclick={closeMenu}>
 					RIFT<span>THAI</span>
 				</a>
-				<button type="button" class="site-menu-drawer-close" aria-label="ปิดเมนู" onclick={closeMenu}>
+				<button bind:this={menuCloseButton} type="button" class="site-menu-drawer-close" aria-label="ปิดเมนู" onclick={closeMenu}>
 					×
 				</button>
 			</div>
