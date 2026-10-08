@@ -1,6 +1,9 @@
 <script lang="ts">
 	import StatSlider from './StatSlider.svelte';
 	import { getDomainIcon } from '$lib/data/domainIcons';
+	import { getRarityIcon } from '$lib/data/rarityIcons';
+	import { getTypeIcons } from '$lib/data/typeIcons';
+	import IconSelect from '$lib/components/IconSelect.svelte';
 	let {
 		searchTerm = $bindable(''),
 		selectedSet = $bindable('All'),
@@ -47,7 +50,7 @@
 		if (rail) open = true;
 	});
 	let showMight = $derived(['All', 'Unit', 'Champion'].includes(selectedType));
-	let showEnergy = $derived(!['Rune', 'Token', 'Basic'].includes(selectedType));
+	let showEnergy = $derived(!['Rune', 'Token'].includes(selectedType));
 	let showGearGroup = $derived(selectedType === 'Gear');
 	let active = $derived(
 		Number(selectedSet !== 'All') +
@@ -66,6 +69,26 @@
 		if (!showGearGroup) selectedGearGroup = 'All';
 		if (ownershipOptions.length === 0) ownershipFilter = 'all';
 	});
+	let typeSelectOptions = $derived(
+		types.map((type) => ({
+			label: type === 'All' ? 'ทั้งหมด' : type,
+			value: type,
+			icons: getTypeIcons(type).map((icon) => ({
+				label: icon.label,
+				src: `/images/icons/${icon.src}`
+			}))
+		}))
+	);
+	let raritySelectOptions = $derived(
+		rarities.map((rarity) => {
+			const icon = getRarityIcon(rarity);
+			return {
+				label: rarity === 'All' ? 'ทั้งหมด' : rarity,
+				value: rarity,
+				icons: icon ? [{ label: rarity, src: icon }] : []
+			};
+		})
+	);
 	function toggle(domain: string) {
 		selectedDomains = selectedDomains.includes(domain)
 			? selectedDomains.filter((d) => d !== domain)
@@ -141,9 +164,7 @@
 			></label
 		>
 		<label
-			>ประเภท<select bind:value={selectedType}
-				>{#each types as t}<option value={t}>{t === 'All' ? 'ทั้งหมด' : t}</option>{/each}</select
-			></label
+			>ประเภท<IconSelect bind:value={selectedType} label="ประเภทการ์ด" options={typeSelectOptions} /></label
 		>
 		{#if showGearGroup}
 			<label
@@ -153,10 +174,7 @@
 			>
 		{/if}
 		<label
-			>ความหายาก<select bind:value={selectedRarity}
-				>{#each rarities as r}<option value={r}>{r === 'All' ? 'ทั้งหมด' : r}</option
-					>{/each}</select
-			></label
+			>ความหายาก<IconSelect bind:value={selectedRarity} label="ความหายาก" options={raritySelectOptions} /></label
 		>
 		{#if ownershipOptions.length > 0}
 			<label
@@ -169,8 +187,11 @@
 			<legend>Domain · เลือกได้หลายโดเมน</legend>
 			<div>
 				<button aria-pressed={selectedDomains.length === 0} onclick={() => (selectedDomains = [])}
-					>ทั้งหมด</button
-				>
+					>
+					<div class=" flex h-full items-center">
+						<p>ทั้งหมด</p>
+					</div>
+				</button>
 				{#each domains.filter((d) => d !== 'All') as d}<button
 						aria-pressed={selectedDomains.includes(d)}
 						onclick={() => toggle(d)}

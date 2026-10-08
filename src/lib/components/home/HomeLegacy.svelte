@@ -131,7 +131,10 @@
 	const cardsPerPage = 48;
 
 	let sets = $derived(['All', ...new Set(cards.map((card) => card.set_name).filter(Boolean))]);
-	let types = $derived(['All', ...new Set(cards.flatMap((card) => getCardTypeLabels(card)).filter(Boolean))]);
+	let types = $derived([
+		'All',
+		...new Set(cards.flatMap((card) => getCardTypeLabels(card)).filter((type) => type && type !== 'Basic'))
+	]);
 	let domains = $derived([
 		'All',
 		...new Set(cards.flatMap((card) => card.domains ?? []).filter(Boolean))
@@ -163,7 +166,11 @@
 					searchTokens.length === 0 || searchTokens.every((token) => searchable.includes(token));
 				const matchesSet = selectedSet === 'All' || card.set_name === selectedSet;
 				const cardTypes = getCardTypeLabels(card);
-				const matchesType = selectedType === 'All' || cardTypes.includes(selectedType);
+				const matchesType =
+					selectedType === 'All' ||
+					(selectedType === 'Rune'
+						? cardTypes.includes('Rune') || cardTypes.includes('Basic')
+						: cardTypes.includes(selectedType));
 				const isEquipment = (card.tags ?? []).includes('Equipment');
 				const isGearUnit = cardTypes.includes('Gear') && cardTypes.includes('Unit');
 				const matchesGearGroup =

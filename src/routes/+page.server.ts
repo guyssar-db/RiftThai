@@ -11,7 +11,8 @@ export const load = async ({ cookies, url }) => {
 	const canEdit = Boolean(user?.isAdmin);
 	const searchTerm = url.searchParams.get('q') ?? '';
 	const selectedSet = url.searchParams.get('set') ?? 'All';
-	const selectedType = url.searchParams.get('type') ?? 'All';
+	const requestedType = url.searchParams.get('type') ?? 'All';
+	const selectedType = requestedType === 'Basic' ? 'Rune' : requestedType;
 	const gearParam = url.searchParams.get('gear')?.toLowerCase();
 	const selectedGearGroup = gearParam === 'equipment' ? 'Equipment' : gearParam === 'unit' ? 'Unit' : 'All';
 	const selectedDomains = url.searchParams.get('domains')?.split(',').filter(Boolean) ?? [];
