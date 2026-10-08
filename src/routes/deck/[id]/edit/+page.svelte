@@ -161,7 +161,10 @@
 	];
 	const powerCode = (code: string) => code.toLowerCase().replaceAll('/', '-');
 	let sets = $derived(['All', ...new Set(cards.map((card) => card.set_name).filter(Boolean))]);
-	let types = $derived(['All', ...new Set(cards.flatMap((card) => getCardTypeLabels(card)).filter(Boolean))]);
+	let types = $derived([
+		'All',
+		...new Set(cards.flatMap((card) => getCardTypeLabels(card)).filter((type) => type && type !== 'Basic'))
+	]);
 	let allDomainValues = $derived([
 		'All',
 		...new Set(cards.flatMap((card) => card.domains ?? []).filter(Boolean))
@@ -198,7 +201,13 @@
 				const cardTypes = getCardTypeLabels(card);
 				const isEquipment = (card.tags ?? []).includes('Equipment');
 				const isGearUnit = cardTypes.includes('Gear') && cardTypes.includes('Unit');
-				if (selectedType !== 'All' && !cardTypes.includes(selectedType)) return false;
+				if (
+					selectedType !== 'All' &&
+					(selectedType === 'Rune'
+						? !cardTypes.includes('Rune') && !cardTypes.includes('Basic')
+						: !cardTypes.includes(selectedType))
+				)
+					return false;
 				if (
 					selectedType === 'Gear' &&
 					selectedGearGroup !== 'All' &&

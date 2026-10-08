@@ -58,7 +58,7 @@
 	<div class="card-grid">
 		{#each Array(12) as _}
 			<div class="flex animate-pulse flex-col gap-4">
-				<div class="aspect-[744/1039] rounded-xl border border-white/10 bg-white/5"></div>
+				<div class="aspect-744/1039 rounded-xl border border-white/10 bg-white/5"></div>
 				<div class="space-y-3 px-1">
 					<div class="h-4 w-3/4 rounded-lg bg-white/5"></div>
 					<div class="h-3 w-1/2 rounded-lg bg-white/5"></div>
@@ -71,69 +71,71 @@
 		{#each cards as card, index (card.code)}
 			{@const cardTypes = getCardTypeLabels(card)}
 			<div class="relative min-w-0">
-			<button
-				type="button"
-				class="rt-glow-card group w-full min-w-0 rounded-xl text-left transition duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/20"
-				onpointerenter={() => preloadPopupImage(card)}
-				onfocus={() => preloadPopupImage(card)}
-				onclick={() => handleOpenPopup(card)}
-				aria-label="ดูรายละเอียด {card.name_en}"
-			>
-				<div
-					class="relative flex aspect-[744/1039] w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-[0_12px_28px_rgba(0,0,0,0.28)] transition duration-200 group-hover:border-cyan-300/35 group-active:scale-[0.985]"
+				<button
+					type="button"
+					class="rt-glow-card group w-full min-w-0 rounded-xl text-left transition duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/20"
+					onpointerenter={() => preloadPopupImage(card)}
+					onfocus={() => preloadPopupImage(card)}
+					onclick={() => handleOpenPopup(card)}
+					aria-label="ดูรายละเอียด {card.name_en}"
 				>
-					{#if card.image_url}
-						{@const imageSources = getCardImageSources(card.image_url, [240, 320, 480, 744])}
-						{#key retries[card.code] ?? 0}
-						<CardImage
-							src={imageSources.fallback}
-							srcset={imageSources.fallbackSrcset}
-							sizes="(min-width: 1440px) 210px, (min-width: 1180px) 18vw, (min-width: 900px) 23vw, (min-width: 640px) 30vw, 46vw"
-							alt={card.name_en}
-							loading={index < 12 ? 'eager' : 'lazy'}
-							decoding="async"
-							fetchpriority={index < 2 ? 'high' : 'auto'}
-							onLoaded={() => markImageLoaded(card.code)}
-							onFailed={() => markImageFailed(card.code)}
-							class="h-full w-full object-cover transition duration-500 {loadedImages.has(card.code)
-								? 'opacity-100'
-								: 'opacity-0'} {usesLandscapeCardFrame(card)
-								? 'battlefield-rotated'
-								: 'group-hover:scale-105'}"
-						/>
-						{/key}
-						{#if !loadedImages.has(card.code) && !failedImages.has(card.code)}
+					<div
+						class="relative flex aspect-744/1039 w-full items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-slate-900 shadow-[0_12px_28px_rgba(0,0,0,0.28)] transition duration-200 group-hover:border-cyan-300/35 group-active:scale-[0.985]"
+					>
+						{#if card.image_url}
+							{@const imageSources = getCardImageSources(card.image_url, [240, 320, 480, 744])}
+							{#key retries[card.code] ?? 0}
+								<CardImage
+									src={imageSources.fallback}
+									srcset={imageSources.fallbackSrcset}
+									sizes="(min-width: 1440px) 210px, (min-width: 1180px) 18vw, (min-width: 900px) 23vw, (min-width: 640px) 30vw, 46vw"
+									alt={card.name_en}
+									loading={index < 12 ? 'eager' : 'lazy'}
+									decoding="async"
+									fetchpriority={index < 2 ? 'high' : 'auto'}
+									onLoaded={() => markImageLoaded(card.code)}
+									onFailed={() => markImageFailed(card.code)}
+									class="h-full w-full object-cover transition duration-500 {loadedImages.has(
+										card.code
+									)
+										? 'opacity-100'
+										: 'opacity-0'} {usesLandscapeCardFrame(card)
+										? 'battlefield-rotated'
+										: 'group-hover:scale-105'}"
+								/>
+							{/key}
+							{#if !loadedImages.has(card.code) && !failedImages.has(card.code)}
+								<div
+									class="absolute inset-0 z-10 grid place-items-center bg-linear-to-br from-slate-800 to-slate-900"
+									role="status"
+									aria-label="กำลังโหลดรูปการ์ด"
+								>
+									<span
+										class="h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"
+									></span>
+								</div>
+							{:else if failedImages.has(card.code)}
+								<div
+									class="absolute inset-0 z-10 grid place-items-center bg-slate-900/85 px-3 text-center text-[10px] font-black tracking-widest text-slate-500 uppercase"
+								>
+									โหลดรูปไม่สำเร็จ
+								</div>
+							{/if}
+						{:else}
 							<div
-								class="absolute inset-0 z-10 grid place-items-center bg-gradient-to-br from-slate-800 to-slate-900"
-								role="status"
-								aria-label="กำลังโหลดรูปการ์ด"
+								class="px-3 text-center text-[10px] font-black tracking-widest text-slate-600 uppercase"
 							>
-								<span
-									class="h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"
-								></span>
-							</div>
-						{:else if failedImages.has(card.code)}
-							<div
-								class="absolute inset-0 z-10 grid place-items-center bg-slate-900/85 px-3 text-center text-[10px] font-black tracking-widest text-slate-500 uppercase"
-							>
-								โหลดรูปไม่สำเร็จ
+								No Image
 							</div>
 						{/if}
-					{:else}
+
 						<div
-							class="px-3 text-center text-[10px] font-black tracking-widest text-slate-600 uppercase"
+							class="absolute top-2.5 rounded-lg border border-white/10 bg-slate-950/82 px-2 py-1 text-[9px] font-bold tracking-wider text-slate-200 backdrop-blur transition group-hover:border-cyan-300/25 group-hover:text-cyan-100"
 						>
-							No Image
+							{card.code}
 						</div>
-					{/if}
 
-					<div
-						class="absolute top-2.5 right-2.5 rounded-lg border border-white/10 bg-slate-950/82 px-2 py-1 text-[9px] font-bold tracking-wider text-slate-200 backdrop-blur transition group-hover:border-cyan-300/25 group-hover:text-cyan-100"
-					>
-						{card.code}
-					</div>
-
-					{#if userCollection}
+						<!-- {#if userCollection}
 						{@const ownedNormal = userCollection[card.code] ?? 0}
 						{@const ownedFoil = userCollection[card.code + '_foil'] ?? 0}
 						{@const owned = ownedNormal + ownedFoil}
@@ -149,47 +151,55 @@
 							<span class={ownedFoil > 0 ? 'font-extrabold text-pink-400' : ''}>F: {ownedFoil}</span
 							>
 						</div>
-					{/if}
+					{/if} -->
 
-					{#if getRarityIcon(card.rarity)}
 						<div
-							class="absolute top-2.5 left-2.5 grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-slate-950/82 shadow-lg backdrop-blur"
+							class=" absolute bottom-0 h-18 w-full bg-linear-to-t from-black via-black/80 to-black/0 p-4"
 						>
-							<img
-								src={getRarityIcon(card.rarity) ?? ''}
-								class="h-5 w-5 object-contain"
-								alt="{card.rarity} rarity"
-							/>
+							<div class="min-w-0 px-0.5">
+								<h3
+									class="flex items-center truncate text-sm font-bold tracking-tight text-slate-100 transition group-hover:text-cyan-200 sm:text-[15px]"
+								>
+									{#if getRarityIcon(card.rarity)}
+										<div
+											class="grid place-items-center mr-1"
+										>
+											<img
+												src={getRarityIcon(card.rarity) ?? ''}
+												class="h-5 w-5 object-contain"
+												alt="{card.rarity} rarity"
+											/>
+										</div>
+									{/if}
+									{card.name_en}
+								</h3>
+								<!-- {#if card.name_th && card.name_th !== card.name_en}
+									<p class="mt-0.5 truncate text-[11px] text-slate-500 sm:text-xs">{card.name_th}</p>
+								{/if} -->
+								<div
+									class="mt-1.5 flex min-w-0 items-center gap-1.5 text-[10px] font-semibold tracking-wide text-slate-500 sm:text-[11px]"
+								>
+									{#each getCardTypeIcons(card) as typeIcon}
+										<img
+											src="/images/icons/{typeIcon.src}"
+											class="h-3.5 w-3.5 shrink-0 object-contain opacity-70"
+											alt="{typeIcon.label} type"
+										/>
+									{/each}
+									<span class="truncate">{cardTypes.join(' · ')}</span>
+								</div>
+							</div>
 						</div>
-					{/if}
-				</div>
-
-				<div class="mt-3 min-w-0 px-0.5">
-					<h3
-						class="truncate text-sm font-bold tracking-tight text-slate-100 transition group-hover:text-cyan-200 sm:text-[15px]"
-					>
-						{card.name_en}
-					</h3>
-					{#if card.name_th && card.name_th !== card.name_en}
-						<p class="mt-0.5 truncate text-[11px] text-slate-500 sm:text-xs">{card.name_th}</p>
-					{/if}
-					<div
-						class="mt-1.5 flex min-w-0 items-center gap-1.5 text-[10px] font-semibold tracking-wide text-slate-500 sm:text-[11px]"
-					>
-						{#each getCardTypeIcons(card) as typeIcon}
-							<img
-								src="/images/icons/{typeIcon.src}"
-								class="h-3.5 w-3.5 shrink-0 object-contain opacity-70"
-								alt="{typeIcon.label} type"
-							/>
-						{/each}
-						<span class="truncate">{cardTypes.join(' · ')}</span>
 					</div>
-				</div>
-			</button>
-			{#if failedImages.has(card.code)}
-				<button type="button" class="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 rounded-lg border border-white/20 bg-slate-800 px-4 py-2 text-xs text-white" onclick={() => retryImage(card.code)} aria-label="ลองโหลดรูป {card.name_en} ใหม่">ลองใหม่</button>
-			{/if}
+				</button>
+				{#if failedImages.has(card.code)}
+					<button
+						type="button"
+						class="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 rounded-lg border border-white/20 bg-slate-800 px-4 py-2 text-xs text-white"
+						onclick={() => retryImage(card.code)}
+						aria-label="ลองโหลดรูป {card.name_en} ใหม่">ลองใหม่</button
+					>
+				{/if}
 			</div>
 		{/each}
 	</div>
