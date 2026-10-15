@@ -19,6 +19,7 @@
 		ownershipOptions = [],
 		ownershipDisabled = false,
 		rail = false,
+		availableTypes = undefined,
 		sets,
 		types,
 		domains,
@@ -39,6 +40,7 @@
 		ownershipOptions?: { label: string; value: string }[];
 		ownershipDisabled?: boolean;
 		rail?: boolean;
+		availableTypes?: string[];
 		sets: string[];
 		types: string[];
 		domains: string[];
@@ -68,9 +70,10 @@
 		if (!showEnergy) selectedEnergy = null;
 		if (!showGearGroup) selectedGearGroup = 'All';
 		if (ownershipOptions.length === 0) ownershipFilter = 'all';
+		if (availableTypes && !availableTypes.includes(selectedType)) selectedType = 'All';
 	});
 	let typeSelectOptions = $derived(
-		types.map((type) => ({
+		(availableTypes ?? types).map((type) => ({
 			label: type === 'All' ? 'ทั้งหมด' : type,
 			value: type,
 			icons: getTypeIcons(type).map((icon) => ({

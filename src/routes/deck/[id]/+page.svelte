@@ -7,6 +7,7 @@
 	import PlaytestModal from '$lib/components/PlaytestModal.svelte';
 	import CardModal from '$lib/components/CardModal.svelte';
 	import { getDomainIcon } from '$lib/data/domainIcons';
+	import { getTypeIcon } from '$lib/data/typeIcons';
 	import type { Card } from '$lib/types/card';
 	import { getCardImageUrl } from '$lib/utils/cardImages';
 	import { usesLandscapeCardFrame } from '$lib/utils/cardPresentation';
@@ -248,13 +249,11 @@
 <div class="rt-page-shell min-h-dvh pb-16 text-slate-100">
 	<div class="mesh-gradient"></div>
 
-	<nav
-		class="sticky top-0 z-50 border-b border-cyan-300/10 bg-[#070a12]/82 shadow-[0_14px_42px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
-	>
+	<nav class="sticky top-0 z-50 border-b border-amber-200/10 bg-[#0a0e15]/90 backdrop-blur-xl">
 		<div class="rt-container flex items-center justify-between gap-4 py-3">
 			<a
 				href="/deck"
-				class="shrink-0 border-l-2 border-cyan-300/60 pl-3 text-xl font-black text-white uppercase italic"
+				class="shrink-0 border-l-2 border-amber-200/60 pl-3 text-xl font-black text-white uppercase italic"
 			>
 				Rift<span class="rt-brand-accent">Thai</span>
 			</a>
@@ -262,140 +261,149 @@
 		</div>
 	</nav>
 
-	<main class="rt-container py-6 sm:py-10">
+	<main class="rt-container py-5 sm:py-8">
 		{#if selectedDeck}
-			<header class="rt-panel rt-topline rt-scanline relative mb-6 overflow-hidden rounded-xl">
-				<div
-					class="pointer-events-none absolute -top-20 -right-12 h-72 w-72 rounded-full bg-cyan-300/12 blur-3xl"
-				></div>
-				<div class="rt-rule-line relative p-5 pl-7 sm:p-7 sm:pl-9">
-					<div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-						<div class="min-w-0">
-							<p class="rt-kicker mb-3">รายละเอียดเด็ค</p>
-							<h1 class="rt-heading text-4xl break-words uppercase italic sm:text-6xl">
-								{getDeckTitle(selectedDeck)}
-							</h1>
-							<p class="rt-copy mt-3 text-sm">
-								Updated {new Date(selectedDeck.updatedAt).toLocaleDateString()} · {stats.total} cards
-								{#if selectedDeck.owner}
-									· Creator: <a
-										href="/profile/{selectedDeck.owner.profileSlug}"
-										class="font-bold text-cyan-300 hover:underline"
-										>{selectedDeck.owner.displayName}</a
-									>
-								{/if}
+			<header
+				class="mb-4 overflow-hidden rounded-2xl border border-white/10 border-t-[#b8aa86]/70 bg-[#101820] shadow-[0_16px_44px_rgba(0,0,0,0.16)]"
+			>
+				<div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+					<div class="min-w-0">
+						<div class="mb-1 flex flex-wrap items-center gap-2">
+							<p class="text-[10px] font-black tracking-[0.2em] text-[#b8aa86] uppercase">
+								รายละเอียดเด็ค
 							</p>
-							{#if isLocal && (selectedDeck.source !== 'online' || !selectedDeck.onlineId)}
-								<div
-									class="mt-4 rounded-lg border border-amber-300/20 bg-amber-400/5 p-3.5 text-xs text-amber-200"
+							<span class="text-[10px] text-slate-600">/</span>
+							<p class="text-[10px] font-semibold text-slate-400">{stats.total} ใบ</p>
+						</div>
+						<h1 class="text-3xl font-black tracking-tight break-words text-slate-100 sm:text-4xl">
+							{getDeckTitle(selectedDeck)}
+						</h1>
+						<p class="mt-1.5 text-xs leading-relaxed text-slate-400 sm:text-sm">
+							อัปเดต {new Date(selectedDeck.updatedAt).toLocaleDateString('th-TH')} · {stats.total} ใบ
+							{#if selectedDeck.owner}
+								· สร้างโดย <a
+									href="/profile/{selectedDeck.owner.profileSlug}"
+									class="font-bold text-slate-200 hover:text-[#d3c7a8] hover:underline"
+									>{selectedDeck.owner.displayName}</a
 								>
-									<div class="flex items-start gap-2.5">
-										<svg
-											class="mt-0.5 h-[18px] w-[18px] shrink-0 text-amber-400"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-											stroke-width="2"
+							{/if}
+						</p>
+						{#if isLocal && (selectedDeck.source !== 'online' || !selectedDeck.onlineId)}
+							<div
+								class="mt-4 rounded-lg border border-amber-300/20 bg-amber-400/5 p-3.5 text-xs text-amber-200"
+							>
+								<div class="flex items-start gap-2.5">
+									<svg
+										class="mt-0.5 h-[18px] w-[18px] shrink-0 text-amber-400"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+										/>
+									</svg>
+									<div>
+										<span class="mb-1 block font-black tracking-wider uppercase"
+											>เด็คในเครื่อง (บันทึกเฉพาะอุปกรณ์นี้)</span
 										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-											/>
-										</svg>
-										<div>
-											<span class="mb-1 block font-black tracking-wider uppercase"
-												>เด็คในเครื่อง (บันทึกเฉพาะอุปกรณ์นี้)</span
-											>
-											คนอื่นจะไม่สามารถเข้าดูลิงก์นี้ได้ หากต้องการแชร์ให้เพื่อน กรุณาไปที่
-											<a href="/deck" class="font-bold text-white underline hover:text-cyan-300"
-												>คลังเด็ค</a
-											>
-											แล้วกดปุ่มสามจุด (&vellip;) เพื่อ <strong>บันทึกออนไลน์</strong>
-											และตั้งค่าเป็น <strong>สาธารณะ</strong>
-										</div>
+										คนอื่นจะไม่สามารถเข้าดูลิงก์นี้ได้ หากต้องการแชร์ให้เพื่อน กรุณาไปที่
+										<a href="/deck" class="font-bold text-white underline hover:text-[#d3c7a8]"
+											>คลังเด็ค</a
+										>
+										แล้วกดปุ่มสามจุด (&vellip;) เพื่อ <strong>บันทึกออนไลน์</strong>
+										และตั้งค่าเป็น <strong>สาธารณะ</strong>
 									</div>
 								</div>
-							{:else if selectedDeck.onlineId}
-								<div class="mt-4 flex flex-wrap gap-2">
-									{#if selectedDeck.hidden}
-										<span
-											class="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-black tracking-widest text-rose-300 uppercase"
-										>
-											<span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>
-											Hidden (ซ่อนโดย Admin)
-										</span>
-									{/if}
-									{#if selectedDeck.visibility === 'public'}
-										<span
-											class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black tracking-widest text-emerald-300 uppercase"
-										>
-											<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400"></span>
-											Public (สาธารณะ)
-										</span>
-									{:else if selectedDeck.visibility === 'unlisted'}
-										<span
-											class="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-black tracking-widest text-cyan-300 uppercase"
-										>
-											<span class="h-1.5 w-1.5 rounded-full bg-cyan-400"></span>
-											Unlisted (ไม่เป็นสาธารณะ - ดูได้เฉพาะผู้มีลิงก์)
-										</span>
-									{:else}
-										<span
-											class="inline-flex items-center gap-1.5 rounded-full border border-slate-500/20 bg-slate-500/10 px-2.5 py-1 text-[10px] font-black tracking-widest text-slate-400 uppercase"
-										>
-											<span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-											Private (ส่วนตัว)
-										</span>
-									{/if}
-								</div>
-							{/if}
-						</div>
-						<div class="flex flex-wrap gap-2">
-							<a
-								href="/deck"
-								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
-							>
-								กลับ
-							</a>
-							{#if hasDeck}
-								<button
-									onclick={openPlaytest}
-									class="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white"
-								>
-									Playtest
-								</button>
-							{/if}
-							{#if isLocal}
-								<a href="/deck/{selectedDeck.id}/edit" class="rt-action">แก้ไขเด็ค</a>
-							{:else}
-								<button onclick={cloneDeckToLocal} class="rt-action cursor-pointer"
-									>คัดลอกไปยังเด็คของฉัน</button
-								>
-							{/if}
-							{#if currentUser?.isAdmin && selectedDeck.onlineId}
-								<button
-									onclick={toggleDeckHidden}
-									class="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 text-xs font-black tracking-widest text-amber-200 uppercase transition hover:bg-amber-500/20"
-								>
-									{selectedDeck.hidden ? 'Unhide Deck' : 'Hide Deck'}
-								</button>
-								<button
-									onclick={deleteDeckAdmin}
-									class="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-red-500/20 bg-red-500/10 px-4 text-xs font-black tracking-widest text-red-200 uppercase transition hover:bg-red-500/20"
-								>
-									ลบเด็ค (ผู้ดูแล)
-								</button>
-								{#if selectedDeck.owner?.id}
-									<button
-										onclick={banOwner}
-										class="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-rose-600/20 bg-rose-600/10 px-4 text-xs font-black tracking-widest text-rose-200 uppercase transition hover:bg-rose-600/20"
+							</div>
+						{:else if selectedDeck.onlineId}
+							<div class="mt-4 flex flex-wrap gap-2">
+								{#if selectedDeck.hidden}
+									<span
+										class="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-black tracking-widest text-rose-300 uppercase"
 									>
-										Ban Owner
-									</button>
+										<span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>
+										Hidden (ซ่อนโดย Admin)
+									</span>
 								{/if}
+								{#if selectedDeck.visibility === 'public'}
+									<span
+										class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-black tracking-widest text-emerald-300 uppercase"
+									>
+										<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400"></span>
+										Public (สาธารณะ)
+									</span>
+								{:else if selectedDeck.visibility === 'unlisted'}
+									<span
+										class="inline-flex items-center gap-1.5 rounded-full border border-slate-400/20 bg-slate-950/40 px-2.5 py-1 text-[10px] font-black tracking-widest text-slate-300 uppercase"
+									>
+										<span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+										Unlisted (ไม่เป็นสาธารณะ - ดูได้เฉพาะผู้มีลิงก์)
+									</span>
+								{:else}
+									<span
+										class="inline-flex items-center gap-1.5 rounded-full border border-slate-500/20 bg-slate-500/10 px-2.5 py-1 text-[10px] font-black tracking-widest text-slate-400 uppercase"
+									>
+										<span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+										Private (ส่วนตัว)
+									</span>
+								{/if}
+							</div>
+						{/if}
+					</div>
+					<div class="flex flex-wrap gap-2 lg:justify-end">
+						<a
+							href="/deck"
+							class="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-3 text-xs font-bold text-slate-200 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
+						>
+							กลับ
+						</a>
+						{#if hasDeck}
+							<button
+								onclick={openPlaytest}
+								class="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border border-[#b8aa86]/35 bg-[#b8aa86]/10 px-3 text-xs font-bold text-[#d3c7a8] transition hover:bg-[#b8aa86]/15 hover:text-white"
+							>
+								Playtest
+							</button>
+						{/if}
+						{#if isLocal}
+							<a
+								href="/deck/{selectedDeck.id}/edit"
+								class="inline-flex min-h-10 items-center justify-center rounded-lg bg-[#b8aa86] px-4 text-xs font-black text-[#151a1d] transition hover:bg-[#c8bd9e]"
+								>แก้ไขเด็ค</a
+							>
+						{:else}
+							<button
+								onclick={cloneDeckToLocal}
+								class="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg bg-[#b8aa86] px-4 text-xs font-black text-[#151a1d] transition hover:bg-[#c8bd9e]"
+								>คัดลอกไปยังเด็คของฉัน</button
+							>
+						{/if}
+						{#if currentUser?.isAdmin && selectedDeck.onlineId}
+							<button
+								onclick={toggleDeckHidden}
+								class="inline-flex min-h-10 cursor-pointer items-center rounded-lg border border-amber-200/20 bg-amber-300/8 px-3 text-xs font-bold text-amber-100 transition hover:bg-amber-300/15"
+							>
+								{selectedDeck.hidden ? 'Unhide Deck' : 'Hide Deck'}
+							</button>
+							<button
+								onclick={deleteDeckAdmin}
+								class="inline-flex min-h-10 cursor-pointer items-center rounded-lg border border-rose-200/20 bg-rose-300/8 px-3 text-xs font-bold text-rose-100 transition hover:bg-rose-300/15"
+							>
+								ลบเด็ค (ผู้ดูแล)
+							</button>
+							{#if selectedDeck.owner?.id}
+								<button
+									onclick={banOwner}
+									class="inline-flex min-h-10 cursor-pointer items-center rounded-lg border border-rose-200/20 bg-rose-300/8 px-3 text-xs font-bold text-rose-100 transition hover:bg-rose-300/15"
+								>
+									Ban Owner
+								</button>
 							{/if}
-						</div>
+						{/if}
 					</div>
 				</div>
 			</header>
@@ -492,8 +500,8 @@
 
 				<section class="mb-6 grid gap-5 lg:grid-cols-3">
 					{@render ChartPanel('Cost Curve', stats.costs)}
-					{@render ChartPanel('Card Types', stats.types)}
-					{@render ChartPanel('Main Domains', stats.domains, true)}
+					{@render ChartPanel('Card Types', stats.types, 'type')}
+					{@render ChartPanel('Main Domains', stats.domains, 'domain')}
 				</section>
 
 				<section class="mb-6 grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
@@ -553,30 +561,40 @@
 	<PlaytestModal deck={selectedDeck} {cards} isOpen={isPlaytestOpen} onClose={closePlaytest} />
 {/if}
 
-{#snippet ChartPanel(title: string, items: { label: string; count: number }[], icons = false)}
+{#snippet ChartPanel(
+	title: string,
+	items: { label: string; count: number }[],
+	iconType: 'domain' | 'type' | null = null
+)}
 	<div class="rt-panel rounded-xl p-5">
 		<h2 class="mb-4 text-lg font-black text-white uppercase italic">{title}</h2>
 		<div class="space-y-3">
 			{#each items as item}
+				{@const iconUrl =
+					iconType === 'type'
+						? getTypeIcon(item.label)
+						: iconType === 'domain'
+							? getDomainIcon(item.label)
+							: null}
 				<div>
 					<div
 						class="mb-1 flex items-center justify-between gap-3 text-xs font-black tracking-widest uppercase"
 					>
 						<span class="flex min-w-0 items-center gap-2 text-slate-300">
-							{#if icons && getDomainIcon(item.label)}
+							{#if iconUrl}
 								<img
-									src={getDomainIcon(item.label) ?? ''}
+									src={iconUrl}
 									class="h-4 w-4 object-contain"
 									alt={item.label}
 								/>
 							{/if}
 							<span class="truncate">{item.label}</span>
 						</span>
-						<span class="text-cyan-200">{item.count}</span>
+						<span class="text-[#d3c7a8]">{item.count}</span>
 					</div>
 					<div class="h-2 overflow-hidden rounded-sm bg-black/30">
 						<div
-							class="h-full bg-cyan-300"
+							class="h-full bg-[#b8aa86]"
 							style="width: {(item.count / getMaxCount(items)) * 100}%"
 						></div>
 					</div>
@@ -603,8 +621,8 @@
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<article
 				class={horizontal
-					? `group grid min-h-32 cursor-pointer grid-cols-[8.5rem_1fr] gap-3 rounded-lg border p-2 transition hover:scale-[1.01] hover:border-cyan-300/35 sm:grid-cols-[10.5rem_1fr] ${isMissing ? 'border-amber-500/30 bg-slate-950/80 shadow-[inset_0_0_12px_rgba(245,158,11,0.03)]' : 'border-white/10 bg-slate-950/70'}`
-					: `group min-w-0 cursor-pointer rounded-lg border p-2 transition hover:scale-[1.01] hover:border-cyan-300/35 ${isMissing ? 'border-amber-500/30 bg-slate-950/80 shadow-[inset_0_0_12px_rgba(245,158,11,0.03)]' : 'border-white/10 bg-slate-950/70'}`}
+					? `group grid min-h-32 cursor-pointer grid-cols-[8.5rem_1fr] gap-3 rounded-lg border p-2 transition hover:border-white/20 sm:grid-cols-[10.5rem_1fr] ${isMissing ? 'border-amber-500/30 bg-slate-950/80 shadow-[inset_0_0_12px_rgba(245,158,11,0.03)]' : 'border-white/10 bg-slate-950/70'}`
+					: `group min-w-0 cursor-pointer rounded-lg border p-2 transition hover:border-white/20 ${isMissing ? 'border-amber-500/30 bg-slate-950/80 shadow-[inset_0_0_12px_rgba(245,158,11,0.03)]' : 'border-white/10 bg-slate-950/70'}`}
 				onclick={() => openCardPopup(item.card)}
 			>
 				<div class="relative overflow-hidden rounded-md bg-slate-950">
@@ -638,7 +656,7 @@
 							<div></div>
 						{/if}
 						<div
-							class="rounded-md bg-cyan-300 px-1.5 py-0.5 text-[10px] font-black text-slate-950 shadow-lg"
+							class="rounded-md bg-[#b8aa86] px-1.5 py-0.5 text-[10px] font-black text-[#151a1d] shadow-lg"
 						>
 							x{item.quantity}
 						</div>

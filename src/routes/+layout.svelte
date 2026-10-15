@@ -276,9 +276,7 @@
 <div
 	class="rt-app-frame min-h-dvh lg:grid"
 	class:rt-sidebar-collapsed={$desktopSidebarCollapsed}
-	class:rt-library-theme={pathname !== '/' &&
-		!pathname.startsWith('/admin') &&
-		!pathname.startsWith('/api')}
+	class:rt-library-theme={pathname !== '/' && !pathname.startsWith('/api')}
 >
 	<PcSideNav active={sideNavActive} />
 	<div class="min-w-0">
