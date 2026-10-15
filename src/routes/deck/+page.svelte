@@ -63,29 +63,16 @@
 	let actionNotice = $state<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 	let importCode = $state('');
 	let importError = $state('');
+	let exportRequestHandled = $state(false);
+	let deckMenuOpensUp = $state(false);
+	let deckMenuMaxHeight = $state('70dvh');
 	let savingDeckId = $state('');
 	let publishingDeckId = $state('');
 	let deletingDeckId = $state('');
 	let deleteConfirmDeckId = $state('');
 	let visibilityConfirmDeckId = $state('');
 	let visibilityConfirmTarget = $state<'private' | 'public' | ''>('');
-	let exportLayout = $state<'portrait' | 'landscape'>('portrait');
 	const imageCache = new Map<string, Promise<HTMLImageElement | null>>();
-
-	$effect(() => {
-		if (!browser) return;
-		const stored = localStorage.getItem('riftthai-export-layout');
-		if (stored === 'portrait' || stored === 'landscape') {
-			exportLayout = stored;
-		} else {
-			void loadPreferredDeckSettings();
-		}
-	});
-
-	$effect(() => {
-		if (!browser) return;
-		localStorage.setItem('riftthai-export-layout', exportLayout);
-	});
 
 	let selectedDeck = $derived(collection.decks.find((deck) => deck.id === selectedDeckId) ?? null);
 	let deleteConfirmDeck = $derived(
@@ -126,6 +113,16 @@
 		void loadOnlineDecks(nextCollection);
 	});
 
+	$effect(() => {
+		if (!browser || isDeckLoading || exportRequestHandled) return;
+		const requestedDeckId = new URLSearchParams(window.location.search).get('exportDeck');
+		if (!requestedDeckId || !collection.decks.some((deck) => deck.id === requestedDeckId)) return;
+
+		exportRequestHandled = true;
+		window.history.replaceState(window.history.state, '', window.location.pathname + window.location.hash);
+		void runDeckAction(requestedDeckId, 'preview');
+	});
+
 	async function loadOnlineDecks(baseCollection: DeckCollection) {
 		try {
 			const session = await getAuthSession<{ user?: { id: string } | null }>();
@@ -163,18 +160,6 @@
 		}
 	}
 
-	async function loadPreferredDeckSettings() {
-		try {
-			const session = await getAuthSession<{
-				user?: { settings?: { defaultExportLayout?: string } };
-			}>();
-			const layout = session.user?.settings?.defaultExportLayout;
-			if (layout === 'portrait' || layout === 'landscape') exportLayout = layout;
-		} catch {
-			// Deck exports keep the built-in portrait default if account settings are unavailable.
-		}
-	}
-
 	function openDeck(deckId: string) {
 		selectedDeckId = deckId;
 		isDeckDetailOpen = true;
@@ -185,8 +170,27 @@
 		shareCopied = false;
 	}
 
-	function toggleDeckMenu(deckId: string) {
-		openDeckMenuId = openDeckMenuId === deckId ? '' : deckId;
+	function toggleDeckMenu(deckId: string, trigger: HTMLButtonElement) {
+		if (openDeckMenuId === deckId) {
+			openDeckMenuId = '';
+			return;
+		}
+
+		openDeckMenuId = deckId;
+		const bounds = trigger.getBoundingClientRect();
+		// The menu is anchored to a padded action row, so leave room for its
+		// top/bottom gaps as well as a small viewport margin.
+		const availableAbove = Math.max(0, bounds.top - 36);
+		const availableBelow = Math.max(0, window.innerHeight - bounds.bottom - 20);
+		const maxViewportHeight = window.innerHeight * 0.7;
+		const menuDeck = collection.decks.find((deck) => deck.id === deckId);
+		const estimatedMenuHeight = menuDeck && isOnlineDeck(menuDeck) ? 320 : 264;
+		deckMenuOpensUp =
+			availableBelow < Math.min(estimatedMenuHeight, maxViewportHeight) &&
+			availableAbove > availableBelow;
+		deckMenuMaxHeight = `${Math.floor(
+			Math.min(maxViewportHeight, deckMenuOpensUp ? availableAbove : availableBelow)
+		)}px`;
 	}
 
 	async function runDeckAction(deckId: string, action: 'preview' | 'download' | 'share') {
@@ -563,95 +567,119 @@
 		}
 	}
 
-	async function changeLayout(layout: 'portrait' | 'landscape') {
-		if (exportLayout === layout) return;
-		exportLayout = layout;
-		await previewPng();
-	}
-
 	async function buildExportCanvas() {
 		const canvas = document.createElement('canvas');
-		const isLandscape = exportLayout === 'landscape';
-		const width = isLandscape ? 2000 : 1600;
-		const cardWidth = 132;
-		const cardHeight = 184;
-		const columns = 8;
-		const topCardColumns = 4;
+		const isLandscape = true;
+		const width = isLandscape ? 2400 : 1600;
+		const cardWidth = isLandscape ? 154 : 176;
+		const cardHeight = isLandscape ? 214 : 246;
+		const columns = isLandscape ? 8 : 7;
 		const legendChampionCards = getLegendChampionCards();
+		const contentWidth = width - 96;
+		const splitWidth = Math.floor((contentWidth - 24) / 2);
+		const topY = 210;
+		const statsHeight = 230;
+		const sectionGap = 24;
+		const exportLeftWidth = 700;
+		const exportRightWidth = contentWidth - exportLeftWidth - sectionGap;
+		const exportRightX = 48 + exportLeftWidth + sectionGap;
+		const exportMainColumns = 8;
+		const exportSideboardColumns = 8;
+		const exportBattlefieldColumns = 1;
+		const exportLegendCardWidth = 250;
+		const exportLegendCardHeight = 350;
+		const exportRuneCardWidth = 190;
+		const exportRuneCardHeight = 264;
 
-		let height = 1220;
+		let height = 1100;
 		if (isLandscape) {
-			const legendRows = getSectionRows(legendChampionCards, 2);
-			const legendHeight = legendChampionCards.length > 0 ? 46 + 22 + legendRows * 226 + 34 : 0;
-			const row1EndY = 210 + Math.max(230, legendHeight);
-
-			const battlefieldRows = getSectionRows(zones.battlefields, 4);
-			const battlefieldHeight =
-				zones.battlefields.length > 0 ? 46 + 22 + battlefieldRows * 192 + 34 : 0;
-
-			const runeRows = getSectionRows(zones.runes, 5);
-			const runeHeight = zones.runes.length > 0 ? 46 + 22 + runeRows * 226 + 34 : 0;
-
-			const row2EndY = row1EndY + Math.max(battlefieldHeight, runeHeight);
-
-			const mainRows = getSectionRows(zones.main, 10);
-			const mainHeight = zones.main.length > 0 ? 46 + 22 + mainRows * 226 + 34 : 0;
-			let row3EndY = row2EndY + mainHeight;
-
-			let bottomHeight = 0;
-			const bottomSections = [];
-			if (sideboardCards.length > 0)
-				bottomSections.push({ title: 'Sideboard', cards: sideboardCards });
-			if (zones.tokens.length > 0)
-				bottomSections.push({ title: 'การ์ด Token', cards: zones.tokens });
-			if (zones.other.length > 0) bottomSections.push({ title: 'การ์ดอื่นๆ', cards: zones.other });
-
+			const legendHeight = getExportSectionHeight(
+				legendChampionCards,
+				2,
+				exportLegendCardWidth,
+				exportLegendCardHeight,
+				false,
+				exportLeftWidth
+			);
+			const runeHeight = getExportSectionHeight(
+				zones.runes,
+				3,
+				exportRuneCardWidth,
+				exportRuneCardHeight,
+				false,
+				exportLeftWidth
+			);
+			const mainHeight = getExportSectionHeight(
+				zones.main,
+				exportMainColumns,
+				cardWidth,
+				cardHeight,
+				false,
+				exportRightWidth
+			);
+			const battlefieldHeight = getExportSectionHeight(
+				zones.battlefields,
+				exportBattlefieldColumns,
+				cardWidth,
+				cardHeight,
+				true,
+				exportLeftWidth
+			);
+			const sideboardHeight = getExportSectionHeight(
+				sideboardCards,
+				exportSideboardColumns,
+				cardWidth,
+				cardHeight,
+				false,
+				exportRightWidth
+			);
+			const leftTopHeight =
+				legendHeight + (legendHeight > 0 && runeHeight > 0 ? sectionGap : 0) + runeHeight;
+			const bottomY = topY + Math.max(leftTopHeight, mainHeight) + sectionGap;
+			const bottomEndY = bottomY + Math.max(battlefieldHeight, sideboardHeight);
+			height = Math.max(1100, bottomEndY + 50);
+		} else {
+			const heroLeftWidth = 520;
+			const heroRightX = 48 + heroLeftWidth + sectionGap;
+			const heroRightWidth = contentWidth - heroLeftWidth - sectionGap;
+			const heroEndY = Math.max(
+				getExportSectionHeight(legendChampionCards, 2, cardWidth, cardHeight, false, heroLeftWidth),
+				getExportSectionHeight(zones.battlefields, 3, cardWidth, cardHeight, true, heroRightWidth)
+			);
+			const mainY = topY + heroEndY + sectionGap;
+			const mainHeight = getExportSectionHeight(
+				zones.main,
+				columns,
+				cardWidth,
+				cardHeight,
+				false,
+				contentWidth
+			);
+			const lowerY = mainY + mainHeight + (mainHeight > 0 ? sectionGap : 0);
+			const bottomSections = [
+				...(zones.runes.length > 0 ? [{ title: 'Rune Deck', cards: zones.runes }] : []),
+				...(sideboardCards.length > 0 ? [{ title: 'Sideboard', cards: sideboardCards }] : []),
+				...(zones.tokens.length > 0 ? [{ title: 'การ์ด Token', cards: zones.tokens }] : []),
+				...(zones.other.length > 0 ? [{ title: 'การ์ดอื่นๆ', cards: zones.other }] : [])
+			];
+			let bottomEndY = lowerY;
 			for (let i = 0; i < bottomSections.length; i += 2) {
 				const left = bottomSections[i];
 				const right = bottomSections[i + 1];
-				if (left && right) {
-					const leftRows = getSectionRows(left.cards, 5);
-					const leftHeight = 46 + 22 + leftRows * 226 + 34;
-					const rightRows = getSectionRows(right.cards, 5);
-					const rightHeight = 46 + 22 + rightRows * 226 + 34;
-					bottomHeight += Math.max(leftHeight, rightHeight);
-				} else if (left) {
-					const leftRows = getSectionRows(left.cards, 10);
-					const leftHeight = 46 + 22 + leftRows * 226 + 34;
-					bottomHeight += leftHeight;
-				}
+				const leftHeight = getExportSectionHeight(
+					left.cards,
+					3,
+					cardWidth,
+					cardHeight,
+					false,
+					splitWidth
+				);
+				const rightHeight = right
+					? getExportSectionHeight(right.cards, 3, cardWidth, cardHeight, false, splitWidth)
+					: 0;
+				bottomEndY += Math.max(leftHeight, rightHeight) + sectionGap;
 			}
-			const bottomPadding = 96;
-			height = Math.max(1120, row3EndY + bottomHeight + bottomPadding);
-		} else {
-			const topSectionRows = Math.max(
-				getSectionRows(legendChampionCards, 2),
-				getSectionRows(zones.battlefields, topCardColumns)
-			);
-			const sectionRows =
-				getSectionRows(zones.main, columns) +
-				getSectionRows(zones.runes, columns) +
-				getSectionRows(sideboardCards, columns) +
-				getSectionRows(zones.tokens, columns) +
-				getSectionRows(zones.other, columns);
-			const remainingSectionCount = [
-				zones.main,
-				zones.runes,
-				sideboardCards,
-				zones.tokens,
-				zones.other
-			].filter((section) => section.length > 0).length;
-			const sectionHeaderAndGap = 112;
-			const bottomPadding = 96;
-			height = Math.max(
-				1220,
-				480 +
-					sectionHeaderAndGap +
-					topSectionRows * 226 +
-					remainingSectionCount * sectionHeaderAndGap +
-					sectionRows * 226 +
-					bottomPadding
-			);
+			height = Math.max(1250, bottomEndY + 50);
 		}
 
 		canvas.width = width;
@@ -664,14 +692,74 @@
 		drawExportHeader(context, width);
 
 		if (isLandscape) {
-			drawExportStats(context, stats.costs, 48, 210, 460, 230, 'ค่าร่าย');
+			const legendEndY = await drawExportSection(
+				context,
+				'Legend + Champion',
+				legendChampionCards,
+				48,
+				topY,
+				exportLegendCardWidth,
+				exportLegendCardHeight,
+				2,
+				exportLeftWidth
+			);
+			const runeY = legendChampionCards.length > 0 ? legendEndY + sectionGap : topY;
+			const runeEndY = await drawExportSection(
+				context,
+				'Rune Deck',
+				zones.runes,
+				48,
+				runeY,
+				exportRuneCardWidth,
+				exportRuneCardHeight,
+				3,
+				exportLeftWidth
+			);
+			const leftTopEndY = zones.runes.length > 0 ? runeEndY : legendEndY;
+			const mainEndY = await drawExportSection(
+				context,
+				'Main Deck',
+				zones.main,
+				exportRightX,
+				topY,
+				cardWidth,
+				cardHeight,
+				exportMainColumns,
+				exportRightWidth,
+				Math.max(0, leftTopEndY - topY)
+			);
+			const bottomY = Math.max(leftTopEndY, mainEndY) + sectionGap;
+			await drawExportSection(
+				context,
+				'Battlefield',
+				zones.battlefields,
+				48,
+				bottomY,
+				cardWidth,
+				cardHeight,
+				exportBattlefieldColumns,
+				exportLeftWidth
+			);
+			await drawExportSection(
+				context,
+				'Sideboard',
+				sideboardCards,
+				exportRightX,
+				bottomY,
+				cardWidth,
+				cardHeight,
+				exportSideboardColumns,
+				exportRightWidth
+			);
+		} else {
+			drawExportStats(context, stats.costs, 48, 210, 460, statsHeight, 'ค่าร่าย');
 			await drawExportIconStats(
 				context,
 				stats.types,
 				548,
 				210,
 				460,
-				230,
+				statsHeight,
 				'ประเภทการ์ด',
 				getTypeIconUrl,
 				true
@@ -682,215 +770,102 @@
 				1048,
 				210,
 				460,
-				230,
+				statsHeight,
 				'Domain หลัก',
 				getDomainIconUrl,
 				false
 			);
 
-			const legendRows = getSectionRows(legendChampionCards, 2);
-			const legendHeight = legendChampionCards.length > 0 ? 46 + 22 + legendRows * 226 + 34 : 0;
+			const heroLeftWidth = 520;
+			const heroRightX = 48 + heroLeftWidth + sectionGap;
+			const heroRightWidth = contentWidth - heroLeftWidth - sectionGap;
 			const legendEndY = await drawExportSection(
 				context,
 				'Legend + Champion',
 				legendChampionCards,
-				1548,
-				210,
+				48,
+				topY,
 				cardWidth,
 				cardHeight,
 				2,
-				404
+				heroLeftWidth
 			);
-			const row1EndY = 210 + Math.max(230, legendHeight);
-
 			const battlefieldEndY = await drawExportSection(
 				context,
 				'Battlefield',
 				zones.battlefields,
-				48,
-				row1EndY,
+				heroRightX,
+				topY,
 				cardWidth,
 				cardHeight,
-				4,
-				928
+				3,
+				heroRightWidth
 			);
-			const runeEndY = await drawExportSection(
-				context,
-				'Rune Deck',
-				zones.runes,
-				1024,
-				row1EndY,
-				cardWidth,
-				cardHeight,
-				5,
-				928
-			);
-			const row2EndY = Math.max(battlefieldEndY, runeEndY);
-
-			const mainEndY = await drawExportSection(
+			let sectionY = Math.max(legendEndY, battlefieldEndY) + sectionGap;
+			sectionY = await drawExportSection(
 				context,
 				'Main Deck',
 				zones.main,
 				48,
-				row2EndY,
+				sectionY,
 				cardWidth,
 				cardHeight,
-				10,
-				1904
+				columns,
+				contentWidth
 			);
-			let currentY = mainEndY;
-
-			const bottomSections = [];
-			if (sideboardCards.length > 0)
-				bottomSections.push({ title: 'Sideboard', cards: sideboardCards });
-			if (zones.tokens.length > 0)
-				bottomSections.push({ title: 'การ์ด Token', cards: zones.tokens });
-			if (zones.other.length > 0) bottomSections.push({ title: 'การ์ดอื่นๆ', cards: zones.other });
-
-			for (let i = 0; i < bottomSections.length; i += 2) {
-				const left = bottomSections[i];
-				const right = bottomSections[i + 1];
+			sectionY += zones.main.length > 0 ? sectionGap : 0;
+			const lowerSections = [
+				...(zones.runes.length > 0 ? [{ title: 'Rune Deck', cards: zones.runes }] : []),
+				...(sideboardCards.length > 0 ? [{ title: 'Sideboard', cards: sideboardCards }] : []),
+				...(zones.tokens.length > 0 ? [{ title: 'การ์ด Token', cards: zones.tokens }] : []),
+				...(zones.other.length > 0 ? [{ title: 'การ์ดอื่นๆ', cards: zones.other }] : [])
+			];
+			for (let i = 0; i < lowerSections.length; i += 2) {
+				const left = lowerSections[i];
+				const right = lowerSections[i + 1];
 				if (left && right) {
 					const leftEndY = await drawExportSection(
 						context,
 						left.title,
 						left.cards,
 						48,
-						currentY,
+						sectionY,
 						cardWidth,
 						cardHeight,
-						5,
-						928
+						3,
+						splitWidth
 					);
 					const rightEndY = await drawExportSection(
 						context,
 						right.title,
 						right.cards,
-						1024,
-						currentY,
+						48 + splitWidth + sectionGap,
+						sectionY,
 						cardWidth,
 						cardHeight,
-						5,
-						928
+						3,
+						splitWidth
 					);
-					currentY = Math.max(leftEndY, rightEndY);
+					sectionY = Math.max(leftEndY, rightEndY) + sectionGap;
 				} else if (left) {
-					currentY = await drawExportSection(
+					sectionY = await drawExportSection(
 						context,
 						left.title,
 						left.cards,
 						48,
-						currentY,
+						sectionY,
 						cardWidth,
 						cardHeight,
-						10,
-						1904
+						7,
+						contentWidth
 					);
+					sectionY += sectionGap;
 				}
 			}
-		} else {
-			drawExportStats(context, stats.costs, 48, 210, 460, 230, 'ค่าร่าย');
-			await drawExportIconStats(
-				context,
-				stats.types,
-				548,
-				210,
-				460,
-				230,
-				'ประเภทการ์ด',
-				getTypeIconUrl,
-				true
-			);
-			await drawExportIconStats(
-				context,
-				stats.domains,
-				1048,
-				210,
-				460,
-				230,
-				'Domain หลัก',
-				getDomainIconUrl,
-				false
-			);
-
-			const topSectionY = 480;
-			const legendEndY = await drawExportSection(
-				context,
-				'Legend + Champion',
-				legendChampionCards,
-				48,
-				topSectionY,
-				cardWidth,
-				cardHeight,
-				2,
-				520
-			);
-			const battlefieldEndY = await drawExportSection(
-				context,
-				'Battlefield',
-				zones.battlefields,
-				600,
-				topSectionY,
-				cardWidth,
-				cardHeight,
-				topCardColumns,
-				908
-			);
-			let sectionY = Math.max(legendEndY, battlefieldEndY);
-			sectionY = await drawExportSection(
-				context,
-				'Main Deck',
-				zones.main,
-				48,
-				sectionY,
-				cardWidth,
-				cardHeight,
-				columns
-			);
-			sectionY = await drawExportSection(
-				context,
-				'Rune Deck',
-				zones.runes,
-				48,
-				sectionY,
-				cardWidth,
-				cardHeight,
-				columns
-			);
-			sectionY = await drawExportSection(
-				context,
-				'Sideboard',
-				sideboardCards,
-				48,
-				sectionY,
-				cardWidth,
-				cardHeight,
-				columns
-			);
-			sectionY = await drawExportSection(
-				context,
-				'Tokens',
-				zones.tokens,
-				48,
-				sectionY,
-				cardWidth,
-				cardHeight,
-				columns
-			);
-			await drawExportSection(
-				context,
-				'Other',
-				zones.other,
-				48,
-				sectionY,
-				cardWidth,
-				cardHeight,
-				columns
-			);
 		}
 
-		// Draw watermark website link at the bottom-right corner
-		context.fillStyle = 'rgba(83, 234, 253, 0.45)';
+		// Draw a quiet watermark at the bottom-right corner
+		context.fillStyle = 'rgba(151, 169, 174, 0.42)';
 		context.font = '800 15px Arial';
 		context.textAlign = 'right';
 		context.fillText('riftthai.guyssar.com', width - 48, height - 36);
@@ -901,38 +876,20 @@
 
 	function drawExportBackground(context: CanvasRenderingContext2D, width: number, height: number) {
 		const background = context.createLinearGradient(0, 0, width, height);
-		background.addColorStop(0, '#07111f');
-		background.addColorStop(0.48, '#080b12');
-		background.addColorStop(1, '#04070d');
+		background.addColorStop(0, '#111820');
+		background.addColorStop(0.5, '#0c131a');
+		background.addColorStop(1, '#090f15');
 		context.fillStyle = background;
 		context.fillRect(0, 0, width, height);
 
-		const glow = context.createRadialGradient(260, 90, 10, 260, 90, 620);
-		glow.addColorStop(0, 'rgba(83,234,253,0.18)');
-		glow.addColorStop(0.45, 'rgba(83,234,253,0.055)');
-		glow.addColorStop(1, 'rgba(83,234,253,0)');
-		context.fillStyle = glow;
+		const softLight = context.createRadialGradient(280, 80, 10, 280, 80, 900);
+		softLight.addColorStop(0, 'rgba(161, 177, 181, 0.055)');
+		softLight.addColorStop(1, 'rgba(161, 177, 181, 0)');
+		context.fillStyle = softLight;
 		context.fillRect(0, 0, width, height);
 
-		context.strokeStyle = 'rgba(83,234,253,0.055)';
+		context.strokeStyle = 'rgba(152, 168, 176, 0.18)';
 		context.lineWidth = 1;
-
-		for (let x = 0; x < width; x += 72) {
-			context.beginPath();
-			context.moveTo(x, 0);
-			context.lineTo(x, height);
-			context.stroke();
-		}
-
-		for (let y = 0; y < height; y += 72) {
-			context.beginPath();
-			context.moveTo(0, y);
-			context.lineTo(width, y);
-			context.stroke();
-		}
-
-		context.strokeStyle = 'rgba(83,234,253,0.08)';
-		context.lineWidth = 2;
 		context.beginPath();
 		context.moveTo(48, 184);
 		context.lineTo(width - 48, 184);
@@ -940,22 +897,17 @@
 	}
 
 	function drawExportHeader(context: CanvasRenderingContext2D, width: number) {
-		fillRoundRect(context, 48, 42, width - 96, 126, 18, 'rgba(18,26,36,0.92)');
-		strokeRoundRect(context, 48, 42, width - 96, 126, 18, 'rgba(83,234,253,0.22)', 1.5);
-		const accent = context.createLinearGradient(48, 42, width - 48, 42);
-		accent.addColorStop(0, '#53EAFD');
-		accent.addColorStop(0.55, 'rgba(83,234,253,0.45)');
-		accent.addColorStop(1, 'rgba(83,234,253,0)');
-		context.fillStyle = accent;
-		context.fillRect(66, 42, width - 132, 4);
+		fillRoundRect(context, 48, 42, width - 96, 126, 16, '#111a22');
+		strokeRoundRect(context, 48, 42, width - 96, 126, 16, '#303b44', 2);
+		fillRoundRect(context, 68, 62, 5, 86, 2, '#a99770');
 
-		fillRoundRect(context, 78, 70, 118, 28, 8, 'rgba(83,234,253,0.10)');
-		context.fillStyle = '#ffffff';
+		fillRoundRect(context, 88, 67, 118, 27, 7, '#202b32');
+		context.fillStyle = '#c4b58f';
 		context.font = '900 14px Arial';
-		context.fillText('RiftThai', 96, 90);
+		context.fillText('RiftThai', 105, 86);
 		context.fillStyle = '#ffffff';
 		context.font = '900 52px Arial';
-		context.fillText((selectedDeck?.name || 'RiftThai Deck').slice(0, 34), 78, 134);
+		context.fillText((selectedDeck?.name || 'RiftThai Deck').slice(0, 34), 88, 134);
 
 		const metrics = [
 			['Legend', `${stats.legendTotal}/1`],
@@ -969,9 +921,9 @@
 
 		metrics.forEach(([label, value], index) => {
 			const chipX = width - 750 + index * 98;
-			fillRoundRect(context, chipX, 76, 84, 58, 10, 'rgba(5,10,18,0.72)');
-			strokeRoundRect(context, chipX, 76, 84, 58, 10, 'rgba(83,234,253,0.16)', 1);
-			context.fillStyle = '#53EAFD';
+			fillRoundRect(context, chipX, 76, 84, 58, 8, '#0c1319');
+			strokeRoundRect(context, chipX, 76, 84, 58, 8, '#34414a', 1.5);
+			context.fillStyle = '#c5b383';
 			context.font = '900 19px Arial';
 			context.fillText(value, chipX + 12, 103);
 			context.fillStyle = '#8fa0b3';
@@ -990,7 +942,7 @@
 		title: string
 	) {
 		drawPanel(context, x, y, width, height);
-		context.fillStyle = '#53EAFD';
+		context.fillStyle = '#c5b383';
 		context.font = '900 20px Arial';
 		context.fillText(title, x + 20, y + 36);
 
@@ -1003,7 +955,7 @@
 			context.fillStyle = '#d6dee7';
 			context.font = '700 14px Arial';
 			context.fillText(item.label.slice(0, 18), x + 20, top + 15);
-			fillRoundRect(context, x + 150, top, width - 210, barHeight, 5, 'rgba(83,234,253,0.13)');
+			fillRoundRect(context, x + 150, top, width - 210, barHeight, 5, 'rgba(197,179,131,0.14)');
 			fillRoundRect(
 				context,
 				x + 150,
@@ -1011,7 +963,7 @@
 				((width - 210) * item.count) / max,
 				barHeight,
 				5,
-				'#53EAFD'
+				'#a99770'
 			);
 			context.fillStyle = '#ffffff';
 			context.font = '900 14px Arial';
@@ -1031,7 +983,7 @@
 		showLabel: boolean
 	) {
 		drawPanel(context, x, y, width, height);
-		context.fillStyle = '#53EAFD';
+		context.fillStyle = '#c5b383';
 		context.font = '900 20px Arial';
 		context.fillText(title, x + 20, y + 36);
 
@@ -1053,8 +1005,8 @@
 
 			const barX = showLabel ? x + 150 : x + 58;
 			const barWidth = showLabel ? width - 210 : width - 118;
-			fillRoundRect(context, barX, top, barWidth, 20, 5, 'rgba(83,234,253,0.13)');
-			fillRoundRect(context, barX, top, (barWidth * item.count) / max, 20, 5, '#53EAFD');
+			fillRoundRect(context, barX, top, barWidth, 20, 5, 'rgba(197,179,131,0.14)');
+			fillRoundRect(context, barX, top, (barWidth * item.count) / max, 20, 5, '#a99770');
 			context.fillStyle = '#ffffff';
 			context.font = '900 14px Arial';
 			context.fillText(String(item.count), x + width - 42, top + 15);
@@ -1070,7 +1022,7 @@
 	) {
 		context.fillStyle = 'rgba(18,26,36,0.88)';
 		context.fillRect(x, y, width, height);
-		context.fillStyle = '#53EAFD';
+		context.fillStyle = '#c5b383';
 		context.font = '900 20px Arial';
 		context.fillText('Deck Structure', x + 20, y + 34);
 
@@ -1092,20 +1044,25 @@
 		cardWidth: number,
 		cardHeight: number,
 		columns: number,
-		sectionWidth = 1460
+		sectionWidth = 1460,
+		minimumHeight = 0
 	) {
 		if (items.length === 0) return startY;
 
 		const isBattlefield = title === 'Battlefield';
-		const currentCardWidth = isBattlefield ? cardHeight : cardWidth;
-		const currentCardHeight = isBattlefield ? cardWidth : cardHeight;
-		const colStep = isBattlefield ? 230 : 188;
-		const rowStep = isBattlefield ? 192 : 226;
+		const currentCardWidth = isBattlefield ? sectionWidth - 36 : cardWidth;
+		const currentCardHeight = isBattlefield ? 126 : cardHeight;
+		const colStep = currentCardWidth + 34;
+		const rowStep = isBattlefield ? currentCardHeight + 18 : currentCardHeight + 58;
 
 		const compactHeader = sectionWidth < 700;
 		const headerHeight = compactHeader ? 70 : 46;
-		drawPanel(context, startX, startY, sectionWidth, headerHeight, 12);
-		context.fillStyle = '#53EAFD';
+		const sectionHeight = Math.max(
+			minimumHeight,
+			getExportSectionHeight(items, columns, cardWidth, cardHeight, isBattlefield, sectionWidth)
+		);
+		drawPanel(context, startX, startY, sectionWidth, sectionHeight, 16);
+		context.fillStyle = '#d3c394';
 		context.font = '900 22px Arial';
 		context.fillText(title, startX + 18, startY + 30);
 		context.fillStyle = '#9aa8b8';
@@ -1116,11 +1073,31 @@
 			startX + (compactHeader ? 18 : sectionWidth - 96),
 			startY + (compactHeader ? 54 : 30)
 		);
+		context.strokeStyle = 'rgba(166, 179, 184, 0.16)';
+		context.lineWidth = 1;
+		context.beginPath();
+		context.moveTo(startX + 18, startY + headerHeight - 1);
+		context.lineTo(startX + sectionWidth - 18, startY + headerHeight - 1);
+		context.stroke();
 
 		const cardStartY = startY + headerHeight + 22;
+		const centerSection = title === 'Legend + Champion' || title === 'Rune Deck' || isBattlefield;
 		for (const [index, item] of items.entries()) {
-			const x = startX + (index % columns) * colStep;
+			const rowIndex = Math.floor(index / columns);
+			const rowStartIndex = rowIndex * columns;
+			const rowItemCount = Math.min(columns, items.length - rowStartIndex);
+			const rowWidth =
+				rowItemCount * currentCardWidth + (rowItemCount - 1) * (colStep - currentCardWidth);
+			const rowStartX = centerSection
+				? startX + Math.max(0, (sectionWidth - rowWidth) / 2)
+				: startX + 18;
+			const x = rowStartX + (index % columns) * colStep;
 			const y = cardStartY + Math.floor(index / columns) * rowStep;
+
+			if (isBattlefield) {
+				await drawExportBattlefieldRow(context, item, x, y, currentCardWidth, currentCardHeight);
+				continue;
+			}
 
 			fillRoundRect(
 				context,
@@ -1129,7 +1106,7 @@
 				currentCardWidth + 12,
 				currentCardHeight + 44,
 				12,
-				'rgba(18,26,36,0.82)'
+				'rgba(20, 29, 37, 0.92)'
 			);
 			strokeRoundRect(
 				context,
@@ -1138,7 +1115,7 @@
 				currentCardWidth + 12,
 				currentCardHeight + 44,
 				12,
-				'rgba(83,234,253,0.14)',
+				'rgba(148, 163, 172, 0.18)',
 				1
 			);
 
@@ -1169,16 +1146,51 @@
 				drawCardPlaceholder(context, item.card.name_en, x, y, currentCardWidth, currentCardHeight);
 			}
 
-			fillRoundRect(context, x + currentCardWidth - 45, y + 8, 36, 24, 7, '#53EAFD');
-			context.fillStyle = '#03111f';
+			fillRoundRect(context, x + currentCardWidth - 45, y + 8, 36, 24, 7, '#c5b383');
+			context.fillStyle = '#171a1c';
 			context.font = '900 13px Arial';
 			context.fillText(`x${item.quantity}`, x + currentCardWidth - 37, y + 25);
 			context.fillStyle = '#d6dee7';
 			context.font = '800 12px Arial';
-			context.fillText(item.card.name_en.slice(0, 18), x - 1, y + currentCardHeight + 22);
+			wrapCanvasText(
+				context,
+				item.card.name_en,
+				x - 1,
+				y + currentCardHeight + 16,
+				currentCardWidth + 2,
+				14,
+				2
+			);
 		}
 
 		return cardStartY + getSectionRows(items, columns) * rowStep + 34;
+	}
+
+	async function drawExportBattlefieldRow(
+		context: CanvasRenderingContext2D,
+		item: DeckCard,
+		x: number,
+		y: number,
+		width: number,
+		height: number
+	) {
+		fillRoundRect(context, x, y, width, height, 10, 'rgba(12, 18, 24, 0.96)');
+
+		if (item.card.image_url) {
+			const image = await loadImage(getCanvasImageUrl(item.card.image_url));
+			if (image) drawCoverImage(context, image, x, y, width, height, 10);
+		}
+
+		const overlay = context.createLinearGradient(x, y, x + width, y);
+		overlay.addColorStop(0, 'rgba(7, 12, 17, 0.94)');
+		overlay.addColorStop(0.38, 'rgba(7, 12, 17, 0.62)');
+		overlay.addColorStop(1, 'rgba(7, 12, 17, 0.32)');
+		fillRoundRect(context, x, y, width, height, 10, overlay);
+		strokeRoundRect(context, x, y, width, height, 10, 'rgba(177, 157, 111, 0.58)', 1.5);
+
+		context.fillStyle = '#ffffff';
+		context.font = '900 28px Arial';
+		context.fillText(item.card.name_en, x + 22, y + height / 2 + 10);
 	}
 
 	function drawContainedImage(
@@ -1227,8 +1239,45 @@
 		context.restore();
 	}
 
+	function drawCoverImage(
+		context: CanvasRenderingContext2D,
+		image: HTMLImageElement,
+		x: number,
+		y: number,
+		width: number,
+		height: number,
+		radius = 0
+	) {
+		const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+		const drawWidth = image.naturalWidth * scale;
+		const drawHeight = image.naturalHeight * scale;
+		const drawX = x + (width - drawWidth) / 2;
+		const drawY = y + (height - drawHeight) / 2;
+
+		context.save();
+		roundRectPath(context, x, y, width, height, radius);
+		context.clip();
+		context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+		context.restore();
+	}
+
 	function getSectionRows(items: DeckCard[], columns: number) {
 		return items.length === 0 ? 0 : Math.ceil(items.length / columns);
+	}
+
+	function getExportSectionHeight(
+		items: DeckCard[],
+		columns: number,
+		cardWidth: number,
+		cardHeight: number,
+		isBattlefield: boolean,
+		sectionWidth: number
+	) {
+		if (items.length === 0) return 0;
+		const currentCardHeight = isBattlefield ? 126 : cardHeight;
+		const headerHeight = sectionWidth < 700 ? 70 : 46;
+		const rowStep = isBattlefield ? currentCardHeight + 18 : currentCardHeight + 58;
+		return headerHeight + 22 + getSectionRows(items, columns) * rowStep + 34;
 	}
 
 	function getCanvasImageUrl(imageUrl: string) {
@@ -1271,11 +1320,23 @@
 		height: number,
 		radius = 14
 	) {
-		fillRoundRect(context, x, y, width, height, radius, 'rgba(18,26,36,0.88)');
-		strokeRoundRect(context, x, y, width, height, radius, 'rgba(83,234,253,0.18)', 1);
-		context.fillStyle = 'rgba(83,234,253,0.035)';
-		roundRectPath(context, x, y, width, Math.min(56, height), radius);
-		context.fill();
+		fillRoundRect(context, x, y, width, height, radius, 'rgba(16, 24, 32, 0.97)');
+		strokeRoundRect(context, x, y, width, height, radius, 'rgba(124, 141, 151, 0.3)', 1.5);
+		fillRoundRect(
+			context,
+			x + 1,
+			y + 1,
+			width - 2,
+			Math.min(54, height - 2),
+			Math.max(2, radius - 1),
+			'rgba(255, 255, 255, 0.025)'
+		);
+		context.strokeStyle = 'rgba(143, 158, 167, 0.18)';
+		context.lineWidth = 1;
+		context.beginPath();
+		context.moveTo(x + 18, y + Math.min(58, height));
+		context.lineTo(x + width - 18, y + Math.min(58, height));
+		context.stroke();
 	}
 
 	function fillRoundRect(
@@ -1536,69 +1597,73 @@
 		</div>
 	</nav>
 
-	<main class="rt-container py-6 sm:py-10">
-		<header class="rt-panel rt-topline rt-scanline relative mb-6 overflow-hidden rounded-xl">
-			<div
-				class="pointer-events-none absolute -top-20 -right-16 h-64 w-64 rounded-full bg-cyan-300/12 blur-3xl"
-			></div>
-			<div class="rt-rule-line relative p-5 pl-7 sm:p-7 sm:pl-9">
-				<div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-					<div class="min-w-0">
-						<p class="rt-kicker mb-3">คลังเด็ค</p>
-						<h1 class="rt-heading text-4xl uppercase italic sm:text-6xl">เด็คของฉัน</h1>
-						<p class="rt-copy mt-3 max-w-2xl text-sm">
-							จัดการเด็คทั้งหมดในเครื่องนี้ เลือกเปิดดูสรุป, export PNG หรือเข้า builder
-							เพื่อแก้ไขเด็ค
-						</p>
+	<main class="rt-container py-5 sm:py-8">
+		<header
+			class="mb-4 overflow-hidden rounded-2xl border border-white/10 border-t-[#b8aa86]/70 bg-[#101820] shadow-[0_16px_44px_rgba(0,0,0,0.16)]"
+		>
+			<div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+				<div class="min-w-0">
+					<div class="mb-1 flex flex-wrap items-center gap-2">
+						<p class="text-[10px] font-black tracking-[0.2em] text-[#b8aa86] uppercase">คลังเด็ค</p>
+						<span class="text-[10px] text-slate-600">/</span>
+						<p class="text-[10px] font-semibold text-slate-400">จัดการและแชร์เด็ค</p>
 					</div>
-					<div class="grid grid-cols-3 gap-2 sm:min-w-[23rem]">
-						<div class="rounded-lg border border-cyan-300/15 bg-black/20 p-3 text-center">
-							<div class="text-xl font-black text-white">{libraryStats.decks}</div>
-							<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
-								เด็ค
-							</div>
-						</div>
-						<div class="rounded-lg border border-cyan-300/15 bg-black/20 p-3 text-center">
-							<div class="text-xl font-black text-white">{libraryStats.cards}</div>
-							<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
-								การ์ด
-							</div>
-						</div>
-						<div class="rounded-lg border border-cyan-300/15 bg-black/20 p-3 text-center">
-							<div class="text-xl font-black text-white">{libraryStats.complete}</div>
-							<div class="mt-1 text-[9px] font-black tracking-widest text-slate-500 uppercase">
-								พร้อมเล่น
-							</div>
-						</div>
+					<h1 class="text-3xl font-black tracking-tight text-slate-100 sm:text-4xl">เด็คของฉัน</h1>
+					<p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-400 sm:text-sm">
+						เปิดดู แก้ไข หรือส่งออกเด็คของคุณได้จากที่เดียว
+					</p>
+				</div>
+
+				<div class="grid grid-cols-[repeat(3,minmax(0,1fr))_auto] items-stretch gap-1.5 sm:gap-2 lg:min-w-[27rem]">
+					<div class="rounded-lg border border-white/10 bg-black/15 px-2 py-2 text-center sm:px-3">
+						<div class="text-lg font-black leading-none text-slate-100">{libraryStats.decks}</div>
+						<div class="mt-1.5 text-[9px] font-bold text-slate-500">เด็ค</div>
 					</div>
-				</div>
-				<div class="mt-5 flex flex-wrap gap-2">
-					<button type="button" class="rt-action" onclick={createNewDeck}>สร้างเด็คใหม่</button>
-					<a
-						href="/deck/browser"
-						class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10"
-					>
-						ค้นหาเด็ค
-					</a>
-				</div>
-				<div
-					class="mt-4 grid gap-2 rounded-lg border border-white/10 bg-black/20 p-2 sm:grid-cols-[minmax(0,1fr)_auto]"
-				>
-					<input
-						bind:value={importCode}
-						class="min-h-11 min-w-0 rounded-md border border-white/10 bg-slate-950/70 px-3 text-xs font-bold text-white placeholder:text-slate-600 focus:border-cyan-300/50 focus:outline-none"
-						placeholder="วางรหัสแชร์เด็ค..."
-					/>
+					<div class="rounded-lg border border-white/10 bg-black/15 px-2 py-2 text-center sm:px-3">
+						<div class="text-lg font-black leading-none text-slate-100">{libraryStats.cards}</div>
+						<div class="mt-1.5 text-[9px] font-bold text-slate-500">การ์ด</div>
+					</div>
+					<div class="rounded-lg border border-white/10 bg-black/15 px-2 py-2 text-center sm:px-3">
+						<div class="text-lg font-black leading-none text-slate-100">{libraryStats.complete}</div>
+						<div class="mt-1.5 text-[9px] font-bold text-slate-500">พร้อมเล่น</div>
+					</div>
 					<button
 						type="button"
-						class="inline-flex min-h-11 items-center justify-center rounded-md border border-cyan-300/20 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10"
-						onclick={importDeckCode}
+						class="inline-flex min-h-12 items-center justify-center rounded-lg bg-[#b8aa86] px-3 text-[11px] font-black text-[#151a1d] transition hover:bg-[#c8bd9e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c8bd9e] sm:px-4 sm:text-xs"
+						onclick={createNewDeck}
 					>
-						นำเข้าเด็ค
+						+ สร้างเด็คใหม่
 					</button>
 				</div>
+
+				<div class="grid gap-2 border-t border-white/[0.07] pt-3 sm:grid-cols-[minmax(0,1fr)_auto] lg:col-span-2">
+					<label class="min-w-0">
+						<span class="sr-only">รหัสแชร์เด็ค</span>
+						<input
+							bind:value={importCode}
+							class="min-h-10 w-full rounded-lg border border-white/10 bg-black/15 px-3 text-xs font-semibold text-slate-100 placeholder:text-slate-500 transition focus:border-[#809a9a]/55 focus:bg-black/25 focus:outline-none"
+							placeholder="วางรหัสแชร์เด็คเพื่อนำเข้า..."
+							aria-label="รหัสแชร์เด็ค"
+						/>
+					</label>
+					<div class="grid grid-cols-2 gap-2">
+						<button
+							type="button"
+							class="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-3 text-xs font-bold text-slate-200 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
+							onclick={importDeckCode}
+						>
+							นำเข้าเด็ค
+						</button>
+						<a
+							href="/deck/browser"
+							class="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:bg-white/[0.04] hover:text-white"
+						>
+							ค้นหาเด็ค
+						</a>
+					</div>
+				</div>
 				{#if importError}
-					<p class="mt-2 text-xs font-bold text-rose-100">{importError}</p>
+					<p class="text-xs font-semibold text-rose-200 sm:col-span-2">{importError}</p>
 				{/if}
 			</div>
 		</header>
@@ -1806,13 +1871,16 @@
 									class="grid h-10 w-10 place-items-center rounded-lg border border-white/10 bg-slate-950/70 text-xl font-black text-slate-300 transition hover:bg-white/10 hover:text-white"
 									aria-label={`เปิดเมนูของ ${deck.name}`}
 									aria-expanded={openDeckMenuId === deck.id}
-									onclick={() => toggleDeckMenu(deck.id)}
+									onclick={(event) => toggleDeckMenu(deck.id, event.currentTarget)}
 								>
 									&vellip;
 								</button>
 								{#if openDeckMenuId === deck.id}
 									<div
-										class="absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-cyan-300/15 bg-slate-950/98 p-1 shadow-2xl shadow-black/60 backdrop-blur-xl"
+										class="absolute right-0 z-50 w-52 overflow-y-auto overscroll-contain rounded-lg border border-white/10 bg-[#0b1117] p-1 shadow-2xl shadow-black/60 backdrop-blur-xl {deckMenuOpensUp
+											? 'bottom-full mb-2'
+											: 'top-full mt-2'}"
+										style={`max-height: ${deckMenuMaxHeight}`}
 									>
 										<button
 											type="button"
@@ -1865,11 +1933,32 @@
 										</button>
 										<button
 											type="button"
-											class="block w-full rounded-md px-3 py-3 text-left text-xs font-black tracking-widest text-slate-200 uppercase transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
+											class="group/export block w-full rounded-md px-3 py-3 text-left text-xs font-black tracking-widest text-slate-200 uppercase transition hover:bg-cyan-300/10 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-45"
 											disabled={deckSummary.stats.total === 0 || isExporting}
 											onclick={() => runDeckAction(deck.id, 'preview')}
 										>
-											ดาวน์โหลด PNG
+											<span class="flex items-center gap-2">
+												<svg
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="1.8"
+													class="h-4 w-4 text-cyan-200 transition group-hover/export:text-cyan-100"
+													aria-hidden="true"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														d="M12 3v11m0 0 4-4m-4 4-4-4"
+													/>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														d="M5 17.5v1A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5v-1"
+													/>
+												</svg>
+												<span>ส่งออก PNG</span>
+											</span>
 										</button>
 										<button
 											type="button"
@@ -1908,85 +1997,160 @@
 				<div
 					class="sticky top-0 z-10 mb-4 rounded-xl border border-white/10 bg-[#0a0e15]/95 p-4 backdrop-blur-xl"
 				>
-					<div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+					<div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
 						<div class="min-w-0">
 							<div class="rt-kicker">รายละเอียดเด็ค</div>
 							<h2 class="truncate text-3xl font-black text-white uppercase italic">
 								{selectedDeck.name}
 							</h2>
-						</div>
-						<div class="flex flex-wrap gap-2">
 							<div
-								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-slate-950/40 p-1"
+								class="mt-3 flex flex-wrap gap-2 text-[10px] font-black tracking-widest uppercase"
 							>
+								<span
+									class="rounded-full border border-cyan-300/20 bg-cyan-300/8 px-2.5 py-1 text-cyan-100"
+								>
+									{stats.total} ใบ
+								</span>
+								<span
+									class="rounded-full border px-2.5 py-1 {deckValidation.isReady
+										? 'border-emerald-300/25 bg-emerald-300/8 text-emerald-100'
+										: 'border-amber-200/25 bg-amber-300/8 text-amber-100'}"
+								>
+									{deckValidation.isReady ? 'พร้อมเล่น' : `แก้ ${deckValidation.errorCount} จุด`}
+								</span>
+							</div>
+						</div>
+						<div class="w-full lg:max-w-[34rem]">
+							<div
+								class="rounded-xl border border-cyan-300/20 bg-gradient-to-br from-cyan-300/10 via-slate-950/55 to-slate-950/80 p-3 shadow-xl shadow-cyan-950/15"
+							>
+								<div class="flex items-center gap-3">
+									<div
+										class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-cyan-200/25 bg-cyan-300/12 text-cyan-100"
+									>
+										<svg
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="1.8"
+											class="h-5 w-5"
+											aria-hidden="true"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												d="M12 3v11m0 0 4-4m-4 4-4-4"
+											/>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												d="M5 17.5v1A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5v-1"
+											/>
+										</svg>
+									</div>
+									<div class="min-w-0">
+										<div class="text-sm font-black tracking-wide text-white">ส่งออกเด็ค</div>
+										<div class="mt-0.5 text-[11px] font-semibold text-slate-400">
+											สร้างภาพ PNG สำหรับเก็บไว้หรือแชร์ต่อ
+										</div>
+									</div>
+									<span
+										class="ml-auto hidden rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[9px] font-black tracking-widest text-slate-300 uppercase sm:inline-flex"
+									>
+										แนวนอนเท่านั้น
+									</span>
+								</div>
+								<div class="mt-3 grid gap-2 sm:grid-cols-[auto_1fr_1.15fr]">
+									<div
+										class="inline-flex min-h-11 items-center justify-center rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-3 text-[10px] font-black tracking-widest text-cyan-100 uppercase"
+									>
+										แนวนอน
+									</div>
+									<button
+										type="button"
+										class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/10 bg-slate-950/55 px-3 text-xs font-black tracking-wide text-slate-200 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-white disabled:opacity-50"
+										disabled={!hasDeck || isExporting}
+										onclick={previewPng}
+									>
+										<svg
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="1.8"
+											class="h-4 w-4"
+											aria-hidden="true"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												d="M2.5 12s3.2-5 9.5-5 9.5 5 9.5 5-3.2 5-9.5 5-9.5-5-9.5-5Z"
+											/>
+											<circle cx="12" cy="12" r="2.2" />
+										</svg>
+										ดูตัวอย่าง
+									</button>
+									<button
+										type="button"
+										class="rt-action inline-flex min-h-11 items-center justify-center gap-2 px-3 text-xs shadow-lg shadow-cyan-950/20 disabled:opacity-50"
+										disabled={!hasDeck || isExporting}
+										onclick={downloadPng}
+									>
+										<svg
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="1.8"
+											class="h-4 w-4"
+											aria-hidden="true"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												d="M12 3v11m0 0 4-4m-4 4-4-4"
+											/>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												d="M5 17.5v1A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5v-1"
+											/>
+										</svg>
+										{isExporting ? 'กำลังสร้าง...' : 'ดาวน์โหลด PNG'}
+									</button>
+								</div>
+							</div>
+							<div class="mt-3 flex flex-wrap justify-end gap-2">
 								<button
 									type="button"
-									class="rounded-md px-3 py-1.5 text-xs font-black tracking-widest uppercase transition {exportLayout ===
-									'portrait'
-										? 'bg-cyan-300 text-slate-950'
-										: 'text-slate-400 hover:text-white'}"
-									onclick={() => (exportLayout = 'portrait')}
+									class="inline-flex min-h-10 items-center rounded-lg border border-cyan-300/20 px-3 text-[10px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10 disabled:opacity-50"
+									disabled={!hasDeck}
+									onclick={shareDeck}
 								>
-									แนวตั้ง
+									แชร์
 								</button>
 								<button
 									type="button"
-									class="rounded-md px-3 py-1.5 text-xs font-black tracking-widest uppercase transition {exportLayout ===
-									'landscape'
-										? 'bg-cyan-300 text-slate-950'
-										: 'text-slate-400 hover:text-white'}"
-									onclick={() => (exportLayout = 'landscape')}
+									class="inline-flex min-h-10 items-center rounded-lg border border-white/10 px-3 text-[10px] font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
+									onclick={() => editDeck(selectedDeck.id)}
 								>
-									แนวนอน
+									แก้ไขเด็ค
+								</button>
+								{#if hasDeck}
+									<button
+										type="button"
+										class="inline-flex min-h-10 items-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-3 text-[10px] font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white"
+										onclick={openPlaytest}
+									>
+										ทดลองเล่น
+									</button>
+								{/if}
+								<button
+									type="button"
+									class="inline-flex min-h-10 items-center rounded-lg px-3 text-[10px] font-black tracking-widest text-slate-400 uppercase transition hover:bg-white/5 hover:text-white"
+									onclick={closeDeck}
+								>
+									ปิด
 								</button>
 							</div>
-							<button
-								type="button"
-								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white disabled:opacity-50"
-								disabled={!hasDeck || isExporting}
-								onclick={previewPng}
-							>
-								1. ดูตัวอย่าง
-							</button>
-							<button
-								type="button"
-								class="rt-action disabled:opacity-50"
-								disabled={!hasDeck || isExporting}
-								onclick={downloadPng}
-							>
-								{isExporting ? 'กำลังส่งออก...' : '2. ดาวน์โหลด PNG'}
-							</button>
-							<button
-								type="button"
-								class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/10 disabled:opacity-50"
-								disabled={!hasDeck}
-								onclick={shareDeck}
-							>
-								3. แชร์
-							</button>
-							<button
-								type="button"
-								class="inline-flex min-h-11 items-center rounded-lg border border-white/10 px-4 text-xs font-black tracking-widest text-slate-300 uppercase transition hover:bg-white/5 hover:text-white"
-								onclick={() => editDeck(selectedDeck.id)}
-							>
-								แก้ไขเด็ค
-							</button>
-							{#if hasDeck}
-								<button
-									type="button"
-									class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 bg-cyan-300/8 px-4 text-xs font-black tracking-widest text-cyan-100 uppercase transition hover:bg-cyan-300/14 hover:text-white"
-									onclick={openPlaytest}
-								>
-									ทดลองเล่น
-								</button>
-							{/if}
-							<button
-								type="button"
-								class="inline-flex min-h-11 items-center rounded-lg px-4 text-xs font-black tracking-widest text-slate-400 uppercase transition hover:bg-white/5 hover:text-white"
-								onclick={closeDeck}
-							>
-								ปิด
-							</button>
 						</div>
 					</div>
 				</div>
@@ -2164,33 +2328,11 @@
 						<div class="text-sm font-bold text-slate-300">ตัวอย่างรูป PNG</div>
 					</div>
 					<div class="flex flex-wrap items-center gap-3">
-						<!-- Segmented Control for Layout -->
-						<div
-							class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-slate-950/40 p-1"
+						<span
+							class="inline-flex min-h-11 items-center rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-3 text-[10px] font-black tracking-widest text-cyan-100 uppercase"
 						>
-							<button
-								type="button"
-								class="rounded-md px-3 py-1.5 text-xs font-black tracking-widest uppercase transition {exportLayout ===
-								'portrait'
-									? 'bg-cyan-300 text-slate-950'
-									: 'text-slate-400 hover:text-white'}"
-								onclick={() => changeLayout('portrait')}
-								disabled={isExporting}
-							>
-								แนวตั้ง
-							</button>
-							<button
-								type="button"
-								class="rounded-md px-3 py-1.5 text-xs font-black tracking-widest uppercase transition {exportLayout ===
-								'landscape'
-									? 'bg-cyan-300 text-slate-950'
-									: 'text-slate-400 hover:text-white'}"
-								onclick={() => changeLayout('landscape')}
-								disabled={isExporting}
-							>
-								แนวนอน
-							</button>
-						</div>
+							แนวนอน
+						</span>
 
 						<!-- Download Button -->
 						<button

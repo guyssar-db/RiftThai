@@ -681,6 +681,99 @@
 		margin-bottom: 4px;
 	}
 }
+@media (min-width: 1280px) {
+	.deck-editor-sidebar-collapsed .deck-editor-filter-layout {
+		display: grid;
+		grid-template-columns: minmax(250px, 290px) minmax(0, 1fr);
+		align-items: start;
+		gap: 20px;
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-card-list > .grid {
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters {
+		position: sticky;
+		top: 84px;
+		max-height: calc(100dvh - 104px);
+		min-width: 0;
+		margin-bottom: 0;
+		overflow-y: auto;
+		scrollbar-gutter: stable;
+		overscroll-behavior: contain;
+		padding: 14px;
+		border: 1px solid #283944;
+		border-radius: 14px;
+		background: #0f1d28;
+		box-shadow: 0 14px 32px rgb(0 0 0 / 16%);
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-search-row {
+		flex-direction: column;
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-filter-toggle,
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-search-input,
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-results,
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-results label,
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-results select,
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-reset {
+		width: 100%;
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-filter-options {
+		grid-template-columns: 1fr;
+	}
+
+	.deck-editor-sidebar-collapsed
+		.deck-editor-filters
+		.home-filter-options.home-filter-options-open {
+		max-height: none;
+		overflow: visible;
+		transform: none;
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-domains,
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-reset {
+		grid-column: auto;
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-domains > div {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 6px;
+		max-height: none;
+		overflow: visible;
+		padding-right: 0;
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-domains button {
+		min-height: 58px;
+		flex: none;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: 4px;
+		padding: 7px 3px;
+		font-size: 10px;
+		text-align: center;
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters .active-filter-chips {
+		flex-direction: column;
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters .active-filter-chips button {
+		width: 100%;
+		text-align: left;
+	}
+
+	.deck-editor-sidebar-collapsed .deck-editor-filters .home-results {
+		align-items: stretch;
+		flex-direction: column;
+		margin-bottom: 4px;
+	}
+}
 @media (max-width: 1200px) {
 	.home-redesign .card-grid {
 		grid-template-columns: repeat(4, minmax(0, 1fr));

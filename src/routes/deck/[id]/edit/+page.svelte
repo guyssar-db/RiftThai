@@ -8,6 +8,7 @@
 	import '$lib/components/home/home.css';
 	import HoldToConfirmButton from '$lib/components/ui/HoldToConfirmButton.svelte';
 	import SiteMenu from '$lib/components/SiteMenu.svelte';
+	import { desktopSidebarCollapsed } from '$lib/stores/sidebar';
 	import { getDomainIcon } from '$lib/data/domainIcons';
 	import { getRarityIcon } from '$lib/data/rarityIcons';
 	import { getCardTypeLabels, getTypeIcons } from '$lib/data/typeIcons';
@@ -65,6 +66,7 @@
 	let sideboardEntries = $state<DeckEntry[]>([]);
 	let isEditingSideboard = $state(false);
 	let legendSearchTerm = $state('');
+	let isLegendPickerOpen = $state(false);
 	let searchTerm = $state('');
 	let selectedType = $state('All');
 	let selectedGearGroup = $state('All');
@@ -133,11 +135,17 @@
 	);
 	let legendCards = $derived(cards.filter(isLegendCard));
 	let filteredLegendCards = $derived.by(() => {
+		const eligibleLegends = selectedLegend
+			? legendCards.filter(
+					(card) =>
+						card.code !== selectedLegend.code && haveSameLegendDomains(card, selectedLegend)
+					)
+			: legendCards;
 		const query = legendSearchTerm.trim().toLocaleLowerCase();
-		if (!query) return legendCards;
+		if (!query) return eligibleLegends;
 
 		const tokens = query.split(/\s+/).filter(Boolean);
-		return legendCards.filter((card) => {
+		return eligibleLegends.filter((card) => {
 			const searchable = [
 				card.name_en,
 				card.name_th,
@@ -192,6 +200,74 @@
 			])
 		}))
 	);
+	let availableTypes = $derived.by(() => {
+		const searchTokens = normalize(searchTerm).split(' ').filter(Boolean);
+		const candidateTypes = [
+			...new Set([
+				...types.filter((type) => type !== 'All'),
+				...(cards.some((card) => getCardTypeLabels(card).includes('Basic')) ? ['Rune'] : [])
+			])
+		];
+		const hasMatchingCard = (type: string) =>
+			indexedCards.some(({ card, searchable }) => {
+				if (!selectedLegend && !isLegendCard(card)) return false;
+				if (selectedLegend && isLegendCard(card)) return false;
+				if (selectedLegend && !isCardAllowedForLegend(card, selectedLegend)) return false;
+
+				const cardTypes = getCardTypeLabels(card);
+				if (type === 'Rune' ? !cardTypes.includes('Rune') && !cardTypes.includes('Basic') : !cardTypes.includes(type)) {
+					return false;
+				}
+				if (
+					type === 'Gear' &&
+					selectedGearGroup !== 'All' &&
+					((selectedGearGroup === 'Equipment' && !(card.tags ?? []).includes('Equipment')) ||
+						(selectedGearGroup === 'Unit' && !(cardTypes.includes('Gear') && cardTypes.includes('Unit'))))
+				)
+					return false;
+				if (
+					selectedDomains.length > 0 &&
+					!selectedDomains.some((domain) => (card.domains ?? []).includes(domain))
+				)
+					return false;
+				if (selectedSet !== 'All' && card.set_name !== selectedSet) return false;
+				if (selectedRarity !== 'All' && card.rarity !== selectedRarity) return false;
+				if (
+					!['Rune', 'Token'].includes(type) &&
+					selectedEnergy !== null &&
+					(selectedEnergy === 7 ? (card.energy ?? 0) < 7 : card.energy !== selectedEnergy)
+				)
+					return false;
+				const cost = data.powerCosts?.[powerCode(card.code)] ?? null;
+				if (
+					selectedPower !== null &&
+					(cost === null || (selectedPower === 3 ? cost < 3 : cost !== selectedPower))
+				)
+					return false;
+				if (
+					['Unit', 'Champion'].includes(type) &&
+					selectedMight !== null &&
+					(card.power?.label !== 'Might' ||
+						(selectedMight === 7
+							? (card.power?.value?.id ?? 0) < 7
+							: card.power?.value?.id !== selectedMight))
+				)
+					return false;
+
+				const owned =
+					(userCardCollection[card.code] ?? 0) + (userCardCollection[`${card.code}_foil`] ?? 0);
+				const deckQuantity = isEditingSideboard
+					? getCardQuantity(sideboardEntries, card.code)
+					: getCardQuantity(entries, card.code);
+				if (ownershipFilter === 'owned' && owned <= 0) return false;
+				if (ownershipFilter === 'missing' && !(deckQuantity > 0 && owned < deckQuantity))
+					return false;
+				if (ownershipFilter === 'in-deck' && deckQuantity <= 0) return false;
+				return searchTokens.every((token) => searchable.includes(token));
+			});
+
+		return ['All', ...candidateTypes.filter(hasMatchingCard)];
+	});
 	let filteredCards = $derived(
 		indexedCards
 			.filter(({ card, searchable }) => {
@@ -370,6 +446,24 @@
 		saveCollection(updateActiveDeckSideboardEntries(collection, normalized));
 	}
 
+	function haveSameLegendDomains(first: Card, second: Card) {
+		const getDomainKey = (legend: Card) =>
+			[...new Set(getAllowedDomains(legend).map((domain) => domain.trim().toLocaleLowerCase()))]
+				.sort()
+				.join('|');
+		return getDomainKey(first) === getDomainKey(second);
+	}
+
+	function openLegendPicker() {
+		legendSearchTerm = '';
+		isLegendPickerOpen = true;
+	}
+
+	function closeLegendPicker() {
+		isLegendPickerOpen = false;
+		legendSearchTerm = '';
+	}
+
 	function selectLegend(card: Card) {
 		const nextEntries = [
 			...entries.filter((entry) => {
@@ -387,6 +481,7 @@
 		}
 		saveCollection(nextCollection);
 		entries = getActiveStoredDeck(nextCollection).entries;
+		isLegendPickerOpen = false;
 		resetCardFilters();
 	}
 
@@ -525,6 +620,18 @@
 
 	function renameDeck() {
 		saveCollection(updateActiveDeckName(collection, deckNameInput));
+	}
+
+	function openExportPreview() {
+		if (!browser || (entries.length === 0 && sideboardEntries.length === 0)) return;
+		renameDeck();
+		const deckId = activeDeck.id;
+		const nextCollection = setActiveStoredDeck(collection, deckId);
+		collection = nextCollection;
+		writeDeckCollectionToStorage(localStorage, nextCollection);
+		const exportWindow = window.open(`/deck?exportDeck=${encodeURIComponent(deckId)}`, '_blank');
+		if (exportWindow) exportWindow.opener = null;
+		else window.location.href = `/deck?exportDeck=${encodeURIComponent(deckId)}`;
 	}
 
 	function setChampion(card: Card) {
@@ -754,82 +861,115 @@
 		</div>
 	</nav>
 
-	<main class="rt-container py-6 sm:py-10">
-		<header class="design-hero rt-panel rt-topline mb-6 overflow-hidden rounded-2xl">
-			<div class="rt-rule-line p-4 sm:p-7 sm:pl-9">
-				<p class="rt-kicker mb-3">หน้าจัดเด็ค</p>
-				<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-					<div>
-						<h1 class="rt-heading text-3xl uppercase italic sm:text-6xl">จัดเด็ค</h1>
-						<p class="rt-copy mt-3 max-w-2xl text-sm">
-							ค้นหาการ์ดแล้วกดเพิ่มหรือลดจำนวน เด็คจะบันทึกไว้ใน browser เครื่องนี้อัตโนมัติ
-						</p>
+	<main class="rt-container py-5 sm:py-8">
+		<header
+			class="mb-4 overflow-hidden rounded-2xl border border-white/10 border-t-[#b8aa86]/70 bg-[#101820] shadow-[0_16px_44px_rgba(0,0,0,0.16)]"
+		>
+			<div class="grid gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+				<div class="min-w-0">
+					<div class="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+						<span class="text-[10px] font-black tracking-[0.2em] text-[#b8aa86] uppercase"
+							>ตัวแก้ไขเด็ค</span
+						>
+						<span class="text-[10px] font-semibold text-slate-500">/</span>
+						<span class="text-[10px] font-semibold text-slate-400">คลังเด็ค</span>
 					</div>
-					<div class="flex flex-col space-y-2">
-						<div class="flex flex-wrap items-end gap-2">
-							<label class="grid min-w-[220px] flex-1 gap-1 sm:flex-none">
-								<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase"
-									>ชื่อเด็ค</span
+					<h1 class="sr-only">แก้ไขเด็ค {deckNameInput || 'ไม่มีชื่อ'}</h1>
+					<label class="block min-w-0 max-w-3xl">
+						<span class="sr-only">ชื่อเด็ค</span>
+						<input
+							bind:value={deckNameInput}
+							class="min-h-12 w-full rounded-lg border border-transparent bg-transparent px-2 text-2xl font-black tracking-tight text-slate-100 caret-[#c7b995] selection:bg-[#c7b995]/30 placeholder:text-slate-600 transition focus:border-[#809a9a]/50 focus:bg-black/15 focus:outline-none sm:min-h-14 sm:text-3xl"
+							maxlength="48"
+							placeholder="ตั้งชื่อเด็ค"
+							aria-label="ชื่อเด็ค"
+							onblur={renameDeck}
+							onkeydown={(event) => {
+								if (event.key === 'Enter') event.currentTarget.blur();
+							}}
+						/>
+					</label>
+					<p class="mt-1 px-2 text-xs leading-relaxed text-slate-400">
+						เพิ่มหรือลดการ์ดได้จากรายการด้านล่าง
+					</p>
+					{#if selectedLegend}
+						<div class="mt-3 flex flex-wrap items-center gap-1.5 px-2">
+							<span class="mr-1 text-[10px] font-bold tracking-wide text-slate-500">ใช้ได้กับ</span>
+							{#each allowedDomains as domain}
+								<span
+									class="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-white/10 bg-black/15 px-2.5 text-[10px] font-semibold text-slate-300"
 								>
-								<input
-									bind:value={deckNameInput}
-									class="min-h-11 rounded-md border border-white/10 bg-[#080b12]/80 px-3 text-sm font-bold text-white focus:border-cyan-300/50 focus:outline-none"
-									maxlength="48"
-									onblur={renameDeck}
-									onkeydown={(event) => {
-										if (event.key === 'Enter') event.currentTarget.blur();
-									}}
-								/>
-							</label>
-							<a href="/deck" class="rt-action">ดูเด็ค</a>
-							<button
-								type="button"
-								class="inline-flex min-h-11 items-center rounded-lg border border-rose-300/20 px-4 text-xs font-black tracking-widest text-rose-100 uppercase transition hover:bg-rose-500/10 disabled:opacity-40"
-								disabled={entries.length === 0}
-								onclick={requestClearDeck}
-							>
-								ล้างเด็ค
-							</button>
+									{#if getDomainIcon(domain)}
+										<img
+											src={getDomainIcon(domain) ?? ''}
+											class="h-3.5 w-3.5 object-contain"
+											alt=""
+										/>
+									{/if}
+									{domain}
+								</span>
+							{/each}
+							{#each selectedLegend.tags ?? [] as tag}
+								<span
+									class="inline-flex min-h-7 items-center rounded-full border border-[#b8aa86]/20 bg-[#b8aa86]/8 px-2.5 text-[10px] font-semibold text-[#d4c8a8]"
+								>
+									{tag}
+								</span>
+							{/each}
 						</div>
-						<p class="text-right text-[10px] font-bold tracking-wide text-slate-500">
-							{activeDeck.onlineId
-								? 'บันทึกการแก้ไขไว้ในเครื่องก่อน · ไปที่เด็คของฉันเพื่อซิงก์ออนไลน์'
-								: 'เด็คในเครื่อง · ไปที่เด็คของฉันเมื่อต้องการบันทึกออนไลน์'}
-						</p>
-						{#if selectedLegend}
-							<div class="flex flex-wrap justify-end gap-2">
-								{#each allowedDomains as domain}
-									<span class="rt-chip">
-										{#if getDomainIcon(domain)}
-											<img
-												src={getDomainIcon(domain) ?? ''}
-												class="h-4 w-4 object-contain"
-												alt={domain}
-											/>
-										{/if}
-										{domain}
-									</span>
-								{/each}
-								{#each selectedLegend.tags ?? [] as tag}
-									<span class="rt-chip border-cyan-300/20 bg-cyan-300/10 text-cyan-100"
-										>Tag: {tag}</span
-									>
-								{/each}
-							</div>
-						{/if}
+					{/if}
+				</div>
+
+				<div class="flex flex-col gap-3 xl:min-w-[17rem] xl:items-end">
+					<div
+						class="inline-flex min-h-8 items-center gap-2 self-start rounded-full border border-white/10 bg-black/15 px-3 text-[10px] font-semibold text-slate-400 xl:self-end"
+						aria-live="polite"
+					>
+						<span class="h-1.5 w-1.5 rounded-full bg-emerald-300/80"></span>
+						{activeDeck.onlineId
+							? 'แก้ไขในเครื่อง · ซิงก์จากหน้าเด็คของฉัน'
+							: 'บันทึกในเครื่องอัตโนมัติ'}
+					</div>
+					<div class="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+						<a
+							href="/deck"
+							class="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-4 text-xs font-bold text-slate-200 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
+						>
+							ดูเด็ค
+						</a>
+						<button
+							type="button"
+							class="inline-flex min-h-10 items-center justify-center rounded-lg bg-[#b8aa86] px-3 text-[11px] font-black text-[#151a1d] transition hover:bg-[#c8bd9e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c8bd9e] disabled:cursor-not-allowed disabled:opacity-40 sm:px-4 sm:text-xs"
+							disabled={entries.length === 0 && sideboardEntries.length === 0}
+							title="เปิดตัวอย่างก่อนดาวน์โหลด PNG"
+							onclick={openExportPreview}
+						>
+							ส่งออก PNG
+						</button>
+						<button
+							type="button"
+							class="inline-flex min-h-10 items-center justify-center rounded-lg border border-rose-200/15 px-4 text-xs font-bold text-rose-200/80 transition hover:border-rose-200/30 hover:bg-rose-300/[0.07] hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-35"
+							disabled={entries.length === 0}
+							onclick={requestClearDeck}
+						>
+							ล้างเด็ค
+						</button>
 					</div>
 				</div>
 			</div>
 		</header>
 
-		<section class="rt-panel relative mb-4 rounded-xl p-3">
+		<section
+			class="mb-3 rounded-xl border border-white/10 bg-[#0e171e] p-2.5 sm:p-3"
+			aria-label="เลือกเด็ค"
+		>
 			<div class="flex gap-2 overflow-x-auto pb-1">
 				<button
 					type="button"
-					class="grid min-h-16 min-w-36 place-items-center rounded-lg border border-dashed border-cyan-300/30 bg-cyan-300/5 px-4 text-center transition hover:bg-cyan-300/10"
+					class="grid min-h-16 min-w-36 place-items-center rounded-lg border border-dashed border-[#b8aa86]/30 bg-[#b8aa86]/[0.04] px-4 text-center transition hover:border-[#b8aa86]/50 hover:bg-[#b8aa86]/[0.08]"
 					onclick={createDeck}
 				>
-					<span class="text-xs font-black tracking-widest text-cyan-100 uppercase"
+					<span class="text-xs font-bold tracking-wide text-[#d4c8a8]"
 						>+ สร้างเด็คใหม่</span
 					>
 				</button>
@@ -839,9 +979,10 @@
 							type="button"
 							class="min-h-16 w-full rounded-lg border p-3 text-left transition {deck.id ===
 							collection.activeDeckId
-								? 'border-cyan-300/50 bg-cyan-300/10 shadow-[0_0_24px_rgba(83,234,253,0.08)]'
-								: 'border-white/10 bg-black/15 hover:border-cyan-300/20 hover:bg-white/5'}"
+								? 'border-[#8ca8a4]/45 bg-[#8ca8a4]/[0.09]'
+								: 'border-white/10 bg-black/15 hover:border-white/20 hover:bg-white/[0.04]'}"
 							onclick={() => selectStoredDeck(deck.id)}
+							aria-pressed={deck.id === collection.activeDeckId}
 						>
 							<span class="block truncate pr-9 text-sm font-black text-white uppercase italic"
 								>{deck.name}</span
@@ -1144,34 +1285,40 @@
 			</aside>
 			{/if}
 		{:else}
-			<section class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+			<section
+				class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]"
+				class:deck-editor-sidebar-collapsed={$desktopSidebarCollapsed}
+			>
 				<div class="min-w-0">
-					<div class="deck-editor-filters rt-panel rt-topline top-[4.75rem] z-40 mb-5 rounded-xl p-3 lg:sticky">
-						<HomeFilters
-							bind:searchTerm
-							bind:selectedSet
-							bind:selectedType
-							bind:selectedGearGroup
-							bind:selectedDomains
-							bind:selectedEnergy
-							bind:selectedMight
-							bind:selectedPower
-							bind:selectedRarity
-							bind:sortMode
-							bind:ownershipFilter
-							sets={sets}
-							types={types}
-							domains={domainFilterValues}
-							rarities={rarities}
-							ownershipOptions={ownershipFilterOptions}
-							ownershipDisabled={!hasCollection}
-							resultsCount={filteredCards.length}
-						/>
-					</div>
+					<div class="deck-editor-filter-layout">
+						<div class="home-filter-inline deck-editor-filters top-[4.75rem] z-40 mb-5 lg:sticky">
+							<HomeFilters
+								bind:searchTerm
+								bind:selectedSet
+								bind:selectedType
+								bind:selectedGearGroup
+								bind:selectedDomains
+								bind:selectedEnergy
+								bind:selectedMight
+								bind:selectedPower
+								bind:selectedRarity
+								bind:sortMode
+								bind:ownershipFilter
+								sets={sets}
+								types={types}
+								availableTypes={availableTypes}
+								domains={domainFilterValues}
+								rarities={rarities}
+								ownershipOptions={ownershipFilterOptions}
+								ownershipDisabled={!hasCollection}
+								resultsCount={filteredCards.length}
+							/>
+						</div>
 
-					<div
-						class="mb-4 hidden flex-col gap-3 rounded-xl border border-white/10 bg-black/15 p-3 sm:flex sm:flex-row sm:items-center sm:justify-between"
-					>
+						<div class="deck-editor-card-list min-w-0">
+							<div
+								class="mb-4 hidden flex-col gap-3 rounded-xl border border-white/10 bg-black/15 p-3 sm:flex sm:flex-row sm:items-center sm:justify-between"
+							>
 						<div class="text-xs font-black tracking-widest text-slate-500 uppercase">
 							แสดง {(cardPage - 1) * cardsPerPage + (paginatedCards.length > 0 ? 1 : 0)}-{Math.min(
 								cardPage * cardsPerPage,
@@ -1370,6 +1517,8 @@
 
 					{@render CardPagination(true)}
 				</div>
+					</div>
+				</div>
 
 				<button
 					type="button"
@@ -1442,7 +1591,17 @@
 								<div class="relative overflow-hidden rounded-lg border border-amber-200/20 bg-black/20">
 									<img src={getCardImageUrl(selectedLegend.image_url, 220, 'webp')} class="aspect-[744/1039] w-full object-cover" alt={selectedLegend.name_en} loading="lazy" />
 									<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2 pt-10">
-										<div class="truncate text-xs font-black text-white">Legend</div>
+										<div class="flex items-center justify-between gap-1">
+											<div class="truncate text-xs font-black text-white">Legend</div>
+											<button
+												type="button"
+												class="shrink-0 rounded-md border border-cyan-300/25 bg-slate-950/80 px-2 py-1 text-[9px] font-black text-cyan-100 transition hover:bg-cyan-300/15"
+												onclick={openLegendPicker}
+												aria-label={`เปลี่ยน Legend ${selectedLegend.name_en}`}
+											>
+												เปลี่ยน
+											</button>
+										</div>
 										<div class="truncate text-[10px] font-bold text-slate-300">{selectedLegend.name_en}</div>
 									</div>
 								</div>
@@ -1569,7 +1728,17 @@
 								<div
 									class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent p-2 pt-10"
 								>
-									<div class="truncate text-xs font-black text-white">Legend</div>
+									<div class="flex items-center justify-between gap-1">
+										<div class="truncate text-xs font-black text-white">Legend</div>
+										<button
+											type="button"
+											class="shrink-0 rounded-md border border-cyan-300/25 bg-slate-950/80 px-2 py-1 text-[9px] font-black text-cyan-100 transition hover:bg-cyan-300/15"
+											onclick={openLegendPicker}
+											aria-label={`เปลี่ยน Legend ${selectedLegend.name_en}`}
+										>
+											เปลี่ยน
+										</button>
+									</div>
 									<div class="truncate text-[10px] font-bold text-slate-300">
 										{selectedLegend.name_en}
 									</div>
@@ -1720,7 +1889,7 @@
 	<div class="fixed inset-0 z-[980] grid place-items-center bg-black/80 p-4 backdrop-blur-sm">
 		<div class="rt-panel w-full max-w-xs rounded-xl p-5 text-center">
 			<div
-				class="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300"
+				class="deck-editor-loading-spinner mx-auto h-10 w-10 rounded-full border-2 border-cyan-300/20 border-t-cyan-300"
 			></div>
 			<div class="mt-4 text-sm font-black tracking-widest text-white uppercase">กำลังโหลดเด็ค</div>
 		</div>
@@ -1729,6 +1898,124 @@
 
 {#if selectedPopupCard}
 	<CardModal card={selectedPopupCard} closePopup={closeCardInfo} canEdit={false} />
+{/if}
+
+{#if isLegendPickerOpen && selectedLegend}
+	<div class="fixed inset-0 z-[980] grid place-items-center bg-slate-950/80 p-3 backdrop-blur-sm sm:p-6">
+		<button
+			type="button"
+			class="absolute inset-0 cursor-default"
+			onclick={closeLegendPicker}
+			aria-label="ปิดหน้าต่างเปลี่ยน Legend"
+		></button>
+		<dialog
+			open
+			class="rt-panel relative z-10 flex max-h-[90dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl p-4 shadow-2xl sm:p-6"
+			aria-modal="true"
+			aria-labelledby="legend-picker-title"
+			tabindex="-1"
+			onkeydown={(event) => {
+				if (event.key === 'Escape') closeLegendPicker();
+			}}
+		>
+			<div class="mb-4 flex items-start justify-between gap-4">
+				<div>
+					<p class="rt-kicker">เปลี่ยน Legend</p>
+					<h2 id="legend-picker-title" class="mt-1 text-xl font-black text-white sm:text-2xl">
+						เลือก Legend ที่มีสีตรงกัน
+					</h2>
+					<p class="rt-copy mt-2 text-xs sm:text-sm">
+						แสดงเฉพาะ Legend ที่มี Domain ชุดเดียวกับใบปัจจุบัน การ์ดในเด็คจึงยังใช้สีได้เหมือนเดิม
+					</p>
+				</div>
+				<button
+					type="button"
+					class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-white/10 text-lg font-black text-slate-300 transition hover:bg-white/10 hover:text-white"
+					onclick={closeLegendPicker}
+					aria-label="ปิดหน้าต่างเปลี่ยน Legend"
+				>
+					×
+				</button>
+			</div>
+
+			<div class="mb-4 flex flex-wrap items-center gap-2">
+				<span class="text-[10px] font-black tracking-widest text-slate-500 uppercase">สีที่ต้องตรงกัน</span>
+				{#if allowedDomains.length > 0}
+					{#each allowedDomains as domain}
+						<span class="rt-chip">
+							{#if getDomainIcon(domain)}
+								<img src={getDomainIcon(domain) ?? ''} class="h-4 w-4 object-contain" alt={domain} />
+							{/if}
+							{domain}
+						</span>
+					{/each}
+				{:else}
+					<span class="rt-chip">Colorless</span>
+				{/if}
+			</div>
+
+			<label class="mb-4 block">
+				<span class="sr-only">ค้นหา Legend ที่มีสีตรงกัน</span>
+				<input
+					bind:value={legendSearchTerm}
+					class="min-h-11 w-full rounded-lg border border-white/10 bg-[#080b12]/80 px-4 text-sm font-semibold text-white placeholder:text-slate-500 focus:border-cyan-300/50 focus:outline-none"
+					placeholder="ค้นหาชื่อ Legend, รหัส หรือแท็ก..."
+				/>
+			</label>
+
+			<div class="min-h-0 flex-1 overflow-y-auto pr-1">
+				<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+					{#each filteredLegendCards as card (card.code)}
+						<button
+							type="button"
+							class="rt-panel flex min-h-28 gap-3 rounded-xl p-3 text-left transition hover:border-cyan-300/40 hover:bg-cyan-300/5 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-300/20"
+							onclick={() => selectLegend(card)}
+						>
+							<img
+								src={getCardImageUrl(card.image_url, 180, 'webp')}
+								class="pointer-events-none aspect-[744/1039] w-20 shrink-0 rounded-md object-cover"
+								alt={card.name_en}
+								loading="lazy"
+							/>
+							<span class="min-w-0 flex-1">
+								<span class="block truncate text-sm font-black text-white">{card.name_en}</span>
+								{#if card.name_th && card.name_th !== card.name_en}
+									<span class="mt-1 block truncate text-xs font-semibold text-slate-400">
+										{card.name_th}
+									</span>
+								{/if}
+								<span class="mt-1 block text-[10px] font-black tracking-widest text-slate-500 uppercase">
+									{card.code}
+								</span>
+								<span class="mt-3 flex flex-wrap gap-1">
+									{#each getAllowedDomains(card) as domain}
+										<span class="rt-chip !min-h-6 !px-2 !py-0.5 !text-[9px]">
+											{#if getDomainIcon(domain)}
+											<img src={getDomainIcon(domain) ?? ''} class="h-3.5 w-3.5 object-contain" alt="" />
+										{/if}
+										{domain}
+										</span>
+									{/each}
+								</span>
+								{#if championCard && !isChampionCandidate(championCard, card)}
+									<span class="mt-2 block text-[10px] font-bold text-amber-200">
+										การเปลี่ยนใบนี้จะนำ Champion ปัจจุบันออก
+									</span>
+								{/if}
+							</span>
+						</button>
+					{:else}
+						<div class="rt-panel col-span-full rounded-xl p-8 text-center">
+							<p class="text-sm font-black text-white">ไม่พบ Legend สีชุดเดียวกัน</p>
+							<p class="mt-2 text-xs font-semibold text-slate-500">
+								ลองเปลี่ยนคำค้นหา หรือใช้ Legend ใบปัจจุบันต่อ
+							</p>
+						</div>
+					{/each}
+				</div>
+			</div>
+		</dialog>
+	</div>
 {/if}
 
 {#if openDeckMenuDeck}
@@ -1785,6 +2072,16 @@
 {/if}
 
 <style>
+	.deck-editor-loading-spinner {
+		animation: deck-editor-loading-spin 900ms linear infinite !important;
+	}
+
+	@keyframes deck-editor-loading-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
 	.deck-editor-mobile-drawer {
 		will-change: transform;
 	}
